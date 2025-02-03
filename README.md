@@ -7,7 +7,7 @@ This repository contains code for analyzing traffic data.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/traffic-studies.git
+git clone https://github.com/semanticdata/traffic-studies.git
 cd traffic-studies
 ```
 
