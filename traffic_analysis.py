@@ -31,11 +31,11 @@ if '45-99' in df.columns:
     non_compliant_cols.append('45-99')
 df['Non_Compliant'] = df[non_compliant_cols].sum(axis=1)
 
-# Create a figure with three subplots
-fig = plt.figure(figsize=(15, 12))
+# Create a figure with four subplots
+fig = plt.figure(figsize=(15, 18))
 
 # 1. Traffic Volume by Hour
-ax1 = plt.subplot(3, 1, 1)
+ax1 = plt.subplot(4, 1, 1)
 sns.barplot(data=df, x='Hour', y='Total', color='skyblue', ax=ax1)
 ax1.set_title('Traffic Volume by Hour', fontsize=12, pad=15)
 ax1.set_xlabel('Hour of Day', fontsize=10)
@@ -43,7 +43,7 @@ ax1.set_ylabel('Total Vehicles', fontsize=10)
 ax1.grid(True, alpha=0.3)
 
 # 2. Speed Distribution
-ax2 = plt.subplot(3, 1, 2)
+ax2 = plt.subplot(4, 1, 2)
 speed_dist = df[speed_columns].mean()
 if '0-20' in speed_dist.index:
     speed_dist = speed_dist.drop('0-20')  # Drop the 0-20 category for better visualization
@@ -55,7 +55,7 @@ plt.xticks(rotation=45)
 ax2.grid(True, alpha=0.3)
 
 # 3. Speed Compliance by Hour
-ax3 = plt.subplot(3, 1, 3)
+ax3 = plt.subplot(4, 1, 3)
 compliance_data = pd.DataFrame({
     'Hour': df['Hour'],
     'Compliant': df['Compliant'],
@@ -68,6 +68,14 @@ ax3.set_title('Speed Compliance by Hour', fontsize=12, pad=15)
 ax3.set_xlabel('Hour of Day', fontsize=10)
 ax3.set_ylabel('Vehicle Count', fontsize=10)
 ax3.grid(True, alpha=0.3)
+
+# 4. Traffic Volume Over Time
+ax4 = plt.subplot(4, 1, 4)
+df.groupby('Date/Time')['Total'].sum().plot(ax=ax4, color='purple')
+ax4.set_title('Traffic Volume Over Time', fontsize=12, pad=15)
+ax4.set_xlabel('Date/Time', fontsize=10)
+ax4.set_ylabel('Total Vehicles', fontsize=10)
+ax4.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.savefig('traffic_analysis.png', dpi=300, bbox_inches='tight')
