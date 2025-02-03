@@ -35,10 +35,16 @@ pip install -r requirements.txt
 python traffic_analysis.py
 ```
 
+5. Run the dashboard:
+```bash
+streamlit run dashboard.py
+```
+
 ## Output
 
 | ![traffic-analysis](./traffic_analysis.png) |
 | :-----------------------------------------: |
+
 
 ## 📜 License
 
