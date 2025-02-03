@@ -47,6 +47,24 @@ for filename in os.listdir(data_directory):
             output_file = os.path.join(output_directory, f'{filename}.png')  # Save to output directory
             plt.savefig(output_file)
             plt.close()  # Close the figure to free memory
+
+            # After parsing the data, calculate total volumes
+            volume_columns = [col for col in data.columns if 'Volume' in col]
+            data['Total Volume'] = data[volume_columns].sum(axis=1)  # Sum across volume columns
+
+            # Create a volume totals graph
+            plt.figure(figsize=(10, 6))
+            sns.lineplot(data=data, x='Date', y='Total Volume')
+            plt.title(f'Total Volume for {location} - {title}')
+            plt.xlabel('Date')
+            plt.ylabel('Total Volume')
+            plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+            plt.tight_layout()  # Adjust layout to prevent clipping
+
+            # Save the volume totals figure
+            output_file_volume = os.path.join(output_directory, f'{filename}_volume_totals.png')
+            plt.savefig(output_file_volume)
+            plt.close()  # Close the figure to free memory
         except pd.errors.ParserError as e:
             with open(error_log_file, 'a') as log_file:
                 log_file.write(f"Error reading {filename}: {e}\n")
