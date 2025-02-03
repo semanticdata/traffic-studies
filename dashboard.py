@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import os
+from pathlib import Path
 
 # Set page config
 st.set_page_config(
@@ -14,14 +16,42 @@ st.set_page_config(
 # Title and description
 st.title("🚗 Traffic Analysis Dashboard")
 st.markdown("""
-This dashboard provides insights into traffic patterns and speed compliance data.
-Use the sidebar filters to customize the view.
+This dashboard provides insights into traffic patterns and speed compliance data across multiple locations.
+Select a location from the sidebar and use the filters to customize the view.
 """)
+
+def get_location_from_file(file_path):
+    """Extract location name from the CSV file metadata."""
+    try:
+        # Read the first few lines to get the metadata
+        with open(file_path, 'r') as f:
+            header_lines = [next(f) for _ in range(6)]
+        
+        # Look for the location line (typically first line)
+        for line in header_lines:
+            if 'Location:' in line:
+                # Extract the location name from the line containing 'Location:'
+                # Split the line by commas and take the second value as the location
+                parts = [part.strip() for part in line.split('Location:')[1].split(',') if part.strip()]
+                if len(parts) > 1:
+                    return parts[1]
+                elif len(parts) == 1:
+                    return parts[0]
+                return "Unknown Location"
+    except Exception:
+        pass
+    
+    # Fallback to filename if location not found in metadata
+    return Path(file_path).stem.split('-')[0].replace('_', ' ').title()
 
 # Load and process data
 @st.cache_data
-def load_data():
-    df = pd.read_csv('data/speed-data-totals.csv', skiprows=6)
+def load_data(file_path):
+    # Get the location name first
+    location_name = get_location_from_file(file_path)
+    
+    # Load the actual data
+    df = pd.read_csv(file_path, skiprows=6)
     df['Date/Time'] = pd.to_datetime(df['Date/Time'].str.split(' - ').str[0])
     df['Hour'] = df['Date/Time'].dt.hour
     
@@ -40,17 +70,48 @@ def load_data():
         non_compliant_cols.append('45-99')
     df['Non_Compliant'] = df[non_compliant_cols].sum(axis=1)
     
-    return df
+    return df, location_name
 
-# Load the data
-try:
-    df = load_data()
-except FileNotFoundError:
-    st.error("❌ Error: Could not find the data file. Please make sure 'data/speed-data-totals.csv' exists.")
+def get_available_locations():
+    """Get list of available data files and their locations."""
+    data_dir = Path('data')
+    if not data_dir.exists():
+        return {}
+    
+    locations = {}
+    for file in data_dir.glob('*.csv'):
+        location_name = get_location_from_file(str(file))
+        locations[location_name] = str(file)
+    
+    return locations
+
+# Sidebar
+st.sidebar.header("Location and Filters")
+
+# Get available locations
+locations = get_available_locations()
+
+if not locations:
+    st.error("❌ No data files found. Please add CSV files to the 'data' directory.")
     st.stop()
 
-# Sidebar filters
-st.sidebar.header("Filters")
+# Location selector
+selected_location = st.sidebar.selectbox(
+    "Select Location",
+    options=sorted(list(locations.keys())),
+    index=0
+)
+
+# Load the data for selected location
+try:
+    df, location_name = load_data(locations[selected_location])
+    # st.sidebar.success(f"📍 Showing data for {location_name}")
+except FileNotFoundError:
+    st.error(f"❌ Error: Could not find the data file for {selected_location}")
+    st.stop()
+except Exception as e:
+    st.error(f"❌ Error loading data: {str(e)}")
+    st.stop()
 
 # Date range filter
 date_range = st.sidebar.date_input(
@@ -76,6 +137,10 @@ mask = (
 )
 filtered_df = df[mask]
 
+# Location Info
+st.header(f"📍 {location_name} Traffic Analysis")
+st.markdown(f"Analyzing traffic data from {date_range[0]} to {date_range[1]}")
+
 # Display key metrics
 col1, col2, col3, col4 = st.columns(4)
 
@@ -96,58 +161,75 @@ with col4:
     st.metric("Speed Compliance", f"{compliance_rate:.1f}%")
 
 # Create visualizations
-st.header("📊 Traffic Analysis")
+st.header("📊 Detailed Analysis")
 
 # 1. Traffic Volume by Hour
-st.subheader("Traffic Volume by Hour")
-fig1, ax1 = plt.subplots(figsize=(10, 6))
-sns.barplot(data=filtered_df, x='Hour', y='Total', color='skyblue', ax=ax1)
-ax1.set_xlabel('Hour of Day')
-ax1.set_ylabel('Total Vehicles')
-ax1.grid(True, alpha=0.3)
-st.pyplot(fig1)
+col1, col2 = st.columns(2)
+
+with col1:
+    st.subheader("Traffic Volume by Hour")
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=filtered_df, x='Hour', y='Total', color='skyblue', ax=ax1)
+    ax1.set_xlabel('Hour of Day')
+    ax1.set_ylabel('Total Vehicles')
+    ax1.grid(True, alpha=0.3)
+    st.pyplot(fig1)
 
 # 2. Speed Distribution
-st.subheader("Average Speed Distribution")
-speed_columns = [col for col in filtered_df.columns if col not in ['Date/Time', 'Hour', 'Total', 'Compliant', 'Non_Compliant']]
-speed_dist = filtered_df[speed_columns].mean()
-if '0-20' in speed_dist.index:
-    speed_dist = speed_dist.drop('0-20')
+with col2:
+    st.subheader("Average Speed Distribution")
+    speed_columns = [col for col in filtered_df.columns if col not in ['Date/Time', 'Hour', 'Total', 'Compliant', 'Non_Compliant']]
+    speed_dist = filtered_df[speed_columns].mean()
+    if '0-20' in speed_dist.index:
+        speed_dist = speed_dist.drop('0-20')
 
-fig2, ax2 = plt.subplots(figsize=(10, 6))
-sns.barplot(x=speed_dist.index, y=speed_dist.values, color='lightgreen', ax=ax2)
-plt.xticks(rotation=45)
-ax2.set_xlabel('Speed (mph)')
-ax2.set_ylabel('Average Vehicle Count')
-ax2.grid(True, alpha=0.3)
-st.pyplot(fig2)
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    sns.barplot(x=speed_dist.index, y=speed_dist.values, color='lightgreen', ax=ax2)
+    plt.xticks(rotation=45)
+    ax2.set_xlabel('Speed (mph)')
+    ax2.set_ylabel('Average Vehicle Count')
+    ax2.grid(True, alpha=0.3)
+    st.pyplot(fig2)
 
 # 3. Speed Compliance by Hour
-st.subheader("Speed Compliance by Hour")
-compliance_data = pd.DataFrame({
-    'Hour': filtered_df['Hour'],
-    'Compliant': filtered_df['Compliant'],
-    'Non-Compliant': filtered_df['Non_Compliant']
-})
-compliance_data_melted = pd.melt(compliance_data, id_vars=['Hour'], var_name='Compliance', value_name='Count')
+col3, col4 = st.columns(2)
 
-fig3, ax3 = plt.subplots(figsize=(10, 6))
-sns.barplot(data=compliance_data_melted, x='Hour', y='Count', hue='Compliance', 
-            palette=['lightgreen', 'salmon'], ax=ax3)
-ax3.set_xlabel('Hour of Day')
-ax3.set_ylabel('Vehicle Count')
-ax3.grid(True, alpha=0.3)
-st.pyplot(fig3)
+with col3:
+    st.subheader("Speed Compliance by Hour")
+    compliance_data = pd.DataFrame({
+        'Hour': filtered_df['Hour'],
+        'Compliant': filtered_df['Compliant'],
+        'Non-Compliant': filtered_df['Non_Compliant']
+    })
+    compliance_data_melted = pd.melt(compliance_data, id_vars=['Hour'], var_name='Compliance', value_name='Count')
+
+    fig3, ax3 = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=compliance_data_melted, x='Hour', y='Count', hue='Compliance', 
+                palette=['lightgreen', 'salmon'], ax=ax3)
+    ax3.set_xlabel('Hour of Day')
+    ax3.set_ylabel('Vehicle Count')
+    ax3.grid(True, alpha=0.3)
+    st.pyplot(fig3)
 
 # 4. Traffic Volume Over Time
-st.subheader("Traffic Volume Over Time")
-fig4, ax4 = plt.subplots(figsize=(10, 6))
-filtered_df.groupby('Date/Time')['Total'].sum().plot(ax=ax4, color='purple')
-ax4.set_xlabel('Date/Time')
-ax4.set_ylabel('Total Vehicles')
-ax4.grid(True, alpha=0.3)
-st.pyplot(fig4)
+with col4:
+    st.subheader("Traffic Volume Over Time")
+    fig4, ax4 = plt.subplots(figsize=(10, 6))
+    filtered_df.groupby('Date/Time')['Total'].sum().plot(ax=ax4, color='purple')
+    ax4.set_xlabel('Date/Time')
+    ax4.set_ylabel('Total Vehicles')
+    ax4.grid(True, alpha=0.3)
+    st.pyplot(fig4)
+
+# Data Summary
+st.header("📋 Data Summary")
+if st.checkbox("Show Raw Data"):
+    st.dataframe(filtered_df)
 
 # Footer
 st.markdown("---")
-st.markdown("Dashboard created with Streamlit | Data refreshed on: " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))) 
+st.markdown("""
+<div style='text-align: center'>
+    <p>Dashboard created with Streamlit | Data refreshed on: {}</p>
+</div>
+""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), unsafe_allow_html=True) 
