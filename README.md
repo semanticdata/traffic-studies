@@ -1,15 +1,8 @@
 # Traffic Studies
 
-This repository contains code for analyzing traffic data. You can find the example data in the `data` directory.
+This repository contains code for analyzing traffic data.
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package installer)
-
-### Usage
+## 🚀 Usage
 
 1. Clone the repository:
 
@@ -30,21 +23,10 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Run the traffic analysis script:
-```bash
-python traffic_analysis.py
-```
-
-5. Run the dashboard:
+4. Run the dashboard:
 ```bash
 streamlit run dashboard.py
 ```
-
-## Output
-
-| ![traffic-analysis](./traffic_analysis.png) |
-| :-----------------------------------------: |
-
 
 ## 📜 License
 
