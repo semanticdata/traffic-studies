@@ -32,40 +32,72 @@ for filename in os.listdir(data_directory):
             data = pd.read_csv(file_path, skiprows=14, on_bad_lines='skip')  # Skip bad lines
             
             # Parse the 'Date/Time' column for date and hour
-            data['Date'] = pd.to_datetime(data['Date/Time']).dt.date
-            data['Hour'] = pd.to_datetime(data['Date/Time']).dt.hour
+            data['DateTime'] = pd.to_datetime(data['Date/Time'])
+            data['Date'] = data['DateTime'].dt.date
+            data['Hour'] = data['DateTime'].dt.hour
+            data['DayOfWeek'] = data['DateTime'].dt.day_name()
+
+            # Calculate total volumes by direction
+            direction_columns = [col for col in data.columns if 'Volume' in col]
+            data['Total Volume'] = data[direction_columns].sum(axis=1)
+
+            # Create hourly traffic pattern visualization
+            plt.figure(figsize=(12, 6))
             
-            # Create a simple visualization
-            plt.figure(figsize=(10, 6))
-            sns.lineplot(data=data)
-            plt.title(f'Visualization of {filename}')
-            plt.xlabel('Index')
-            plt.ylabel('Values')
-            plt.legend(data.columns)
+            # Plot each direction separately
+            for col in direction_columns:
+                direction = col.split(' - ')[1]  # Extract direction name
+                hourly_avg = data.groupby('Hour')[col].mean()
+                plt.plot(hourly_avg.index, hourly_avg.values, label=direction, marker='o')
 
-            # Save the figure instead of showing it
-            output_file = os.path.join(output_directory, f'{filename}.png')  # Save to output directory
+            plt.title(f'Average Hourly Traffic Pattern\n{location}\n{title}')
+            plt.xlabel('Hour of Day')
+            plt.ylabel('Average Vehicle Count')
+            plt.grid(True, linestyle='--', alpha=0.7)
+            plt.legend()
+            plt.xticks(range(0, 24))
+            
+            # Adjust layout and save
+            plt.tight_layout()
+            output_file = os.path.join(output_directory, f'{filename}_hourly_pattern.png')
             plt.savefig(output_file)
-            plt.close()  # Close the figure to free memory
+            plt.close()
 
-            # After parsing the data, calculate total volumes
-            volume_columns = [col for col in data.columns if 'Volume' in col]
-            data['Total Volume'] = data[volume_columns].sum(axis=1)  # Sum across volume columns
+            # Create daily traffic pattern by day of week
+            plt.figure(figsize=(12, 6))
+            
+            # Calculate daily totals and handle missing days
+            daily_totals = data.groupby(['DayOfWeek', 'Date'])['Total Volume'].sum().reset_index()
+            daily_averages = daily_totals.groupby('DayOfWeek')['Total Volume'].mean()
+            
+            # Reorder days to start with Monday
+            days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            daily_averages = daily_averages.reindex(days_order)
+            
+            # Create bar plot
+            bars = plt.bar(daily_averages.index, daily_averages.values)
+            
+            # Add value labels on top of each bar
+            for bar in bars:
+                height = bar.get_height()
+                if pd.notna(height):  # Only add label if height is not NaN
+                    plt.text(bar.get_x() + bar.get_width()/2., height,
+                            f'{int(round(height))}',  # Round to nearest integer
+                            ha='center', va='bottom')
 
-            # Create a volume totals graph
-            plt.figure(figsize=(10, 6))
-            sns.lineplot(data=data, x='Date', y='Total Volume')
-            plt.title(f'Total Volume for {location} - {title}')
-            plt.xlabel('Date')
-            plt.ylabel('Total Volume')
-            plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
-            plt.tight_layout()  # Adjust layout to prevent clipping
+            plt.title(f'Average Daily Traffic Volume by Day\n{location}\n{title}')
+            plt.xlabel('Day of Week')
+            plt.ylabel('Average Daily Vehicle Count')
+            plt.grid(True, linestyle='--', alpha=0.7, axis='y')
+            plt.xticks(rotation=45)
+            
+            # Adjust layout and save
+            plt.tight_layout()
+            output_file = os.path.join(output_directory, f'{filename}_daily_pattern.png')
+            plt.savefig(output_file)
+            plt.close()
 
-            # Save the volume totals figure
-            output_file_volume = os.path.join(output_directory, f'{filename}_volume_totals.png')
-            plt.savefig(output_file_volume)
-            plt.close()  # Close the figure to free memory
-        except pd.errors.ParserError as e:
+        except Exception as e:
             with open(error_log_file, 'a') as log_file:
-                log_file.write(f"Error reading {filename}: {e}\n")
-            continue  # Skip to the next file if there's an error
+                log_file.write(f"Error processing {filename}: {str(e)}\n")
+            continue
