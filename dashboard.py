@@ -5,6 +5,7 @@ import seaborn as sns
 from datetime import datetime
 import os
 from pathlib import Path
+import csv
 
 # Set page config
 st.set_page_config(
@@ -27,50 +28,146 @@ def get_location_from_file(file_path):
         with open(file_path, 'r') as f:
             header_lines = [next(f) for _ in range(6)]
         
-        # Look for the location line (typically first line)
+        # Look for the location line
         for line in header_lines:
             if 'Location:' in line:
-                # Extract the location name from the line containing 'Location:'
-                # Split the line by commas and take the second value as the location
-                parts = [part.strip() for part in line.split('Location:')[1].split(',') if part.strip()]
-                if len(parts) > 1:
-                    return parts[1]
-                elif len(parts) == 1:
-                    return parts[0]
-                return "Unknown Location"
+                location = line.split('Location:')[1].strip().strip('"').strip(',')
+                return location
+        
+        # Fallback to filename if location not found in metadata
+        return Path(file_path).stem.split('-')[1].replace('_', ' ').title()
     except Exception:
-        pass
-    
-    # Fallback to filename if location not found in metadata
-    return Path(file_path).stem.split('-')[0].replace('_', ' ').title()
+        return Path(file_path).stem.split('-')[1].replace('_', ' ').title()
+
+def detect_file_structure(file_path):
+    """Detect the structure of the CSV file and return appropriate parsing parameters."""
+    try:
+        # Read the first few lines to analyze structure
+        with open(file_path, 'r') as f:
+            header_lines = []
+            for _ in range(15):  # Read first 15 lines to capture all metadata
+                try:
+                    header_lines.append(next(f))
+                except StopIteration:
+                    break
+        
+        # Extract metadata information
+        start_date = None
+        start_time = None
+        for line in header_lines:
+            if 'Start Date:' in line:
+                start_date = line.split(',')[1].strip().strip('"')
+            if 'Start Time:' in line:
+                start_time = line.split(',')[1].strip().strip('"')
+        
+        # Find the line with column headers
+        column_line = None
+        for i, line in enumerate(header_lines):
+            if 'Date/Time' in line:
+                column_line = line
+                metadata_rows = i
+                break
+        
+        if column_line:
+            columns = [col.strip().strip('"') for col in column_line.split(',')]
+            
+            # Identify speed and volume columns for each direction
+            nb_speed_cols = [col for col in columns if 'MPH  - Northbound' in col]
+            sb_speed_cols = [col for col in columns if 'MPH  - Southbound' in col]
+            
+            return {
+                'metadata_rows': metadata_rows,
+                'column_names': columns,
+                'datetime_column': 'Date/Time',
+                'nb_speed_columns': nb_speed_cols,
+                'sb_speed_columns': sb_speed_cols,
+                'nb_volume_column': 'Volume - Northbound',
+                'sb_volume_column': 'Volume - Southbound',
+                'start_date': start_date,
+                'start_time': start_time
+            }
+    except Exception as e:
+        print(f"Error detecting file structure: {e}")
+        import traceback
+        print(traceback.format_exc())
+        return None
 
 # Load and process data
 @st.cache_data
 def load_data(file_path):
-    # Get the location name first
+    # Detect file structure
+    structure = detect_file_structure(file_path)
+    if not structure:
+        raise ValueError("Could not detect file structure")
+    
+    # Get the location name
     location_name = get_location_from_file(file_path)
     
-    # Load the actual data
-    df = pd.read_csv(file_path, skiprows=6)
-    df['Date/Time'] = pd.to_datetime(df['Date/Time'].str.split(' - ').str[0])
-    df['Hour'] = df['Date/Time'].dt.hour
-    
-    # Calculate speed compliance
-    speed_columns = [col for col in df.columns if col not in ['Date/Time', 'Hour', 'Total']]
-    
-    # Calculate compliant speeds (0-30 mph)
-    df['Compliant'] = df[['0-20'] + [str(i) for i in range(21, 31) if str(i) in df.columns]].sum(axis=1)
-    
-    # Calculate non-compliant speeds (31+ mph)
-    non_compliant_cols = [col for col in speed_columns 
-                         if col not in ['0-20'] and 
-                         (col != '45-99') and 
-                         (col.isdigit() and int(col) > 30 if col.isdigit() else False)]
-    if '45-99' in df.columns:
-        non_compliant_cols.append('45-99')
-    df['Non_Compliant'] = df[non_compliant_cols].sum(axis=1)
-    
-    return df, location_name
+    try:
+        # Read the CSV with proper parameters
+        df = pd.read_csv(file_path,
+                        skiprows=structure['metadata_rows'])
+        
+        # Convert Date/Time to datetime using the specific format from the file
+        try:
+            df['Date/Time'] = pd.to_datetime(df['Date/Time'], format='%m/%d/%Y %H:%M')
+        except Exception as e:
+            print(f"Error parsing dates: {e}")
+            # Try alternative date parsing if the first attempt fails
+            df['Date/Time'] = pd.to_datetime(df['Date/Time'])
+        
+        df['Hour'] = df['Date/Time'].dt.hour
+        
+        # Calculate speed compliance for Northbound
+        nb_speed_ranges = parse_speed_ranges(structure['nb_speed_columns'])
+        if nb_speed_ranges:
+            nb_compliant_cols = [col for col, (start, end) in nb_speed_ranges.items() if end <= 30]
+            nb_non_compliant_cols = [col for col, (start, end) in nb_speed_ranges.items() if start > 30]
+            
+            df['NB_Compliant'] = df[nb_compliant_cols].sum(axis=1) if nb_compliant_cols else 0
+            df['NB_Non_Compliant'] = df[nb_non_compliant_cols].sum(axis=1) if nb_non_compliant_cols else 0
+        else:
+            df['NB_Compliant'] = 0
+            df['NB_Non_Compliant'] = 0
+        
+        # Calculate speed compliance for Southbound
+        sb_speed_ranges = parse_speed_ranges(structure['sb_speed_columns'])
+        if sb_speed_ranges:
+            sb_compliant_cols = [col for col, (start, end) in sb_speed_ranges.items() if end <= 30]
+            sb_non_compliant_cols = [col for col, (start, end) in sb_speed_ranges.items() if start > 30]
+            
+            df['SB_Compliant'] = df[sb_compliant_cols].sum(axis=1) if sb_compliant_cols else 0
+            df['SB_Non_Compliant'] = df[sb_non_compliant_cols].sum(axis=1) if sb_non_compliant_cols else 0
+        else:
+            df['SB_Compliant'] = 0
+            df['SB_Non_Compliant'] = 0
+        
+        # Calculate total volumes
+        df['Total'] = df[structure['nb_volume_column']] + df[structure['sb_volume_column']]
+        
+        return df, location_name, structure
+        
+    except Exception as e:
+        print(f"Error loading data: {e}")
+        import traceback
+        print(traceback.format_exc())
+        raise
+
+def parse_speed_ranges(columns):
+    """Parse speed range columns and return a dictionary of ranges."""
+    ranges = {}
+    for col in columns:
+        try:
+            if 'MPH' in col and '-' in col:
+                # Extract the speed range part
+                speed_part = col.split('MPH')[0].strip()
+                if '-' in speed_part:
+                    start, end = map(int, speed_part.split('-'))
+                    ranges[col] = (start, end)
+        except Exception as e:
+            print(f"Error parsing speed range for column {col}: {e}")
+            continue
+    return ranges
 
 def get_available_locations():
     """Get list of available data files and their locations."""
@@ -104,8 +201,7 @@ selected_location = st.sidebar.selectbox(
 
 # Load the data for selected location
 try:
-    df, location_name = load_data(locations[selected_location])
-    # st.sidebar.success(f"📍 Showing data for {location_name}")
+    df, location_name, structure = load_data(locations[selected_location])
 except FileNotFoundError:
     st.error(f"❌ Error: Could not find the data file for {selected_location}")
     st.stop()
@@ -148,8 +244,11 @@ with col1:
     st.metric("Total Vehicles", f"{filtered_df['Total'].sum():,}")
     
 with col2:
-    avg_vehicles = filtered_df['Total'].mean()
-    st.metric("Avg Vehicles/Hour", f"{avg_vehicles:.1f}")
+    nb_volume = filtered_df[structure['nb_volume_column']].sum()
+    sb_volume = filtered_df[structure['sb_volume_column']].sum()
+    dominant_direction = "Northbound" if nb_volume > sb_volume else "Southbound"
+    dominant_pct = max(nb_volume, sb_volume) / (nb_volume + sb_volume) * 100
+    st.metric("Dominant Direction", f"{dominant_direction} ({dominant_pct:.1f}%)")
     
 with col3:
     peak_hour = filtered_df.loc[filtered_df['Total'].idxmax(), 'Hour']
@@ -157,68 +256,102 @@ with col3:
     st.metric("Peak Hour", f"{peak_hour:02d}:00 ({peak_vehicles} vehicles)")
     
 with col4:
-    compliance_rate = (filtered_df['Compliant'].sum() / filtered_df['Total'].sum() * 100)
+    total_compliant = filtered_df['NB_Compliant'].sum() + filtered_df['SB_Compliant'].sum()
+    total_volume = filtered_df['Total'].sum()
+    compliance_rate = (total_compliant / total_volume * 100) if total_volume > 0 else 0
     st.metric("Speed Compliance", f"{compliance_rate:.1f}%")
 
 # Create visualizations
 st.header("📊 Detailed Analysis")
 
-# 1. Traffic Volume by Hour
+# 1. Directional Traffic Volume by Hour
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Traffic Volume by Hour")
+    st.subheader("Directional Traffic Volume by Hour")
+    hourly_volumes = filtered_df.groupby('Hour').agg({
+        structure['nb_volume_column']: 'mean',
+        structure['sb_volume_column']: 'mean'
+    }).reset_index()
+    
     fig1, ax1 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=filtered_df, x='Hour', y='Total', color='skyblue', ax=ax1)
+    ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['nb_volume_column']], 
+            label='Northbound', alpha=0.7, color='skyblue')
+    ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['sb_volume_column']], 
+            bottom=hourly_volumes[structure['nb_volume_column']], 
+            label='Southbound', alpha=0.7, color='lightgreen')
     ax1.set_xlabel('Hour of Day')
-    ax1.set_ylabel('Total Vehicles')
+    ax1.set_ylabel('Average Vehicles per Hour')
+    ax1.legend()
     ax1.grid(True, alpha=0.3)
     st.pyplot(fig1)
 
-# 2. Speed Distribution
+# 2. Speed Distribution by Direction
 with col2:
-    st.subheader("Average Speed Distribution")
-    speed_columns = [col for col in filtered_df.columns if col not in ['Date/Time', 'Hour', 'Total', 'Compliant', 'Non_Compliant']]
-    speed_dist = filtered_df[speed_columns].mean()
-    if '0-20' in speed_dist.index:
-        speed_dist = speed_dist.drop('0-20')
-
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
-    sns.barplot(x=speed_dist.index, y=speed_dist.values, color='lightgreen', ax=ax2)
-    plt.xticks(rotation=45)
-    ax2.set_xlabel('Speed (mph)')
-    ax2.set_ylabel('Average Vehicle Count')
-    ax2.grid(True, alpha=0.3)
+    st.subheader("Speed Distribution by Direction")
+    
+    # Calculate average speeds for both directions
+    nb_speeds = filtered_df[structure['nb_speed_columns']].mean()
+    sb_speeds = filtered_df[structure['sb_speed_columns']].mean()
+    
+    fig2, (ax2a, ax2b) = plt.subplots(2, 1, figsize=(10, 8))
+    
+    # Northbound speeds
+    sns.barplot(x=[col.split('-')[0].strip() for col in structure['nb_speed_columns']], 
+                y=nb_speeds, color='skyblue', ax=ax2a)
+    ax2a.set_title('Northbound Speed Distribution')
+    ax2a.set_xlabel('Speed Range (MPH)')
+    ax2a.set_ylabel('Average Vehicle Count')
+    ax2a.tick_params(axis='x', rotation=45)
+    
+    # Southbound speeds
+    sns.barplot(x=[col.split('-')[0].strip() for col in structure['sb_speed_columns']], 
+                y=sb_speeds, color='lightgreen', ax=ax2b)
+    ax2b.set_title('Southbound Speed Distribution')
+    ax2b.set_xlabel('Speed Range (MPH)')
+    ax2b.set_ylabel('Average Vehicle Count')
+    ax2b.tick_params(axis='x', rotation=45)
+    
+    plt.tight_layout()
     st.pyplot(fig2)
 
-# 3. Speed Compliance by Hour
+# 3. Speed Compliance by Direction and Hour
 col3, col4 = st.columns(2)
 
 with col3:
-    st.subheader("Speed Compliance by Hour")
+    st.subheader("Speed Compliance by Direction")
     compliance_data = pd.DataFrame({
-        'Hour': filtered_df['Hour'],
-        'Compliant': filtered_df['Compliant'],
-        'Non-Compliant': filtered_df['Non_Compliant']
+        'Direction': ['Northbound', 'Northbound', 'Southbound', 'Southbound'],
+        'Compliance': ['Compliant', 'Non-Compliant', 'Compliant', 'Non-Compliant'],
+        'Count': [
+            filtered_df['NB_Compliant'].sum(),
+            filtered_df['NB_Non_Compliant'].sum(),
+            filtered_df['SB_Compliant'].sum(),
+            filtered_df['SB_Non_Compliant'].sum()
+        ]
     })
-    compliance_data_melted = pd.melt(compliance_data, id_vars=['Hour'], var_name='Compliance', value_name='Count')
-
+    
     fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=compliance_data_melted, x='Hour', y='Count', hue='Compliance', 
+    sns.barplot(data=compliance_data, x='Direction', y='Count', hue='Compliance',
                 palette=['lightgreen', 'salmon'], ax=ax3)
-    ax3.set_xlabel('Hour of Day')
     ax3.set_ylabel('Vehicle Count')
     ax3.grid(True, alpha=0.3)
     st.pyplot(fig3)
 
-# 4. Traffic Volume Over Time
+# 4. Traffic Volume Over Time by Direction
 with col4:
     st.subheader("Traffic Volume Over Time")
     fig4, ax4 = plt.subplots(figsize=(10, 6))
-    filtered_df.groupby('Date/Time')['Total'].sum().plot(ax=ax4, color='purple')
+    ax4.plot(filtered_df['Date/Time'], filtered_df[structure['nb_volume_column']], 
+             label='Northbound', color='skyblue', alpha=0.7)
+    ax4.plot(filtered_df['Date/Time'], filtered_df[structure['sb_volume_column']], 
+             label='Southbound', color='lightgreen', alpha=0.7)
     ax4.set_xlabel('Date/Time')
-    ax4.set_ylabel('Total Vehicles')
+    ax4.set_ylabel('Vehicles')
+    ax4.legend()
     ax4.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
     st.pyplot(fig4)
 
 # Data Summary
