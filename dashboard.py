@@ -159,6 +159,8 @@ def get_available_locations():
     return locations
 
 # Sidebar
+st.sidebar.header("Traffic Analysis Dashboard")
+st.sidebar.markdown("""Please select a location and set your desired date and hour filters to analyze the traffic data.""") 
 st.sidebar.header("Location and Filters")
 
 # Get available locations
