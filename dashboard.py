@@ -20,8 +20,10 @@ def load_data(file_path):
     if not structure:
         raise ValueError("Could not detect file structure")
     
-    # Get the location name
-    location_name = get_location_from_file(file_path)
+    # Get the location name and ensure it's clean
+    location_name = structure['location']
+    if location_name and isinstance(location_name, str):
+        location_name = location_name.strip().strip('"').strip("'").strip(',').strip()
     
     try:
         # Read the CSV with proper parameters
@@ -60,13 +62,14 @@ def get_location_from_file(file_path):
         # Look for the location line
         for line in header_lines:
             if 'Location:' in line:
-                location = line.split('Location:')[1].strip().strip('"').strip(',')
+                # Strip quotes, commas, and whitespace from both ends of the location string
+                location = line.split('Location:')[1].strip().strip('"').strip("'").strip(',').strip()
                 return location
         
         # Fallback to filename if location not found in metadata
-        return Path(file_path).stem.split('-')[1].replace('_', ' ').title()
+        return Path(file_path).stem.split('-')[1].replace('_', ' ').strip().strip('"').strip("'").title()
     except Exception:
-        return Path(file_path).stem.split('-')[1].replace('_', ' ').title()
+        return Path(file_path).stem.split('-')[1].replace('_', ' ').strip().strip('"').strip("'").title()
 
 def detect_file_structure(file_path):
     """Detect the structure of the CSV file and return appropriate parsing parameters."""
@@ -81,7 +84,14 @@ def detect_file_structure(file_path):
         
         for line in header_lines:
             if 'Location:' in line:
-                location = line.split('Location:')[1].strip().strip('"').strip(',')
+                # Handle CSV formatted line with quotes
+                parts = line.strip().split('","')  # Split on CSV delimiter
+                if len(parts) > 1:
+                    # Remove remaining quotes and clean
+                    location = parts[1].replace('"', '').strip()
+                else:
+                    # Fallback to original method
+                    location = line.split('Location:')[1].strip().strip('"').strip("'").strip(',').strip()
             elif 'Comments:' in line:
                 comments = line.split('Comments:')[1].strip().strip('"').strip(',')
             elif 'Title:' in line:
@@ -159,7 +169,8 @@ if not locations:
 selected_location = st.sidebar.selectbox(
     "Select Location",
     options=sorted(list(locations.keys())),
-    index=0
+    index=0,
+    format_func=lambda x: x.strip().strip('"').strip("'").strip(',').strip()
 )
 
 # Load the data for selected location
