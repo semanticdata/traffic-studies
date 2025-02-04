@@ -3,6 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import re  # Import regex for parsing
+import csv  # Add this with other imports
 
 # Set the directory containing the CSV files
 data_directory = 'data'
