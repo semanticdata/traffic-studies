@@ -52,7 +52,7 @@ def load_data(file_path):
         return df, location_name, structure
         
     except Exception as e:
-        st.error(f"Error loading data: {e}")
+        st.error(f"Error loading data: {e} (and I thought I was the only one with issues!)")
         raise
 
 def get_location_from_file(file_path):
