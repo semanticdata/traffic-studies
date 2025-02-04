@@ -5,6 +5,13 @@ import seaborn as sns
 from datetime import datetime
 from pathlib import Path
 
+# Set page config
+st.set_page_config(
+    page_title="Traffic Analysis Dashboard",
+    page_icon="🚗",
+    layout="wide"
+)
+
 # Load and process data
 @st.cache_data
 def load_data(file_path):
@@ -221,94 +228,86 @@ with col4:
 st.header("📊 Detailed Analysis")
 
 # 1. Directional Traffic Volume by Hour
-col1, col2 = st.columns(2)
+st.subheader("Directional Traffic Volume by Hour")
+hourly_volumes = filtered_df.groupby('Hour').agg({
+    structure['dir1_volume_col']: 'mean',
+    structure['dir2_volume_col']: 'mean'
+}).reset_index()
 
-with col1:
-    st.subheader("Directional Traffic Volume by Hour")
-    hourly_volumes = filtered_df.groupby('Hour').agg({
-        structure['dir1_volume_col']: 'mean',
-        structure['dir2_volume_col']: 'mean'
-    }).reset_index()
-    
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
-    ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['dir1_volume_col']], 
-            label=structure['dir1_name'], alpha=0.7, color='skyblue')
-    ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['dir2_volume_col']], 
-            bottom=hourly_volumes[structure['dir1_volume_col']], 
-            label=structure['dir2_name'], alpha=0.7, color='lightgreen')
-    ax1.set_xlabel('Hour of Day')
-    ax1.set_ylabel('Average Vehicles per Hour')
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
-    st.pyplot(fig1)
+fig1, ax1 = plt.subplots(figsize=(15, 8))
+ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['dir1_volume_col']], 
+        label=structure['dir1_name'], alpha=0.7, color='skyblue')
+ax1.bar(hourly_volumes['Hour'], hourly_volumes[structure['dir2_volume_col']], 
+        bottom=hourly_volumes[structure['dir1_volume_col']], 
+        label=structure['dir2_name'], alpha=0.7, color='lightgreen')
+ax1.set_xlabel('Hour of Day')
+ax1.set_ylabel('Average Vehicles per Hour')
+ax1.legend()
+ax1.grid(True, alpha=0.3)
+st.pyplot(fig1)
 
 # 2. Speed Distribution by Direction
-with col2:
-    st.subheader("Speed Distribution by Direction")
-    
-    # Calculate average speeds for both directions
-    dir1_speeds = filtered_df[structure['dir1_speed_cols']].mean()
-    dir2_speeds = filtered_df[structure['dir2_speed_cols']].mean()
-    
-    fig2, (ax2a, ax2b) = plt.subplots(2, 1, figsize=(10, 8))
-    
-    # Direction 1 speeds
-    sns.barplot(x=[col.split('-')[0].strip() for col in structure['dir1_speed_cols']], 
-                y=dir1_speeds, color='skyblue', ax=ax2a)
-    ax2a.set_title(f'{structure["dir1_name"]} Speed Distribution')
-    ax2a.set_xlabel('Speed Range (MPH)')
-    ax2a.set_ylabel('Average Vehicle Count')
-    ax2a.tick_params(axis='x', rotation=45)
-    
-    # Direction 2 speeds
-    sns.barplot(x=[col.split('-')[0].strip() for col in structure['dir2_speed_cols']], 
-                y=dir2_speeds, color='lightgreen', ax=ax2b)
-    ax2b.set_title(f'{structure["dir2_name"]} Speed Distribution')
-    ax2b.set_xlabel('Speed Range (MPH)')
-    ax2b.set_ylabel('Average Vehicle Count')
-    ax2b.tick_params(axis='x', rotation=45)
-    
-    plt.tight_layout()
-    st.pyplot(fig2)
+st.subheader("Speed Distribution by Direction")
 
-# 3. Speed Compliance by Direction and Hour
-col3, col4 = st.columns(2)
+# Calculate average speeds for both directions
+dir1_speeds = filtered_df[structure['dir1_speed_cols']].mean()
+dir2_speeds = filtered_df[structure['dir2_speed_cols']].mean()
 
-with col3:
-    st.subheader("Speed Compliance by Direction")
-    compliance_data = pd.DataFrame({
-        'Direction': [structure['dir1_name'], structure['dir1_name'], structure['dir2_name'], structure['dir2_name']],
-        'Compliance': ['Compliant', 'Non-Compliant', 'Compliant', 'Non-Compliant'],
-        'Count': [
-            filtered_df['Dir1_Compliant'].sum(),
-            filtered_df['Dir1_Non_Compliant'].sum(),
-            filtered_df['Dir2_Compliant'].sum(),
-            filtered_df['Dir2_Non_Compliant'].sum()
-        ]
-    })
-    
-    fig3, ax3 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=compliance_data, x='Direction', y='Count', hue='Compliance',
-                palette=['lightgreen', 'salmon'], ax=ax3)
-    ax3.set_ylabel('Vehicle Count')
-    ax3.grid(True, alpha=0.3)
-    st.pyplot(fig3)
+fig2, (ax2a, ax2b) = plt.subplots(2, 1, figsize=(15, 12))
+
+# Direction 1 speeds
+sns.barplot(x=[col.split('-')[0].strip() for col in structure['dir1_speed_cols']], 
+            y=dir1_speeds, color='skyblue', ax=ax2a)
+ax2a.set_title(f'{structure["dir1_name"]} Speed Distribution')
+ax2a.set_xlabel('Speed Range (MPH)')
+ax2a.set_ylabel('Average Vehicle Count')
+ax2a.tick_params(axis='x', rotation=45)
+
+# Direction 2 speeds
+sns.barplot(x=[col.split('-')[0].strip() for col in structure['dir2_speed_cols']], 
+            y=dir2_speeds, color='lightgreen', ax=ax2b)
+ax2b.set_title(f'{structure["dir2_name"]} Speed Distribution')
+ax2b.set_xlabel('Speed Range (MPH)')
+ax2b.set_ylabel('Average Vehicle Count')
+ax2b.tick_params(axis='x', rotation=45)
+
+plt.tight_layout()
+st.pyplot(fig2)
+
+# 3. Speed Compliance by Direction
+st.subheader("Speed Compliance by Direction")
+compliance_data = pd.DataFrame({
+    'Direction': [structure['dir1_name'], structure['dir1_name'], structure['dir2_name'], structure['dir2_name']],
+    'Compliance': ['Compliant', 'Non-Compliant', 'Compliant', 'Non-Compliant'],
+    'Count': [
+        filtered_df['Dir1_Compliant'].sum(),
+        filtered_df['Dir1_Non_Compliant'].sum(),
+        filtered_df['Dir2_Compliant'].sum(),
+        filtered_df['Dir2_Non_Compliant'].sum()
+    ]
+})
+
+fig3, ax3 = plt.subplots(figsize=(15, 8))
+sns.barplot(data=compliance_data, x='Direction', y='Count', hue='Compliance',
+            palette=['lightgreen', 'salmon'], ax=ax3)
+ax3.set_ylabel('Vehicle Count')
+ax3.grid(True, alpha=0.3)
+st.pyplot(fig3)
 
 # 4. Traffic Volume Over Time by Direction
-with col4:
-    st.subheader("Traffic Volume Over Time")
-    fig4, ax4 = plt.subplots(figsize=(10, 6))
-    ax4.plot(filtered_df['Date/Time'], filtered_df[structure['dir1_volume_col']], 
-             label=structure['dir1_name'], color='skyblue', alpha=0.7)
-    ax4.plot(filtered_df['Date/Time'], filtered_df[structure['dir2_volume_col']], 
-             label=structure['dir2_name'], color='lightgreen', alpha=0.7)
-    ax4.set_xlabel('Date/Time')
-    ax4.set_ylabel('Vehicles')
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-    st.pyplot(fig4)
+st.subheader("Traffic Volume Over Time")
+fig4, ax4 = plt.subplots(figsize=(15, 8))
+ax4.plot(filtered_df['Date/Time'], filtered_df[structure['dir1_volume_col']], 
+         label=structure['dir1_name'], color='skyblue', alpha=0.7)
+ax4.plot(filtered_df['Date/Time'], filtered_df[structure['dir2_volume_col']], 
+         label=structure['dir2_name'], color='lightgreen', alpha=0.7)
+ax4.set_xlabel('Date/Time')
+ax4.set_ylabel('Vehicles')
+ax4.legend()
+ax4.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+st.pyplot(fig4)
 
 # Data Summary
 st.header("📋 Data Summary")
