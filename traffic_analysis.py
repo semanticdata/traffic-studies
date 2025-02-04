@@ -1,3 +1,6 @@
+# This script is used to analyze traffic data from CSV files.
+# It will create visualizations and save them to the output directory.
+
 import os
 import pandas as pd
 import seaborn as sns
