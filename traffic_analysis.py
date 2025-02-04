@@ -45,16 +45,36 @@ def detect_file_structure(file_path):
         
         if column_line:
             columns = [col.strip().strip('"') for col in column_line.split(',')]
+            
+            # Detect direction pairs based on column names
+            dir1_speed_cols = [col for col in columns if 'MPH  - Northbound' in col]
+            dir2_speed_cols = [col for col in columns if 'MPH  - Southbound' in col]
+            
+            # If no N/S columns found, try E/W
+            if not (dir1_speed_cols and dir2_speed_cols):
+                dir1_speed_cols = [col for col in columns if 'MPH  - Eastbound' in col]
+                dir2_speed_cols = [col for col in columns if 'MPH  - Westbound' in col]
+            
+            # Determine the direction pairs
+            if 'Northbound' in ''.join(columns):
+                dir1_name = 'Northbound'
+                dir2_name = 'Southbound'
+            else:
+                dir1_name = 'Eastbound'
+                dir2_name = 'Westbound'
+            
             return {
                 'metadata_rows': metadata_rows,
                 'columns': columns,
                 'location': location,
                 'comments': comments,
                 'title': title,
-                'nb_speed_cols': [col for col in columns if 'MPH  - Northbound' in col],
-                'sb_speed_cols': [col for col in columns if 'MPH  - Southbound' in col],
-                'nb_volume_col': 'Volume - Northbound',
-                'sb_volume_col': 'Volume - Southbound'
+                'dir1_name': dir1_name,
+                'dir2_name': dir2_name,
+                'dir1_speed_cols': dir1_speed_cols,
+                'dir2_speed_cols': dir2_speed_cols,
+                'dir1_volume_col': f'Volume - {dir1_name}',
+                'dir2_volume_col': f'Volume - {dir2_name}'
             }
     except Exception as e:
         print(f"Error detecting file structure: {e}")
@@ -66,12 +86,12 @@ def create_speed_compliance_plot(df, structure, output_path):
     
     # Calculate compliance for both directions
     speed_limit = 30  # mph
-    directions = ['Northbound', 'Southbound']
+    directions = [structure['dir1_name'], structure['dir2_name']]
     compliant_data = []
     non_compliant_data = []
     
     for direction in directions:
-        speed_cols = structure['nb_speed_cols'] if direction == 'Northbound' else structure['sb_speed_cols']
+        speed_cols = structure['dir1_speed_cols'] if direction == structure['dir1_name'] else structure['dir2_speed_cols']
         compliant_cols = [col for col in speed_cols if int(col.split('-')[0].strip()) <= speed_limit]
         non_compliant_cols = [col for col in speed_cols if int(col.split('-')[0].strip()) > speed_limit]
         
@@ -115,7 +135,7 @@ def create_hourly_pattern_heatmap(df, structure, output_path):
     df['Hour'] = df['Date/Time'].dt.hour
     
     # Calculate average total volume by day and hour
-    volume_cols = [structure['nb_volume_col'], structure['sb_volume_col']]
+    volume_cols = [structure['dir1_volume_col'], structure['dir2_volume_col']]
     df['Total'] = df[volume_cols].sum(axis=1)
     
     pivot_data = df.pivot_table(
