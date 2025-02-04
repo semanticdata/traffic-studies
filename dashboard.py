@@ -1,3 +1,6 @@
+# This is the main dashboard for the traffic analysis project.
+# It will display the data and allow for filtering and visualization.
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
