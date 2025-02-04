@@ -163,6 +163,20 @@ def create_hourly_pattern_heatmap(df, structure, output_path):
     plt.savefig(os.path.join(output_path, f'hourly_pattern_heatmap.png'))
     plt.close()
 
+def plot_traffic_analysis(df, location):
+    """Create a plot for traffic analysis."""
+    # Example implementation (customize as needed)
+    plt.figure(figsize=(12, 6))
+    plt.plot(df['Hour'], df['Total'], label='Total Volume', marker='o')
+    plt.title(f'Traffic Analysis for {location}')
+    plt.xlabel('Hour of Day')
+    plt.ylabel('Total Volume')
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_directory, f'{location}_traffic_analysis.png'))
+    plt.close()
+
 def main():
     """Main function to run traffic analysis."""
     try:
