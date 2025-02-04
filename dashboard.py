@@ -197,27 +197,30 @@ mask = (
 filtered_df = df[mask]
 
 # Location Info
-st.header(f"📍 {location_name} Traffic Analysis")
-st.markdown(f"Analyzing traffic data from {date_range[0]} to {date_range[1]}")
+st.header(f"📍 {location_name} - Traffic Study")
+st.markdown(f"Analyzing traffic data from _{date_range[0]}_ to _{date_range[1]}_.")
 
 # Display key metrics
-col1, col2, col3, col4 = st.columns(4)
+col1, col2 = st.columns(2)
 
 with col1:
     st.metric("Total Vehicles", f"{filtered_df['Total'].sum():,}")
-    
+
 with col2:
     dir1_volume = filtered_df[structure['dir1_volume_col']].sum()
     dir2_volume = filtered_df[structure['dir2_volume_col']].sum()
     dominant_direction = structure['dir1_name'] if dir1_volume > dir2_volume else structure['dir2_name']
     dominant_pct = max(dir1_volume, dir2_volume) / (dir1_volume + dir2_volume) * 100
     st.metric("Dominant Direction", f"{dominant_direction} ({dominant_pct:.1f}%)")
-    
+
+# New row for the next two metrics
+col3, col4 = st.columns(2)
+
 with col3:
     peak_hour = filtered_df.loc[filtered_df['Total'].idxmax(), 'Hour']
     peak_vehicles = filtered_df['Total'].max()
     st.metric("Peak Hour", f"{peak_hour:02d}:00 ({peak_vehicles} vehicles)")
-    
+
 with col4:
     total_compliant = filtered_df['Dir1_Compliant'].sum() + filtered_df['Dir2_Compliant'].sum()
     total_volume = filtered_df['Total'].sum()
