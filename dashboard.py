@@ -2,243 +2,22 @@
 # It will display the data and allow for filtering and visualization.
 
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
-from pathlib import Path
+from utils.data_loader import load_data, get_available_locations
+from utils.visualizations import (
+    plot_traffic_volume,
+    plot_speed_distribution,
+    plot_speed_compliance,
+)
+from utils.styles import CUSTOM_CSS
 
 # Set page config
 st.set_page_config(
     page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide"
 )
 
-# Custom CSS
-st.markdown(
-    """
-    <style>
-    .main {
-        padding: 2rem;
-    }
-    .stMetric {
-        padding: 1rem;
-        border-radius: 0.5rem;
-        background-color: rgba(128, 128, 128, 0.1);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    .stMetric:hover {
-        transform: translateY(-2px);
-        transition: all 0.2s ease;
-    }
-    .stMetric > div[data-testid="stMetricLabel"] {
-        color: var(--text-color);
-    }
-    .stMetric > div[data-testid="stMetricValue"] {
-        color: var(--text-color);
-    }
-    h1, h2, h3 {
-        color: var(--text-color);
-    }
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-    }
-    .stTabs [data-baseweb="tab"] {
-        padding: 1rem 2rem;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
-
-
-# Load and process data
-@st.cache_data
-def load_data(file_path):
-    # Detect file structure
-    structure = detect_file_structure(file_path)
-    if not structure:
-        raise ValueError("Could not detect file structure")
-
-    # Get the location name and ensure it's clean
-    location_name = structure["location"]
-    if location_name and isinstance(location_name, str):
-        location_name = location_name.strip().strip('"').strip("'").strip(",").strip()
-
-    try:
-        # Read the CSV with proper parameters
-        df = pd.read_csv(file_path, skiprows=structure["metadata_rows"])
-
-        # Convert Date/Time to datetime using the specific format from the file
-        df["Date/Time"] = pd.to_datetime(df["Date/Time"], errors="coerce")
-        df["Hour"] = df["Date/Time"].dt.hour
-
-        # Calculate speed compliance for both directions
-        dir1_speed_cols = structure["dir1_speed_cols"]
-        dir2_speed_cols = structure["dir2_speed_cols"]
-
-        df["Dir1_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x <= 30).sum(), axis=1
-        )
-        df["Dir1_Non_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x > 30).sum(), axis=1
-        )
-
-        df["Dir2_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x <= 30).sum(), axis=1
-        )
-        df["Dir2_Non_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x > 30).sum(), axis=1
-        )
-
-        # Calculate total volumes
-        df["Total"] = (
-            df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
-        )
-
-        return df, location_name, structure
-
-    except Exception as e:
-        st.error(
-            f"Error loading data: {e} (and I thought I was the only one with issues!)"
-        )
-        raise
-
-
-def get_location_from_file(file_path):
-    """Extract location name from the CSV file metadata."""
-    try:
-        # Read the first few lines to get the metadata
-        with open(file_path, "r") as f:
-            header_lines = [next(f) for _ in range(6)]
-
-        # Look for the location line
-        for line in header_lines:
-            if "Location:" in line:
-                # Strip quotes, commas, and whitespace from both ends of the location string
-                location = (
-                    line.split("Location:")[1]
-                    .strip()
-                    .strip('"')
-                    .strip("'")
-                    .strip(",")
-                    .strip()
-                )
-                return location
-
-        # Fallback to filename if location not found in metadata
-        return (
-            Path(file_path)
-            .stem.split("-")[1]
-            .replace("_", " ")
-            .strip()
-            .strip('"')
-            .strip("'")
-            .title()
-        )
-    except Exception:
-        return (
-            Path(file_path)
-            .stem.split("-")[1]
-            .replace("_", " ")
-            .strip()
-            .strip('"')
-            .strip("'")
-            .title()
-        )
-
-
-def detect_file_structure(file_path):
-    """Detect the structure of the CSV file and return appropriate parsing parameters."""
-    try:
-        with open(file_path, "r") as f:
-            header_lines = [next(f) for _ in range(15)]
-
-        # Extract metadata information
-        location = None
-        comments = None
-        title = None
-
-        for line in header_lines:
-            if "Location:" in line:
-                # Handle CSV formatted line with quotes
-                parts = line.strip().split('","')  # Split on CSV delimiter
-                if len(parts) > 1:
-                    # Remove remaining quotes and clean
-                    location = parts[1].replace('"', "").strip()
-                else:
-                    # Fallback to original method
-                    location = (
-                        line.split("Location:")[1]
-                        .strip()
-                        .strip('"')
-                        .strip("'")
-                        .strip(",")
-                        .strip()
-                    )
-            elif "Comments:" in line:
-                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
-            elif "Title:" in line:
-                title = line.split("Title:")[1].strip().strip('"').strip(",")
-
-        # Find data columns
-        column_line = None
-        for i, line in enumerate(header_lines):
-            if "Date/Time" in line:
-                column_line = line
-                metadata_rows = i
-                break
-
-        if column_line:
-            columns = [col.strip().strip('"') for col in column_line.split(",")]
-
-            # Detect direction pairs based on column names
-            dir1_speed_cols = [col for col in columns if "MPH  - Northbound" in col]
-            dir2_speed_cols = [col for col in columns if "MPH  - Southbound" in col]
-
-            # If no N/S columns found, try E/W
-            if not (dir1_speed_cols and dir2_speed_cols):
-                dir1_speed_cols = [col for col in columns if "MPH  - Eastbound" in col]
-                dir2_speed_cols = [col for col in columns if "MPH  - Westbound" in col]
-
-            # Determine the direction pairs
-            if "Northbound" in "".join(columns):
-                dir1_name = "Northbound"
-                dir2_name = "Southbound"
-            else:
-                dir1_name = "Eastbound"
-                dir2_name = "Westbound"
-
-            return {
-                "metadata_rows": metadata_rows,
-                "columns": columns,
-                "location": location,
-                "comments": comments,
-                "title": title,
-                "dir1_name": dir1_name,
-                "dir2_name": dir2_name,
-                "dir1_speed_cols": dir1_speed_cols,
-                "dir2_speed_cols": dir2_speed_cols,
-                "dir1_volume_col": f"Volume - {dir1_name}",
-                "dir2_volume_col": f"Volume - {dir2_name}",
-            }
-    except Exception as e:
-        print(f"Error detecting file structure: {e}")
-        return None
-
-
-def get_available_locations():
-    """Get list of available data files and their locations."""
-    data_dir = Path("data")
-    if not data_dir.exists():
-        return {}
-
-    locations = {}
-    for file in data_dir.glob("*.csv"):
-        location_name = get_location_from_file(str(file))
-        locations[location_name] = str(file)
-
-    return locations
-
+# Apply custom CSS
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # Sidebar
 st.sidebar.header("Traffic Analysis Dashboard")
@@ -247,7 +26,7 @@ st.sidebar.markdown(
 )
 st.sidebar.header("Location and Filters")
 
-# Get available locations
+# Main dashboard layout
 locations = get_available_locations()
 
 if not locations:
@@ -340,126 +119,20 @@ tab1, tab2, tab3 = st.tabs(["📈 Traffic Volume", "🚗 Speed Analysis", "📊 
 
 with tab1:
     st.subheader("Directional Traffic Volume by Hour")
-    hourly_volumes = (
-        filtered_df.groupby("Hour")
-        .agg(
-            {structure["dir1_volume_col"]: "mean", structure["dir2_volume_col"]: "mean"}
-        )
-        .reset_index()
-    )
-
-    fig1, ax1 = plt.subplots(figsize=(15, 8))
-    ax1.bar(
-        hourly_volumes["Hour"],
-        hourly_volumes[structure["dir1_volume_col"]],
-        label=structure["dir1_name"],
-        alpha=0.7,
-        color="skyblue",
-    )
-    ax1.bar(
-        hourly_volumes["Hour"],
-        hourly_volumes[structure["dir2_volume_col"]],
-        bottom=hourly_volumes[structure["dir1_volume_col"]],
-        label=structure["dir2_name"],
-        alpha=0.7,
-        color="lightgreen",
-    )
-    ax1.set_xlabel("Hour of Day")
-    ax1.set_ylabel("Average Vehicles per Hour")
-    ax1.legend()
-    ax1.grid(True, alpha=0.3)
+    fig1 = plot_traffic_volume(filtered_df, structure)
     st.pyplot(fig1)
 
     st.subheader("Traffic Volume Over Time")
-    fig4, ax4 = plt.subplots(figsize=(15, 8))
-    ax4.plot(
-        filtered_df["Date/Time"],
-        filtered_df[structure["dir1_volume_col"]],
-        label=structure["dir1_name"],
-        color="skyblue",
-        alpha=0.7,
-    )
-    ax4.plot(
-        filtered_df["Date/Time"],
-        filtered_df[structure["dir2_volume_col"]],
-        label=structure["dir2_name"],
-        color="lightgreen",
-        alpha=0.7,
-    )
-    ax4.set_xlabel("Date/Time")
-    ax4.set_ylabel("Vehicles")
-    ax4.legend()
-    ax4.grid(True, alpha=0.3)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
+    fig4 = plot_traffic_volume(filtered_df, structure)
     st.pyplot(fig4)
 
 with tab2:
     st.subheader("Speed Distribution by Direction")
-
-    # Calculate average speeds for both directions
-    dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean()
-    dir2_speeds = filtered_df[structure["dir2_speed_cols"]].mean()
-
-    fig2, (ax2a, ax2b) = plt.subplots(2, 1, figsize=(15, 12))
-
-    # Direction 1 speeds
-    sns.barplot(
-        x=[col.split("-")[0].strip() for col in structure["dir1_speed_cols"]],
-        y=dir1_speeds,
-        color="skyblue",
-        ax=ax2a,
-    )
-    ax2a.set_title(f'{structure["dir1_name"]} Speed Distribution')
-    ax2a.set_xlabel("Speed Range (MPH)")
-    ax2a.set_ylabel("Average Vehicle Count")
-    ax2a.tick_params(axis="x", rotation=45)
-
-    # Direction 2 speeds
-    sns.barplot(
-        x=[col.split("-")[0].strip() for col in structure["dir2_speed_cols"]],
-        y=dir2_speeds,
-        color="lightgreen",
-        ax=ax2b,
-    )
-    ax2b.set_title(f'{structure["dir2_name"]} Speed Distribution')
-    ax2b.set_xlabel("Speed Range (MPH)")
-    ax2b.set_ylabel("Average Vehicle Count")
-    ax2b.tick_params(axis="x", rotation=45)
-
-    plt.tight_layout()
+    fig2 = plot_speed_distribution(filtered_df, structure)
     st.pyplot(fig2)
 
     st.subheader("Speed Compliance by Direction")
-    compliance_data = pd.DataFrame(
-        {
-            "Direction": [
-                structure["dir1_name"],
-                structure["dir1_name"],
-                structure["dir2_name"],
-                structure["dir2_name"],
-            ],
-            "Compliance": ["Compliant", "Non-Compliant", "Compliant", "Non-Compliant"],
-            "Count": [
-                filtered_df["Dir1_Compliant"].sum(),
-                filtered_df["Dir1_Non_Compliant"].sum(),
-                filtered_df["Dir2_Compliant"].sum(),
-                filtered_df["Dir2_Non_Compliant"].sum(),
-            ],
-        }
-    )
-
-    fig3, ax3 = plt.subplots(figsize=(15, 8))
-    sns.barplot(
-        data=compliance_data,
-        x="Direction",
-        y="Count",
-        hue="Compliance",
-        palette=["lightgreen", "salmon"],
-        ax=ax3,
-    )
-    ax3.set_ylabel("Vehicle Count")
-    ax3.grid(True, alpha=0.3)
+    fig3 = plot_speed_compliance(filtered_df, structure)
     st.pyplot(fig3)
 
 with tab3:
