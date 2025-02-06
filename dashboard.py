@@ -112,6 +112,33 @@ with col4:
     compliance_rate = (total_compliant / total_volume * 100) if total_volume > 0 else 0
     st.metric("🚦 Speed Compliance", f"{compliance_rate:.1f}%")
 
+# Add a second row of metrics
+col5, col6, col7, col8 = st.columns(4)
+
+with col5:
+    avg_daily_traffic = (
+        filtered_df.groupby(filtered_df["Date/Time"].dt.date)["Total"].sum().mean()
+    )
+    st.metric("📅 Average Daily Traffic", f"{avg_daily_traffic:,.0f}")
+
+with col6:
+    # Calculate average speeds using the speed columns from structure
+    dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean().mean()
+    st.metric(
+        "🏎️ Average Speed ({})".format(structure["dir1_name"]), f"{dir1_speeds:.1f} mph"
+    )
+
+with col7:
+    dir2_speeds = filtered_df[structure["dir2_speed_cols"]].mean().mean()
+    st.metric(
+        "🏎️ Average Speed ({})".format(structure["dir2_name"]), f"{dir2_speeds:.1f} mph"
+    )
+with col8:
+    weekday_avg = filtered_df[filtered_df["Date/Time"].dt.weekday < 5]["Total"].mean()
+    weekend_avg = filtered_df[filtered_df["Date/Time"].dt.weekday >= 5]["Total"].mean()
+    ratio = weekday_avg / weekend_avg if weekend_avg > 0 else 0
+    st.metric("📊 Weekday/Weekend Ratio", f"{ratio:.2f}")
+
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Create tabs for visualizations
