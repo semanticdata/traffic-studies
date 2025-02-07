@@ -174,7 +174,7 @@ def plot_temporal_patterns(filtered_df, structure):
     return fig
 
 
-def plot_speed_violation_severity(filtered_df, structure):
+def plot_speed_violation_severity(filtered_df, structure, speed_limit=30):
     """Create visualization for speed violation severity."""
     # Calculate speed ranges and their frequencies
     speed_ranges = {
@@ -189,10 +189,8 @@ def plot_speed_violation_severity(filtered_df, structure):
         (structure["dir1_name"], structure["dir1_speed_cols"]),
         (structure["dir2_name"], structure["dir2_speed_cols"])
     ]:
-        # Default to 25 if not specified
-        speed_limit = structure.get('speed_limit', 25)
-
         for col in speed_cols:
+            # Extract the lower speed bound from column name (e.g., "35-39 MPH" -> 35)
             speed = int(col.split('-')[0].strip())
             if speed > speed_limit:
                 over_limit = speed - speed_limit
@@ -201,24 +199,29 @@ def plot_speed_violation_severity(filtered_df, structure):
                         violation_data.append({
                             'Direction': direction,
                             'Violation Range': range_name,
-                            'Count': filtered_df[col].mean()
+                            # Changed from mean() to sum()
+                            'Count': filtered_df[col].sum()
                         })
 
     violation_df = pd.DataFrame(violation_data)
 
-    fig, ax = plt.subplots(figsize=(15, 8))
-    sns.barplot(
-        data=violation_df,
-        x='Direction',
-        y='Count',
-        hue='Violation Range',
-        palette='YlOrRd',
-        ax=ax
-    )
-    ax.set_title('Speed Violation Severity Analysis', pad=20, fontsize=14)
-    ax.set_xlabel('Direction', fontsize=12)
-    ax.set_ylabel('Average Vehicle Count', fontsize=12)
-    ax.legend(title='Violation Severity', fontsize=10)
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    return fig
+    # Only create visualization if there are violations
+    if not violation_df.empty:
+        fig, ax = plt.subplots(figsize=(15, 8))
+        sns.barplot(
+            data=violation_df,
+            x='Direction',
+            y='Count',
+            hue='Violation Range',
+            palette='YlOrRd',
+            ax=ax
+        )
+        ax.set_title('Speed Violation Severity Analysis', pad=20, fontsize=14)
+        ax.set_xlabel('Direction', fontsize=12)
+        ax.set_ylabel('Number of Vehicles', fontsize=12)
+        ax.legend(title='Speed Over Limit', fontsize=10)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        return fig
+    else:
+        return None
