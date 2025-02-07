@@ -100,14 +100,16 @@ with col2:
     dominant_pct = max(dir1_volume, dir2_volume) / (dir1_volume +
                                                     dir2_volume) * 100 if (dir1_volume + dir2_volume) > 0 else 0
     st.metric("🔄 Dominant Direction",
-              f"{dominant_direction} ({dominant_pct:.1f}%)")
+              f"{dominant_direction}",
+              f"{dominant_pct:.1f}%")
 
 with col3:
     hourly_totals = filtered_df.groupby('Hour')['Total'].sum()
     peak_hour = hourly_totals.idxmax()
     peak_vehicles = hourly_totals.max()
     st.metric("⏰ Peak Hour",
-              f"{peak_hour:02d}:00 ({peak_vehicles:,} vehicles)")
+              f"{peak_hour:02d}:00",
+              f"{peak_vehicles:,} vehicles")
 
 with col4:
     # Calculate compliance directly from speed columns
