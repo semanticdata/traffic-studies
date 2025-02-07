@@ -78,12 +78,9 @@ filtered_df = df[mask]
 # Location Info
 st.markdown(
     f"""
-    <h1 style='text-align: center; margin-bottom: 2rem;'>
+    <h1 style='text-align: center;'>
         📍 {location_name} - Traffic Study
     </h1>
-    <p style='text-align: center; font-size: 1.2rem; color: var(--text-color);'>
-        Analyzing traffic data from <b>{date_range[0]}</b> to <b>{date_range[1]}</b>
-    </p>
 """,
     unsafe_allow_html=True,
 )
