@@ -20,6 +20,7 @@ CUSTOM_CSS = """
     }
     .stMetric > div[data-testid="stMetricValue"] {
         color: var(--text-color);
+        font-size: 1.6rem;
     }
     h1, h2, h3 {
         color: var(--text-color);
