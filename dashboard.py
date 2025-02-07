@@ -23,10 +23,10 @@ st.set_page_config(
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # Sidebar
-st.sidebar.header("Traffic Analysis Dashboard")
-st.sidebar.markdown(
-    """Please select a location and set your desired date and hour filters to analyze the traffic data."""
-)
+# st.sidebar.header("Traffic Analysis Dashboard")
+# st.sidebar.markdown(
+#     """Please select a location and set your desired date and hour filters to analyze the traffic data."""
+# )
 st.sidebar.header("Location and Filters")
 
 # Main dashboard layout
@@ -159,25 +159,25 @@ tab1, tab2, tab3 = st.tabs(
     ["📈 Traffic Volume", "🚗 Speed Analysis", "📊 Raw Data"])
 
 with tab1:
-    st.subheader("Directional Traffic Volume by Hour")
+    # st.subheader("Directional Traffic Volume by Hour")
     fig1 = plot_traffic_volume(filtered_df, structure)
     st.pyplot(fig1)
 
-    st.subheader("Traffic Volume Over Time")
-    # fig4 = plot_traffic_volume(filtered_df, structure)
+    # st.subheader("Daily Traffic Volume Patterns")
     temporal_fig = plot_temporal_patterns(filtered_df, structure)
-    severity_fig = plot_speed_violation_severity(filtered_df, structure)
-    # st.pyplot(fig4)
     st.pyplot(temporal_fig)
-    st.pyplot(severity_fig)
 
 
 with tab2:
-    st.subheader("Speed Distribution by Direction")
+    # st.subheader("Speed Violation Severity")
+    severity_fig = plot_speed_violation_severity(filtered_df, structure)
+    st.pyplot(severity_fig)
+
+    # st.subheader("Speed Distribution by Direction")
     fig2 = plot_speed_distribution(filtered_df, structure)
     st.pyplot(fig2)
 
-    st.subheader("Speed Compliance by Direction")
+    # st.subheader("Speed Compliance by Direction")
     fig3 = plot_speed_compliance(filtered_df, structure)
     st.pyplot(fig3)
 
