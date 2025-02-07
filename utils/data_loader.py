@@ -76,7 +76,8 @@ def detect_file_structure(file_path):
                         .strip()
                     )
             elif "Comments:" in line:
-                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
+                comments = line.split("Comments:")[
+                    1].strip().strip('"').strip(",")
             elif "Title:" in line:
                 title = line.split("Title:")[1].strip().strip('"').strip(",")
 
@@ -89,15 +90,20 @@ def detect_file_structure(file_path):
                 break
 
         if column_line:
-            columns = [col.strip().strip('"') for col in column_line.split(",")]
+            columns = [col.strip().strip('"')
+                       for col in column_line.split(",")]
 
             # Detect direction pairs based on column names
-            dir1_speed_cols = [col for col in columns if "MPH  - Northbound" in col]
-            dir2_speed_cols = [col for col in columns if "MPH  - Southbound" in col]
+            dir1_speed_cols = [
+                col for col in columns if "MPH  - Northbound" in col]
+            dir2_speed_cols = [
+                col for col in columns if "MPH  - Southbound" in col]
 
             if not (dir1_speed_cols and dir2_speed_cols):
-                dir1_speed_cols = [col for col in columns if "MPH  - Eastbound" in col]
-                dir2_speed_cols = [col for col in columns if "MPH  - Westbound" in col]
+                dir1_speed_cols = [
+                    col for col in columns if "MPH  - Eastbound" in col]
+                dir2_speed_cols = [
+                    col for col in columns if "MPH  - Westbound" in col]
 
             if "Northbound" in "".join(columns):
                 dir1_name = "Northbound"
@@ -124,7 +130,7 @@ def detect_file_structure(file_path):
         return None
 
 
-def load_data(file_path):
+def load_data(file_path, speed_limit=25):
     """Load and process traffic data from CSV file."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -143,17 +149,17 @@ def load_data(file_path):
         dir2_speed_cols = structure["dir2_speed_cols"]
 
         df["Dir1_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x <= 30).sum(), axis=1
+            lambda x: (x <= speed_limit).sum(), axis=1
         )
         df["Dir1_Non_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x > 30).sum(), axis=1
+            lambda x: (x > speed_limit).sum(), axis=1
         )
 
         df["Dir2_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x <= 30).sum(), axis=1
+            lambda x: (x <= speed_limit).sum(), axis=1
         )
         df["Dir2_Non_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x > 30).sum(), axis=1
+            lambda x: (x > speed_limit).sum(), axis=1
         )
 
         df["Total"] = (

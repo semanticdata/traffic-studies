@@ -74,8 +74,45 @@ def plot_speed_distribution(filtered_df, structure):
     return fig2
 
 
-def plot_speed_compliance(filtered_df, structure):
+def plot_speed_compliance(filtered_df, structure, speed_limit=30):
     """Create speed compliance visualizations."""
+    # Calculate compliance directly from speed columns
+    dir1_compliant = filtered_df[structure["dir1_speed_cols"]].apply(
+        lambda row: sum(
+            int(col.split('-')[0].strip()) <= speed_limit
+            for col, count in row.items()
+            if count > 0
+        ),
+        axis=1
+    ).sum()
+
+    dir1_non_compliant = filtered_df[structure["dir1_speed_cols"]].apply(
+        lambda row: sum(
+            int(col.split('-')[0].strip()) > speed_limit
+            for col, count in row.items()
+            if count > 0
+        ),
+        axis=1
+    ).sum()
+
+    dir2_compliant = filtered_df[structure["dir2_speed_cols"]].apply(
+        lambda row: sum(
+            int(col.split('-')[0].strip()) <= speed_limit
+            for col, count in row.items()
+            if count > 0
+        ),
+        axis=1
+    ).sum()
+
+    dir2_non_compliant = filtered_df[structure["dir2_speed_cols"]].apply(
+        lambda row: sum(
+            int(col.split('-')[0].strip()) > speed_limit
+            for col, count in row.items()
+            if count > 0
+        ),
+        axis=1
+    ).sum()
+
     compliance_data = pd.DataFrame(
         {
             "Direction": [
@@ -86,10 +123,10 @@ def plot_speed_compliance(filtered_df, structure):
             ],
             "Compliance": ["Compliant", "Non-Compliant", "Compliant", "Non-Compliant"],
             "Count": [
-                filtered_df["Dir1_Compliant"].sum(),
-                filtered_df["Dir1_Non_Compliant"].sum(),
-                filtered_df["Dir2_Compliant"].sum(),
-                filtered_df["Dir2_Non_Compliant"].sum(),
+                dir1_compliant,
+                dir1_non_compliant,
+                dir2_compliant,
+                dir2_non_compliant,
             ],
         }
     )
