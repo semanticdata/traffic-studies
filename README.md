@@ -1,6 +1,6 @@
 # Traffic Studies
 
-This repository contains code for analyzing traffic data.
+Dashboard for analyzing traffic studies data for Crystal, Minnesota.
 
 ## 🚀 Usage
 
@@ -19,11 +19,13 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
 3. Install required packages:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Run the dashboard:
+
 ```bash
 streamlit run dashboard.py
 ```
