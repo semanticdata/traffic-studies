@@ -279,7 +279,7 @@ with tab2:
     st.pyplot(fig3)
 
 with tab3:
-    st.subheader("Data Summary")
+    # st.subheader("Data Summary")
     st.dataframe(filtered_df, use_container_width=True)
 
 # Enhanced footer
