@@ -73,7 +73,11 @@ mask = (
     & (df["Date/Time"].dt.date <= date_range[1])
     & (df["Hour"].between(hour_range[0], hour_range[1]))
 )
-filtered_df = df[mask]
+filtered_df = df[mask].copy()
+
+# Then add any new columns
+filtered_df['Hour'] = filtered_df['Date/Time'].dt.hour
+filtered_df['DayOfWeek'] = filtered_df['Date/Time'].dt.day_name()
 
 # Location Info
 st.markdown(
