@@ -82,7 +82,7 @@ filtered_df['DayOfWeek'] = filtered_df['Date/Time'].dt.day_name()
 # Location Info
 st.markdown(
     f"""
-    <h1 style='text-align: center;'>
+    <h1 style='text-align: left;'>
         📍 {location_name} - Traffic Study
     </h1>
 """,
@@ -98,26 +98,37 @@ with col1:
     st.metric("📊 Total Vehicles", f"{total_vehicles:,}")
 
 with col2:
-    dir1_volume = filtered_df[structure["dir1_volume_col"]].sum()
-    dir2_volume = filtered_df[structure["dir2_volume_col"]].sum()
-    dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
-    dominant_pct = max(dir1_volume, dir2_volume) / (dir1_volume +
-                                                    dir2_volume) * 100 if (dir1_volume + dir2_volume) > 0 else 0
-    st.metric("🔄 Dominant Direction",
-              f"{dominant_direction}",
-              f"{dominant_pct:.1f}%")
+    # Calculate average speeds using weighted average
+    def calculate_weighted_speed(df, speed_cols):
+        total_count = 0
+        weighted_sum = 0
+        for col in speed_cols:
+            speed = int(col.split('-')[0].strip())
+            count = df[col].sum()
+            weighted_sum += speed * count
+            total_count += count
+        return weighted_sum / total_count if total_count > 0 else 0
+    dir2_avg_speed = calculate_weighted_speed(
+        filtered_df, structure["dir2_speed_cols"])
+    st.metric(
+        "🏎️ Average Speed ({})".format(structure["dir2_name"]),
+        f"{dir2_avg_speed:.1f} mph"
+    )
+
 
 with col3:
-    hourly_totals = filtered_df.groupby('Hour')['Total'].sum()
-    peak_hour = hourly_totals.idxmax()
-    peak_vehicles = hourly_totals.max()
-    st.metric("⏰ Peak Hour",
-              f"{peak_hour:02d}:00",
-              f"{peak_vehicles:,} vehicles")
+
+    dir1_avg_speed = calculate_weighted_speed(
+        filtered_df, structure["dir1_speed_cols"])
+    st.metric(
+        "🏎️ Average Speed ({})".format(structure["dir1_name"]),
+        f"{dir1_avg_speed:.1f} mph"
+    )
+
 
 with col4:
     # Calculate compliance directly from speed columns
-    def calculate_compliance(df, speed_cols, speed_limit=25):
+    def calculate_compliance(df, speed_cols, speed_limit=30):
         compliant = 0
         total = 0
         for col in speed_cols:
@@ -154,41 +165,31 @@ with col5:
     )
 
 with col6:
-    # Calculate average speeds using weighted average
-    def calculate_weighted_speed(df, speed_cols):
-        total_count = 0
-        weighted_sum = 0
-        for col in speed_cols:
-            speed = int(col.split('-')[0].strip())
-            count = df[col].sum()
-            weighted_sum += speed * count
-            total_count += count
-        return weighted_sum / total_count if total_count > 0 else 0
-
-    dir1_avg_speed = calculate_weighted_speed(
-        filtered_df, structure["dir1_speed_cols"])
-    st.metric(
-        "🏎️ Average Speed ({})".format(structure["dir1_name"]),
-        f"{dir1_avg_speed:.1f} mph"
-    )
+    hourly_totals = filtered_df.groupby('Hour')['Total'].sum()
+    peak_hour = hourly_totals.idxmax()
+    peak_vehicles = hourly_totals.max()
+    st.metric("⏰ Peak Hour",
+              f"{peak_hour:02d}:00",
+              f"{peak_vehicles:,} vehicles")
 
 with col7:
-    dir2_avg_speed = calculate_weighted_speed(
-        filtered_df, structure["dir2_speed_cols"])
-    st.metric(
-        "🏎️ Average Speed ({})".format(structure["dir2_name"]),
-        f"{dir2_avg_speed:.1f} mph"
-    )
+    dir1_volume = filtered_df[structure["dir1_volume_col"]].sum()
+    dir2_volume = filtered_df[structure["dir2_volume_col"]].sum()
+    dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
+    dominant_pct = max(dir1_volume, dir2_volume) / (dir1_volume +
+                                                    dir2_volume) * 100 if (dir1_volume + dir2_volume) > 0 else 0
+    st.metric("🔄 Dominant Direction",
+              f"{dominant_direction}",
+              f"{dominant_pct:.1f}%")
 
 with col8:
-    weekday_mask = filtered_df["Date/Time"].dt.weekday < 5
-    weekday_avg = filtered_df[weekday_mask]["Total"].mean()
-    weekend_avg = filtered_df[~weekday_mask]["Total"].mean()
-    ratio = weekday_avg / weekend_avg if weekend_avg > 0 else 0
-    st.metric(
-        "📊 Weekday/Weekend Ratio",
-        f"{weekday_avg:.1f} / {weekend_avg:.1f} = {ratio:.1f}"
-    )
+    # Busiest day of week
+    dow_volumes = filtered_df.groupby(
+        filtered_df['Date/Time'].dt.day_name())['Total'].mean()
+    busiest_day = dow_volumes.idxmax()
+    busiest_volume = dow_volumes.max()
+    st.metric("📆 Busiest Day", f"{busiest_day}",
+              f"Avg: {busiest_volume:.0f} vehicles")
 
 
 # Add a third row of metrics for additional insights
@@ -227,7 +228,7 @@ with col10:
 
 with col11:
     # High speed violations (15+ mph over limit)
-    def count_high_speeders(df, speed_cols, speed_limit=25):
+    def count_high_speeders(df, speed_cols, speed_limit=30):
         high_speeders = 0
         for col in speed_cols:
             speed = int(col.split('-')[0].strip())
@@ -245,13 +246,14 @@ with col11:
               f"{total_high_speeders:,} ({high_speeder_pct:.1f}%)")
 
 with col12:
-    # Busiest day of week
-    dow_volumes = filtered_df.groupby(
-        filtered_df['Date/Time'].dt.day_name())['Total'].mean()
-    busiest_day = dow_volumes.idxmax()
-    busiest_volume = dow_volumes.max()
-    st.metric("📆 Busiest Day", f"{busiest_day}",
-              f"Avg: {busiest_volume:.0f} vehicles")
+    weekday_mask = filtered_df["Date/Time"].dt.weekday < 5
+    weekday_avg = filtered_df[weekday_mask]["Total"].mean()
+    weekend_avg = filtered_df[~weekday_mask]["Total"].mean()
+    ratio = weekday_avg / weekend_avg if weekend_avg > 0 else 0
+    st.metric(
+        "📊 Weekday/Weekend Ratio",
+        f"{weekday_avg:.1f} / {weekend_avg:.1f} = {ratio:.1f}"
+    )
 
 st.markdown("</div>", unsafe_allow_html=True)
 

@@ -130,7 +130,7 @@ def detect_file_structure(file_path):
         return None
 
 
-def load_data(file_path, speed_limit=25):
+def load_data(file_path, speed_limit=30):
     """Load and process traffic data from CSV file."""
     structure = detect_file_structure(file_path)
     if not structure:
