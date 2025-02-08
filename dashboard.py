@@ -285,7 +285,14 @@ with col12:
 st.markdown("</div>", unsafe_allow_html=True)
 
 # Create tabs for visualizations
-tab1, tab2, tab3 = st.tabs(["📈 Traffic Volume", "🚗 Speed Analysis", "📊 Raw Data"])
+tab1, tab2, tab3, tab4 = st.tabs(
+    [
+        "📈 Traffic Volume",
+        "🚗 Speed Analysis",
+        "🚛 Vehicle Classification",
+        "📊 Raw Data",
+    ]
+)
 
 with tab1:
     # st.subheader("Directional Traffic Volume by Hour")
@@ -311,7 +318,106 @@ with tab2:
     st.pyplot(fig3)
 
 with tab3:
-    # st.subheader("Data Summary")
+    st.subheader("Vehicle Classification Analysis")
+
+    # Create two columns for directional analysis
+    dir1_col, dir2_col = st.columns(2)
+
+    with dir1_col:
+        st.markdown(f"#### {structure['dir1_name']}")
+
+        # Create classification data for direction 1
+        class_data_dir1 = pd.DataFrame(
+            {
+                "Vehicle Type": [
+                    "🏍️ Class 1 - Motorcycles",
+                    "🚗 Class 2 - Passenger Cars",
+                    "🚐 Class 3 - Pickups, Vans",
+                    "🚌 Class 4 - Buses",
+                    "🚛 Class 5 - 2 Axles, 6 Tires",
+                    "🚛 Class 6 - 3 Axles",
+                ],
+                "Count": [
+                    filtered_df[structure["dir1_class_cols"][0]].sum(),
+                    filtered_df[structure["dir1_class_cols"][1]].sum(),
+                    filtered_df[structure["dir1_class_cols"][2]].sum(),
+                    filtered_df[structure["dir1_class_cols"][3]].sum(),
+                    filtered_df[structure["dir1_class_cols"][4]].sum(),
+                    filtered_df[structure["dir1_class_cols"][5]].sum(),
+                ],
+            }
+        )
+
+        # Calculate percentages
+        total_dir1 = class_data_dir1["Count"].sum()
+        class_data_dir1["Percentage"] = (
+            class_data_dir1["Count"] / total_dir1 * 100
+        ).round(1)
+
+        # Display as a formatted table
+        for _, row in class_data_dir1.iterrows():
+            st.markdown(
+                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
+            )
+
+        st.markdown(f"**Total Vehicles: {total_dir1:,}**")
+
+    with dir2_col:
+        st.markdown(f"#### {structure['dir2_name']}")
+
+        # Create classification data for direction 2
+        class_data_dir2 = pd.DataFrame(
+            {
+                "Vehicle Type": [
+                    "🏍️ Class 1 - Motorcycles",
+                    "🚗 Class 2 - Passenger Cars",
+                    "🚐 Class 3 - Pickups, Vans",
+                    "🚌 Class 4 - Buses",
+                    "🚛 Class 5 - 2 Axles, 6 Tires",
+                    "🚛 Class 6 - 3 Axles",
+                ],
+                "Count": [
+                    filtered_df[structure["dir2_class_cols"][0]].sum(),
+                    filtered_df[structure["dir2_class_cols"][1]].sum(),
+                    filtered_df[structure["dir2_class_cols"][2]].sum(),
+                    filtered_df[structure["dir2_class_cols"][3]].sum(),
+                    filtered_df[structure["dir2_class_cols"][4]].sum(),
+                    filtered_df[structure["dir2_class_cols"][5]].sum(),
+                ],
+            }
+        )
+
+        # Calculate percentages
+        total_dir2 = class_data_dir2["Count"].sum()
+        class_data_dir2["Percentage"] = (
+            class_data_dir2["Count"] / total_dir2 * 100
+        ).round(1)
+
+        # Display as a formatted table
+        for _, row in class_data_dir2.iterrows():
+            st.markdown(
+                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
+            )
+
+        st.markdown(f"**Total Vehicles: {total_dir2:,}**")
+
+    # Add a visualization section
+    st.subheader("Vehicle Classification Distribution")
+
+    # Create a combined DataFrame for plotting
+    plot_data = pd.DataFrame(
+        {
+            "Vehicle Type": class_data_dir1["Vehicle Type"],
+            structure["dir1_name"]: class_data_dir1["Count"],
+            structure["dir2_name"]: class_data_dir2["Count"],
+        }
+    )
+
+    # Create a bar chart using Streamlit
+    st.bar_chart(plot_data.set_index("Vehicle Type"), use_container_width=True)
+
+# Rename the existing tab3 to tab4 for Raw Data
+with tab4:
     st.dataframe(filtered_df, use_container_width=True)
 
 # Enhanced footer

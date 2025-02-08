@@ -76,8 +76,7 @@ def detect_file_structure(file_path):
                         .strip()
                     )
             elif "Comments:" in line:
-                comments = line.split("Comments:")[
-                    1].strip().strip('"').strip(",")
+                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
             elif "Title:" in line:
                 title = line.split("Title:")[1].strip().strip('"').strip(",")
 
@@ -90,27 +89,80 @@ def detect_file_structure(file_path):
                 break
 
         if column_line:
-            columns = [col.strip().strip('"')
-                       for col in column_line.split(",")]
+            columns = [col.strip().strip('"') for col in column_line.split(",")]
 
-            # Detect direction pairs based on column names
-            dir1_speed_cols = [
-                col for col in columns if "MPH  - Northbound" in col]
-            dir2_speed_cols = [
-                col for col in columns if "MPH  - Southbound" in col]
+            # Debug print
+            print("\nAll columns found:", columns)
 
-            if not (dir1_speed_cols and dir2_speed_cols):
-                dir1_speed_cols = [
-                    col for col in columns if "MPH  - Eastbound" in col]
-                dir2_speed_cols = [
-                    col for col in columns if "MPH  - Westbound" in col]
-
+            # Detect direction names
             if "Northbound" in "".join(columns):
                 dir1_name = "Northbound"
                 dir2_name = "Southbound"
             else:
                 dir1_name = "Eastbound"
                 dir2_name = "Westbound"
+
+            # Debug print
+            print(f"\nDirections detected: {dir1_name}, {dir2_name}")
+
+            # Detect speed columns
+            dir1_speed_cols = [col for col in columns if f"MPH  - {dir1_name}" in col]
+            dir2_speed_cols = [col for col in columns if f"MPH  - {dir2_name}" in col]
+
+            # Detect classification columns - try multiple patterns
+            dir1_class_cols = []
+            dir2_class_cols = []
+            for class_num in range(1, 7):  # Classes 1 through 6
+                # Try different possible patterns
+                patterns1 = [
+                    f"Class #{class_num} - {dir1_name}",
+                    f"Class {class_num} - {dir1_name}",
+                    f"Class{class_num} - {dir1_name}",
+                    f"Class #{class_num}-{dir1_name}",
+                    f"Class {class_num}-{dir1_name}",
+                ]
+                patterns2 = [
+                    f"Class #{class_num} - {dir2_name}",
+                    f"Class {class_num} - {dir2_name}",
+                    f"Class{class_num} - {dir2_name}",
+                    f"Class #{class_num}-{dir2_name}",
+                    f"Class {class_num}-{dir2_name}",
+                ]
+
+                # Try to find matching column for direction 1
+                class1_col = None
+                for pattern in patterns1:
+                    print(f"Trying pattern for dir1: '{pattern}'")
+                    matching_cols = [col for col in columns if pattern in col]
+                    if matching_cols:
+                        class1_col = matching_cols[0]
+                        break
+
+                # Try to find matching column for direction 2
+                class2_col = None
+                for pattern in patterns2:
+                    print(f"Trying pattern for dir2: '{pattern}'")
+                    matching_cols = [col for col in columns if pattern in col]
+                    if matching_cols:
+                        class2_col = matching_cols[0]
+                        break
+
+                if class1_col:
+                    print(f"Found {dir1_name} Class {class_num}: {class1_col}")
+                    dir1_class_cols.append(class1_col)
+                else:
+                    print(f"No column found for {dir1_name} Class {class_num}")
+
+                if class2_col:
+                    print(f"Found {dir2_name} Class {class_num}: {class2_col}")
+                    dir2_class_cols.append(class2_col)
+                else:
+                    print(f"No column found for {dir2_name} Class {class_num}")
+
+            # Debug print final results
+            print(f"\nFinal classification columns found:")
+            print(f"{dir1_name}:", dir1_class_cols)
+            print(f"{dir2_name}:", dir2_class_cols)
 
             return {
                 "metadata_rows": metadata_rows,
@@ -124,6 +176,8 @@ def detect_file_structure(file_path):
                 "dir2_speed_cols": dir2_speed_cols,
                 "dir1_volume_col": f"Volume - {dir1_name}",
                 "dir2_volume_col": f"Volume - {dir2_name}",
+                "dir1_class_cols": dir1_class_cols,
+                "dir2_class_cols": dir2_class_cols,
             }
     except Exception as e:
         print(f"Error detecting file structure: {e}")
