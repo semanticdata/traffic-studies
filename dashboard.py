@@ -80,14 +80,9 @@ filtered_df["Hour"] = filtered_df["Date/Time"].dt.hour
 filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
 
 # Location Info
-st.markdown(
-    f"""
-    <h1 style='text-align: left;'>
-        📍 {location_name} - Traffic Study
-    </h1>
-""",
-    unsafe_allow_html=True,
-)
+st.title("Traffic Analysis Dashboard")
+st.subheader(f"Location: {location_name}")
+
 
 # Display key metrics with enhanced styling
 st.markdown("<div style='margin: 2rem 0;'>", unsafe_allow_html=True)
@@ -224,14 +219,14 @@ with col9:
         # Print overall statistics
         if speeds:
             speeds_series = pd.Series(speeds)
-            print("\nOverall Statistics:")
-            print(f"Min speed: {min(speeds)}")
-            print(f"Max speed: {max(speeds)}")
-            print(f"Mean speed: {np.mean(speeds):.1f}")
-            print(f"Speed distribution:\n{speeds_series.value_counts().sort_index()}")
+            # print("\nOverall Statistics:")
+            # print(f"Min speed: {min(speeds)}")
+            # print(f"Max speed: {max(speeds)}")
+            # print(f"Mean speed: {np.mean(speeds):.1f}")
+            # print(f"Speed distribution:\n{speeds_series.value_counts().sort_index()}")
 
             percentile_85 = np.percentile(speeds, 85)
-            print(f"\nCalculated 85th percentile: {percentile_85:.1f} mph")
+            # print(f"\nCalculated 85th percentile: {percentile_85:.1f} mph")
             return percentile_85
         return 0
 
