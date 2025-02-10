@@ -32,14 +32,40 @@ streamlit run dashboard.py
 
 ## 📦 Data
 
-Classifications:
+Key Metrics:
 
-- Class 1: Motorcycles - 2 Axles
-- Class 2: Passenger Cars - 2 Axles
-- Class 3: Pickup Trucks, Vans - 2 Axles
-- Class 4: Buses
-- Class 5: Single Unit - 2 Axles, 6 Tires
-- Class 6: Single Unit Truck - 3 Axles
+- Total Vehicles
+- Average Speed (Northbound/Eastbound)
+- Average Speed (Southbound/Westbound)
+- Speed Compliance (%)
+- Daily Traffic - Average and Max
+- Peak Hour (Number of Vehicles)
+- Dominant Direction
+- Busiest Day
+- 85th Percentile Speed
+- Peak Hour Factor (PHF)
+- High Speed Violations
+- Weekday/Weekend Ratio
+
+Traffic Volume:
+
+- Hourly Traffic Volume Distribution (per direction of travel)
+- Daily Traffic Volume Patterns
+
+Speed Analysis:
+
+- Speed Violation Severity Analysis (+5, +10, +15 mph over)
+- Speed Distribution (per direction of travel)
+- Speed Compliance Analysis by Direction
+
+Vehicle Classifications:
+
+- 🏍️ Class 1: Motorcycles
+- 🚗 Class 2: Passenger Cars
+- 🚐 Class 3: Pickups, Vans
+- 🚌 Class 4: Buses
+- 🚛 Class 5: 2 Axles, 6 Tires
+- 🚛 Class 6: 3 Axles
 
 ## 📜 License
 
