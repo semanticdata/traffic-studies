@@ -1,8 +1,9 @@
 import pandas as pd
 from pathlib import Path
+from typing import Dict, Tuple, Optional
 
 
-def get_data_directory():
+def get_data_directory() -> Path:
     """Get the path to the data directory relative to the project root."""
     # Get the current file's directory (utils)
     current_dir = Path(__file__).parent
@@ -11,7 +12,7 @@ def get_data_directory():
     return data_dir
 
 
-def get_location_from_file(file_path):
+def get_location_from_file(file_path: str) -> str:
     """Extract location name from the CSV file metadata."""
     try:
         with open(file_path, "r") as f:
@@ -50,7 +51,7 @@ def get_location_from_file(file_path):
         )
 
 
-def detect_file_structure(file_path):
+def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
     """Detect the structure of the CSV file and return appropriate parsing parameters."""
     try:
         with open(file_path, "r") as f:
@@ -184,7 +185,9 @@ def detect_file_structure(file_path):
         return None
 
 
-def load_data(file_path, speed_limit=30):
+def load_data(
+    file_path: str, speed_limit: int = 30
+) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
     """Load and process traffic data from CSV file."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -226,7 +229,7 @@ def load_data(file_path, speed_limit=30):
         raise Exception(f"Error loading data: {e}")
 
 
-def get_available_locations():
+def get_available_locations() -> Dict[str, str]:
     """Get list of available data files and their locations."""
     data_dir = get_data_directory()
     if not data_dir.exists():

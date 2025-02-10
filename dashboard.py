@@ -14,6 +14,7 @@ from utils.visualizations import (
 from utils.styles import CUSTOM_CSS
 import numpy as np
 import pandas as pd
+from typing import Tuple, Dict
 
 
 # Set page config
@@ -94,7 +95,8 @@ with col1:
 
 with col2:
     # Calculate average speeds using weighted average
-    def calculate_weighted_speed(df, speed_cols):
+    def calculate_weighted_speed(df: pd.DataFrame, speed_cols: list) -> float:
+        """Calculate the weighted average speed."""
         total_count = 0
         weighted_sum = 0
         for col in speed_cols:
@@ -122,7 +124,10 @@ with col3:
 
 with col4:
     # Calculate compliance directly from speed columns
-    def calculate_compliance(df, speed_cols, speed_limit=30):
+    def calculate_compliance(
+        df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
+    ) -> Tuple[int, int]:
+        """Calculate the number of compliant and non-compliant vehicles."""
         compliant = 0
         total = 0
         for col in speed_cols:
@@ -196,7 +201,8 @@ col9, col10, col11, col12 = st.columns(4)
 
 with col9:
     # Calculate 85th percentile speed
-    def calculate_85th_percentile_speed(df, speed_cols):
+    def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: list) -> float:
+        """Calculate the 85th percentile speed."""
         speeds = []
         # print("\nAnalyzing speed columns:", speed_cols)
 
@@ -240,7 +246,8 @@ with col9:
 
 with col10:
     # Peak hour factor (PHF)
-    def calculate_phf(df):
+    def calculate_phf(df: pd.DataFrame) -> float:
+        """Calculate the Peak Hour Factor (PHF)."""
         hourly_volumes = df.groupby("Hour")["Total"].sum()
         peak_hour_volume = hourly_volumes.max()
         if peak_hour_volume == 0:
@@ -254,7 +261,10 @@ with col10:
 
 with col11:
     # High speed violations (15+ mph over limit)
-    def count_high_speeders(df, speed_cols, speed_limit=30):
+    def count_high_speeders(
+        df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
+    ) -> int:
+        """Count the number of high-speed violators (15+ mph over limit)."""
         high_speeders = 0
         for col in speed_cols:
             speed = int(col.split("-")[0].strip())

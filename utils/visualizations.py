@@ -1,15 +1,17 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+from typing import Dict, Optional
 
 
-def plot_traffic_volume(filtered_df, structure):
+def plot_traffic_volume(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> plt.Figure:
     """Create traffic volume visualizations."""
     hourly_volumes = (
         filtered_df.groupby("Hour")
         .agg(
-            {structure["dir1_volume_col"]: "mean",
-                structure["dir2_volume_col"]: "mean"}
+            {structure["dir1_volume_col"]: "mean", structure["dir2_volume_col"]: "mean"}
         )
         .reset_index()
     )
@@ -39,7 +41,9 @@ def plot_traffic_volume(filtered_df, structure):
     return fig1
 
 
-def plot_speed_distribution(filtered_df, structure):
+def plot_speed_distribution(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> plt.Figure:
     """Create speed distribution visualizations."""
     dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean()
     dir2_speeds = filtered_df[structure["dir2_speed_cols"]].mean()
@@ -74,44 +78,62 @@ def plot_speed_distribution(filtered_df, structure):
     return fig2
 
 
-def plot_speed_compliance(filtered_df, structure, speed_limit=30):
+def plot_speed_compliance(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> plt.Figure:
     """Create speed compliance visualizations."""
     # Calculate compliance directly from speed columns
-    dir1_compliant = filtered_df[structure["dir1_speed_cols"]].apply(
-        lambda row: sum(
-            int(col.split('-')[0].strip()) <= speed_limit
-            for col, count in row.items()
-            if count > 0
-        ),
-        axis=1
-    ).sum()
+    dir1_compliant = (
+        filtered_df[structure["dir1_speed_cols"]]
+        .apply(
+            lambda row: sum(
+                int(col.split("-")[0].strip()) <= speed_limit
+                for col, count in row.items()
+                if count > 0
+            ),
+            axis=1,
+        )
+        .sum()
+    )
 
-    dir1_non_compliant = filtered_df[structure["dir1_speed_cols"]].apply(
-        lambda row: sum(
-            int(col.split('-')[0].strip()) > speed_limit
-            for col, count in row.items()
-            if count > 0
-        ),
-        axis=1
-    ).sum()
+    dir1_non_compliant = (
+        filtered_df[structure["dir1_speed_cols"]]
+        .apply(
+            lambda row: sum(
+                int(col.split("-")[0].strip()) > speed_limit
+                for col, count in row.items()
+                if count > 0
+            ),
+            axis=1,
+        )
+        .sum()
+    )
 
-    dir2_compliant = filtered_df[structure["dir2_speed_cols"]].apply(
-        lambda row: sum(
-            int(col.split('-')[0].strip()) <= speed_limit
-            for col, count in row.items()
-            if count > 0
-        ),
-        axis=1
-    ).sum()
+    dir2_compliant = (
+        filtered_df[structure["dir2_speed_cols"]]
+        .apply(
+            lambda row: sum(
+                int(col.split("-")[0].strip()) <= speed_limit
+                for col, count in row.items()
+                if count > 0
+            ),
+            axis=1,
+        )
+        .sum()
+    )
 
-    dir2_non_compliant = filtered_df[structure["dir2_speed_cols"]].apply(
-        lambda row: sum(
-            int(col.split('-')[0].strip()) > speed_limit
-            for col, count in row.items()
-            if count > 0
-        ),
-        axis=1
-    ).sum()
+    dir2_non_compliant = (
+        filtered_df[structure["dir2_speed_cols"]]
+        .apply(
+            lambda row: sum(
+                int(col.split("-")[0].strip()) > speed_limit
+                for col, count in row.items()
+                if count > 0
+            ),
+            axis=1,
+        )
+        .sum()
+    )
 
     compliance_data = pd.DataFrame(
         {
@@ -140,8 +162,7 @@ def plot_speed_compliance(filtered_df, structure, speed_limit=30):
         palette=["lightgreen", "salmon"],
         ax=ax3,
     )
-    ax3.set_title("Speed Compliance Analysis by Direction",
-                  pad=20, fontsize=14)
+    ax3.set_title("Speed Compliance Analysis by Direction", pad=20, fontsize=14)
     ax3.set_xlabel("Direction", fontsize=12)
     ax3.set_ylabel("Vehicle Count", fontsize=12)
     ax3.legend(fontsize=10)
@@ -150,58 +171,74 @@ def plot_speed_compliance(filtered_df, structure, speed_limit=30):
     return fig3
 
 
-def plot_temporal_patterns(filtered_df, structure):
+def plot_temporal_patterns(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> plt.Figure:
     """Create visualizations for temporal traffic patterns."""
     # Add day of week column using Date/Time instead of Date
-    filtered_df['DayOfWeek'] = filtered_df['Date/Time'].dt.day_name()
+    filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
 
     # Daily patterns
-    daily_volumes = filtered_df.groupby('DayOfWeek').agg({
-        structure["dir1_volume_col"]: 'sum',
-        structure["dir2_volume_col"]: 'sum'
-    }).reindex(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'])
+    daily_volumes = (
+        filtered_df.groupby("DayOfWeek")
+        .agg({structure["dir1_volume_col"]: "sum", structure["dir2_volume_col"]: "sum"})
+        .reindex(
+            [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+            ]
+        )
+    )
 
     fig, ax = plt.subplots(figsize=(15, 8))
-    daily_volumes.plot(kind='bar', ax=ax)
-    ax.set_title('Daily Traffic Volume Patterns', pad=20, fontsize=14)
-    ax.set_xlabel('Day of Week', fontsize=12)
-    ax.set_ylabel('Total Vehicle Count', fontsize=12)
-    ax.legend(labels=[structure["dir1_name"],
-              structure["dir2_name"]], fontsize=10)
+    daily_volumes.plot(kind="bar", ax=ax)
+    ax.set_title("Daily Traffic Volume Patterns", pad=20, fontsize=14)
+    ax.set_xlabel("Day of Week", fontsize=12)
+    ax.set_ylabel("Total Vehicle Count", fontsize=12)
+    ax.legend(labels=[structure["dir1_name"], structure["dir2_name"]], fontsize=10)
     ax.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
     return fig
 
 
-def plot_speed_violation_severity(filtered_df, structure, speed_limit=30):
+def plot_speed_violation_severity(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> Optional[plt.Figure]:
     """Create visualization for speed violation severity."""
     # Calculate speed ranges and their frequencies
     speed_ranges = {
-        '0-5 mph over': (0, 5),
-        '5-10 mph over': (5, 10),
-        '10-15 mph over': (10, 15),
-        '15+ mph over': (15, float('inf'))
+        "0-5 mph over": (0, 5),
+        "5-10 mph over": (5, 10),
+        "10-15 mph over": (10, 15),
+        "15+ mph over": (15, float("inf")),
     }
 
     violation_data = []
     for direction, speed_cols in [
         (structure["dir1_name"], structure["dir1_speed_cols"]),
-        (structure["dir2_name"], structure["dir2_speed_cols"])
+        (structure["dir2_name"], structure["dir2_speed_cols"]),
     ]:
         for col in speed_cols:
             # Extract the lower speed bound from column name (e.g., "35-39 MPH" -> 35)
-            speed = int(col.split('-')[0].strip())
+            speed = int(col.split("-")[0].strip())
             if speed > speed_limit:
                 over_limit = speed - speed_limit
                 for range_name, (min_over, max_over) in speed_ranges.items():
                     if min_over <= over_limit < max_over:
-                        violation_data.append({
-                            'Direction': direction,
-                            'Violation Range': range_name,
-                            # Changed from mean() to sum()
-                            'Count': filtered_df[col].sum()
-                        })
+                        violation_data.append(
+                            {
+                                "Direction": direction,
+                                "Violation Range": range_name,
+                                # Changed from mean() to sum()
+                                "Count": filtered_df[col].sum(),
+                            }
+                        )
 
     violation_df = pd.DataFrame(violation_data)
 
@@ -210,16 +247,16 @@ def plot_speed_violation_severity(filtered_df, structure, speed_limit=30):
         fig, ax = plt.subplots(figsize=(15, 8))
         sns.barplot(
             data=violation_df,
-            x='Direction',
-            y='Count',
-            hue='Violation Range',
-            palette='YlOrRd',
-            ax=ax
+            x="Direction",
+            y="Count",
+            hue="Violation Range",
+            palette="YlOrRd",
+            ax=ax,
         )
-        ax.set_title('Speed Violation Severity Analysis', pad=20, fontsize=14)
-        ax.set_xlabel('Direction', fontsize=12)
-        ax.set_ylabel('Number of Vehicles', fontsize=12)
-        ax.legend(title='Speed Over Limit', fontsize=10)
+        ax.set_title("Speed Violation Severity Analysis", pad=20, fontsize=14)
+        ax.set_xlabel("Direction", fontsize=12)
+        ax.set_ylabel("Number of Vehicles", fontsize=12)
+        ax.legend(title="Speed Over Limit", fontsize=10)
         ax.grid(True, alpha=0.3)
         plt.tight_layout()
         return fig
