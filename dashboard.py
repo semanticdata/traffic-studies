@@ -11,7 +11,7 @@ from utils.visualizations import (
     plot_temporal_patterns,
     plot_speed_violation_severity,
 )
-from utils.styles import CUSTOM_CSS
+import os
 import numpy as np
 import pandas as pd
 from typing import Tuple, Dict
@@ -23,14 +23,18 @@ st.set_page_config(
     page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide"
 )
 
+
+# Load custom CSS from an external file
+def load_custom_css(file_path: str) -> str:
+    with open(file_path, "r") as f:
+        return f"<style>{f.read()}</style>"
+
+
 # Apply custom CSS
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+css_file_path = os.path.join(os.path.dirname(__file__), "utils", "styles.css")
+st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
 # Sidebar
-# st.sidebar.header("Traffic Analysis Dashboard")
-# st.sidebar.markdown(
-#     """Please select a location and set your desired date and hour filters to analyze the traffic data."""
-# )
 st.sidebar.header("Location and Filters")
 
 # Main dashboard layout
@@ -405,31 +409,6 @@ except Exception as e:
 
 st.subheader("Raw Data")
 st.dataframe(filtered_df, use_container_width=True)
-
-# Add footer to sidebar
-st.sidebar.markdown("---")
-st.sidebar.markdown(
-    """
-    <div style='text-align: center; padding: 1rem; background-color: rgba(128, 128, 128, 0.1); border-radius: 0.5rem;'>
-        <p style='color: var(--text-color);'>Thank you for using the Traffic Analysis Dashboard!</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-# Enhanced footer
-st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center; padding: 1rem; background-color: rgba(128, 128, 128, 0.1); border-radius: 0.5rem;'>
-        <p style='color: var(--text-color);'>
-            Dashboard created with ❤️ using Streamlit<br>
-            Data refreshed on: {}<br>
-            <small>Version 1.0.0</small>
-        </p>
-    </div>
-    """.format(
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ),
-    unsafe_allow_html=True,
+st.info(
+    "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
 )
