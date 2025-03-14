@@ -385,6 +385,7 @@ show_raw_data = st.checkbox("Show Raw Data")
 if show_raw_data:
     st.subheader("Raw Data")
     st.dataframe(filtered_df, use_container_width=True)
-    st.info(
-        "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
-    )
+
+st.info(
+    "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
+)
