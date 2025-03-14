@@ -215,10 +215,10 @@ with col5:
     st.metric("🎯 85th Percentile Speed", f"{max(dir1_85th, dir2_85th):.1f} mph")
 
 with col6:
-    hourly_totals = filtered_df.groupby("Hour")["Total"].sum()
-    peak_hour = hourly_totals.idxmax()
-    peak_vehicles = hourly_totals.max()
-    st.metric("⏰ Peak Hour", f"{peak_hour:02d}:00 ({peak_vehicles:,} vehicles)")
+    daily_traffic = filtered_df.groupby(filtered_df["Date/Time"].dt.date)["Total"].sum()
+    avg_daily_traffic = daily_traffic.mean()
+    max_daily_traffic = daily_traffic.max()
+    st.metric("📅 Daily Traffic", f"Avg: {avg_daily_traffic:,.0f}")
 
 # Third row of metrics
 col7, col8, col9 = st.columns(3)
@@ -237,23 +237,28 @@ with col7:
     st.metric("🔄 Dominant Direction", f"{dominant_direction}", f"{dominant_pct:.1f}%")
 
 with col8:
-    # Busiest day of week
-    dow_volumes = filtered_df.groupby(filtered_df["Date/Time"].dt.day_name())[
-        "Total"
-    ].mean()
-    busiest_day = dow_volumes.idxmax()
-    busiest_volume = dow_volumes.max()
+    # Group by both date and day name to get accurate daily totals
+    daily_volumes = filtered_df.groupby(
+        [filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.day_name()]
+    )["Total"].sum()
+
+    # Calculate true average by day of week
+    dow_averages = daily_volumes.groupby(level=1).mean()
+    busiest_day = dow_averages.idxmax()
+    busiest_volume = dow_averages.max()
     st.metric("📆 Busiest Day", f"{busiest_day}", f"Avg: {busiest_volume:.0f} vehicles")
 
 with col9:
-    daily_traffic = filtered_df.groupby(filtered_df["Date/Time"].dt.date)["Total"].sum()
-    avg_daily_traffic = daily_traffic.mean()
-    max_daily_traffic = daily_traffic.max()
-    st.metric(
-        "📅 Daily Traffic",
-        f"Avg: {avg_daily_traffic:,.0f}",
-        f"Max: {max_daily_traffic:,.0f}",
-    )
+    # Group by date and hour to get unique peak hours
+    hourly_volumes = filtered_df.groupby(
+        [filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.hour]
+    )["Total"].sum()
+
+    # Find the overall peak hour
+    peak_hour_idx = hourly_volumes.idxmax()
+    peak_hour = peak_hour_idx[1]  # Get hour from the multi-index
+    peak_vehicles = hourly_volumes.max()
+    st.metric("⏰ Peak Hour", f"{peak_hour:02d}:00", f"{peak_vehicles:,} vehicles")
 
 # Fourth row of metrics
 col10, col11, col12 = st.columns(3)
