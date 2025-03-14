@@ -398,14 +398,29 @@ except Exception as e:
 st.subheader("Raw Data")
 st.dataframe(filtered_df, use_container_width=True)
 
+# Add footer to sidebar
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    """
+    <div style='text-align: center; padding: 1rem; background-color: rgba(128, 128, 128, 0.1); border-radius: 0.5rem;'>
+        <p style='color: var(--text-color);'>Thank you for using the Traffic Analysis Dashboard!</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 # Enhanced footer
 st.markdown("---")
 st.markdown(
     """
     <div style='text-align: center; padding: 1rem; background-color: rgba(128, 128, 128, 0.1); border-radius: 0.5rem;'>
-        <p style='color: var(--text-color);'>Dashboard created with ❤️ using Streamlit | Data refreshed on: {}</p>
+        <p style='color: var(--text-color);'>
+            Dashboard created with ❤️ using Streamlit<br>
+            Data refreshed on: {}<br>
+            <small>Version 1.0.0</small>
+        </p>
     </div>
-""".format(
+    """.format(
         datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ),
     unsafe_allow_html=True,
