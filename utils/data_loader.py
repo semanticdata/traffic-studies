@@ -241,9 +241,3 @@ def get_available_locations() -> Dict[str, str]:
         locations[location_name] = str(file)
 
     return locations
-
-
-def load_custom_css(file_path: str) -> str:
-    """Load custom CSS from an external file."""
-    with open(file_path, "r") as f:
-        return f"<style>{f.read()}</style>"

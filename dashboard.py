@@ -2,7 +2,6 @@
 # It will display the data and allow for filtering and visualization.
 
 import streamlit as st
-from datetime import datetime
 from utils.data_loader import load_data, get_available_locations
 from utils.visualizations import (
     plot_traffic_volume,
@@ -10,14 +9,12 @@ from utils.visualizations import (
     plot_speed_compliance,
     plot_temporal_patterns,
     plot_speed_violation_severity,
-    plot_vehicle_classification_distribution,  # Add this import
+    plot_vehicle_classification_distribution,
 )
 import os
 import numpy as np
 import pandas as pd
 from typing import Tuple
-
-# import plotly.express as px
 
 
 # Function to calculate weighted average speed
@@ -160,7 +157,6 @@ st.markdown(
 st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 
 # Display key metrics with enhanced styling
-st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -283,10 +279,8 @@ with col12:
         f"{weekday_avg:.1f} / {weekend_avg:.1f} = {ratio:.1f}",
     )
 
-st.markdown("</div>", unsafe_allow_html=True)
-
 # Visualizations
-st.subheader("Traffic Volume Analysis")
+st.subheader("Traffic Volume")
 fig1 = plot_traffic_volume(filtered_df, structure)
 st.pyplot(fig1)
 
@@ -303,7 +297,10 @@ st.pyplot(fig2)
 fig3 = plot_speed_compliance(filtered_df, structure)
 st.pyplot(fig3)
 
-st.subheader("Vehicle Classification Analysis")
+st.subheader("Vehicle Classification")
+classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
+st.pyplot(classification_fig)
+
 dir1_col, dir2_col = st.columns(2)
 
 with dir1_col:
@@ -384,12 +381,10 @@ with dir2_col:
         )
         class_data_dir2 = pd.DataFrame({"Vehicle Type": [], "Count": []})
 
-st.subheader("Vehicle Classification Distribution")
-classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
-st.pyplot(classification_fig)
-
-st.subheader("Raw Data")
-st.dataframe(filtered_df, use_container_width=True)
-st.info(
-    "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
-)
+show_raw_data = st.checkbox("Show Raw Data")
+if show_raw_data:
+    st.subheader("Raw Data")
+    st.dataframe(filtered_df, use_container_width=True)
+    st.info(
+        "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
+    )
