@@ -34,23 +34,28 @@ def load_custom_css(file_path: str) -> str:
 css_file_path = os.path.join(os.path.dirname(__file__), "utils", "styles.css")
 st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
-# Sidebar
-st.sidebar.header("Location and Filters")
-
 # Main dashboard layout
+st.title("Traffic Analysis Dashboard")
+st.markdown(
+    "This dashboard provides insights into traffic data, including volume, speed, and vehicle classification."
+)
+st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 locations = get_available_locations()
 
 if not locations:
     st.error("❌ No data files found. Please add CSV files to the 'data' directory.")
     st.stop()
 
-# Location selector
-selected_location = st.sidebar.selectbox(
-    "Select Location",
-    options=sorted(list(locations.keys())),
-    index=0,
-    format_func=lambda x: x.strip().strip('"').strip("'").strip(",").strip(),
-)
+colu1, colu2, colu3 = st.columns(3)
+
+with colu1:
+    # Location selector
+    selected_location = st.selectbox(
+        "Select Location",
+        options=sorted(list(locations.keys())),
+        index=0,
+        format_func=lambda x: x.strip().strip('"').strip("'").strip(",").strip(),
+    )
 
 # Load the data for selected location
 try:
@@ -62,16 +67,18 @@ except Exception as e:
     st.error(f"❌ Error loading data: {str(e)}")
     st.stop()
 
-# Date range filter
-date_range = st.sidebar.date_input(
-    "Select Date Range",
-    value=(df["Date/Time"].min().date(), df["Date/Time"].max().date()),
-    min_value=df["Date/Time"].min().date(),
-    max_value=df["Date/Time"].max().date(),
-)
+with colu2:
+    # Date range filter
+    date_range = st.date_input(
+        "Select Date Range",
+        value=(df["Date/Time"].min().date(), df["Date/Time"].max().date()),
+        min_value=df["Date/Time"].min().date(),
+        max_value=df["Date/Time"].max().date(),
+    )
 
-# Hour range filter
-hour_range = st.sidebar.slider("Hour Range", min_value=0, max_value=23, value=(0, 23))
+with colu3:
+    # Hour range filter
+    hour_range = st.slider("Hour Range", min_value=0, max_value=23, value=(0, 23))
 
 # Filter the data
 mask = (
@@ -85,9 +92,8 @@ filtered_df = df[mask].copy()
 filtered_df["Hour"] = filtered_df["Date/Time"].dt.hour
 filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
 
-# Location Info
-st.title("Traffic Analysis Dashboard")
-st.subheader(f"Location: {location_name}")
+# Location Information
+# st.subheader(f"Location: {location_name}")
 
 
 # Function to calculate weighted average speed
@@ -159,8 +165,8 @@ def count_high_speeders(
 
 
 # Display key metrics with enhanced styling
-st.markdown("<div style='margin: 2rem 0;'>", unsafe_allow_html=True)
-col1, col2, col3, col4 = st.columns(4)
+st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     total_vehicles = filtered_df["Total"].sum()
@@ -180,6 +186,9 @@ with col3:
         f"{dir1_avg_speed:.1f} mph",
     )
 
+# Second row of metrics
+col4, col5, col6 = st.columns(3)
+
 with col4:
     dir1_compliant, dir1_total = calculate_compliance(
         filtered_df, structure["dir1_speed_cols"]
@@ -196,24 +205,23 @@ with col4:
     )
     st.metric("🚦 Speed Compliance", f"{compliance_rate:.1f}%")
 
-# Second row of metrics
-col5, col6, col7, col8 = st.columns(4)
-
 with col5:
-    daily_traffic = filtered_df.groupby(filtered_df["Date/Time"].dt.date)["Total"].sum()
-    avg_daily_traffic = daily_traffic.mean()
-    max_daily_traffic = daily_traffic.max()
-    st.metric(
-        "📅 Daily Traffic",
-        f"Avg: {avg_daily_traffic:,.0f}",
-        f"Max: {max_daily_traffic:,.0f}",
+    dir1_85th = calculate_85th_percentile_speed(
+        filtered_df, structure["dir1_speed_cols"]
     )
+    dir2_85th = calculate_85th_percentile_speed(
+        filtered_df, structure["dir2_speed_cols"]
+    )
+    st.metric("🎯 85th Percentile Speed", f"{max(dir1_85th, dir2_85th):.1f} mph")
 
 with col6:
     hourly_totals = filtered_df.groupby("Hour")["Total"].sum()
     peak_hour = hourly_totals.idxmax()
     peak_vehicles = hourly_totals.max()
-    st.metric("⏰ Peak Hour", f"{peak_hour:02d}:00", f"{peak_vehicles:,} vehicles")
+    st.metric("⏰ Peak Hour", f"{peak_hour:02d}:00 ({peak_vehicles:,} vehicles)")
+
+# Third row of metrics
+col7, col8, col9 = st.columns(3)
 
 with col7:
     dir1_volume = filtered_df[structure["dir1_volume_col"]].sum()
@@ -237,18 +245,18 @@ with col8:
     busiest_volume = dow_volumes.max()
     st.metric("📆 Busiest Day", f"{busiest_day}", f"Avg: {busiest_volume:.0f} vehicles")
 
-
-# Add a third row of metrics for additional insights
-col9, col10, col11, col12 = st.columns(4)
-
 with col9:
-    dir1_85th = calculate_85th_percentile_speed(
-        filtered_df, structure["dir1_speed_cols"]
+    daily_traffic = filtered_df.groupby(filtered_df["Date/Time"].dt.date)["Total"].sum()
+    avg_daily_traffic = daily_traffic.mean()
+    max_daily_traffic = daily_traffic.max()
+    st.metric(
+        "📅 Daily Traffic",
+        f"Avg: {avg_daily_traffic:,.0f}",
+        f"Max: {max_daily_traffic:,.0f}",
     )
-    dir2_85th = calculate_85th_percentile_speed(
-        filtered_df, structure["dir2_speed_cols"]
-    )
-    st.metric("🎯 85th Percentile Speed", f"{max(dir1_85th, dir2_85th):.1f} mph")
+
+# Fourth row of metrics
+col10, col11, col12 = st.columns(3)
 
 with col10:
     phf = calculate_phf(filtered_df)

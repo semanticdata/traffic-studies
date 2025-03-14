@@ -36,3 +36,7 @@ h3 {
 .stTabs [data-baseweb="tab"] {
     padding: 1rem 2rem;
 }
+
+.spacer {
+    margin: 2rem 0;
+}
