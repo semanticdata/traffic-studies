@@ -10,90 +10,14 @@ from utils.visualizations import (
     plot_speed_compliance,
     plot_temporal_patterns,
     plot_speed_violation_severity,
+    plot_vehicle_classification_distribution,  # Add this import
 )
 import os
 import numpy as np
 import pandas as pd
-from typing import Tuple, Dict
-import plotly.express as px
+from typing import Tuple
 
-
-# Set page config
-st.set_page_config(
-    page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide"
-)
-
-
-# Load custom CSS from an external file
-def load_custom_css(file_path: str) -> str:
-    with open(file_path, "r") as f:
-        return f"<style>{f.read()}</style>"
-
-
-# Apply custom CSS
-css_file_path = os.path.join(os.path.dirname(__file__), "utils", "styles.css")
-st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
-
-# Main dashboard layout
-st.title("Traffic Analysis Dashboard")
-st.markdown(
-    "This dashboard provides insights into traffic data, including volume, speed, and vehicle classification."
-)
-st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
-locations = get_available_locations()
-
-if not locations:
-    st.error("❌ No data files found. Please add CSV files to the 'data' directory.")
-    st.stop()
-
-colu1, colu2, colu3 = st.columns(3)
-
-with colu1:
-    # Location selector
-    selected_location = st.selectbox(
-        "Select Location",
-        options=sorted(list(locations.keys())),
-        index=0,
-        format_func=lambda x: x.strip().strip('"').strip("'").strip(",").strip(),
-    )
-
-# Load the data for selected location
-try:
-    df, location_name, structure = load_data(locations[selected_location])
-except FileNotFoundError:
-    st.error(f"❌ Error: Could not find the data file for {selected_location}")
-    st.stop()
-except Exception as e:
-    st.error(f"❌ Error loading data: {str(e)}")
-    st.stop()
-
-with colu2:
-    # Date range filter
-    date_range = st.date_input(
-        "Select Date Range",
-        value=(df["Date/Time"].min().date(), df["Date/Time"].max().date()),
-        min_value=df["Date/Time"].min().date(),
-        max_value=df["Date/Time"].max().date(),
-    )
-
-with colu3:
-    # Hour range filter
-    hour_range = st.slider("Hour Range", min_value=0, max_value=23, value=(0, 23))
-
-# Filter the data
-mask = (
-    (df["Date/Time"].dt.date >= date_range[0])
-    & (df["Date/Time"].dt.date <= date_range[1])
-    & (df["Hour"].between(hour_range[0], hour_range[1]))
-)
-filtered_df = df[mask].copy()
-
-# Then add any new columns
-filtered_df["Hour"] = filtered_df["Date/Time"].dt.hour
-filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
-
-# Location Information
-# st.subheader(f"Location: {location_name}")
+# import plotly.express as px
 
 
 # Function to calculate weighted average speed
@@ -163,6 +87,77 @@ def count_high_speeders(
             high_speeders += df[col].sum()
     return high_speeders
 
+
+# Set page config
+st.set_page_config(
+    page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide"
+)
+
+# Sidebar for filters
+st.sidebar.title("Filters")
+locations = get_available_locations()
+
+if not locations:
+    st.sidebar.error(
+        "❌ No data files found. Please add CSV files to the 'data' directory."
+    )
+    st.stop()
+
+selected_location = st.sidebar.selectbox(
+    "Select Location",
+    options=sorted(list(locations.keys())),
+    index=0,
+    format_func=lambda x: x.strip().strip('"').strip("'").strip(",").strip(),
+)
+
+# Load the data for selected location
+try:
+    df, location_name, structure = load_data(locations[selected_location])
+except FileNotFoundError:
+    st.sidebar.error(f"❌ Error: Could not find the data file for {selected_location}")
+    st.stop()
+except Exception as e:
+    st.sidebar.error(f"❌ Error loading data: {str(e)}")
+    st.stop()
+
+date_range = st.sidebar.date_input(
+    "Select Date Range",
+    value=(df["Date/Time"].min().date(), df["Date/Time"].max().date()),
+    min_value=df["Date/Time"].min().date(),
+    max_value=df["Date/Time"].max().date(),
+)
+
+hour_range = st.sidebar.slider("Hour Range", min_value=0, max_value=23, value=(0, 23))
+
+# Filter the data
+mask = (
+    (df["Date/Time"].dt.date >= date_range[0])
+    & (df["Date/Time"].dt.date <= date_range[1])
+    & (df["Hour"].between(hour_range[0], hour_range[1]))
+)
+filtered_df = df[mask].copy()
+
+# Then add any new columns
+filtered_df["Hour"] = filtered_df["Date/Time"].dt.hour
+filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
+
+
+# Load custom CSS from an external file
+def load_custom_css(file_path: str) -> str:
+    with open(file_path, "r") as f:
+        return f"<style>{f.read()}</style>"
+
+
+# Apply custom CSS
+css_file_path = os.path.join(os.path.dirname(__file__), "utils", "styles.css")
+st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
+
+# Main dashboard layout
+st.title("Traffic Analysis Dashboard")
+st.markdown(
+    "This dashboard provides insights into traffic data, including volume, speed, and vehicle classification."
+)
+st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 
 # Display key metrics with enhanced styling
 st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
@@ -390,35 +385,8 @@ with dir2_col:
         class_data_dir2 = pd.DataFrame({"Vehicle Type": [], "Count": []})
 
 st.subheader("Vehicle Classification Distribution")
-try:
-    if (
-        len(structure.get("dir1_class_cols", [])) >= 6
-        and len(structure.get("dir2_class_cols", [])) >= 6
-    ):
-        plot_data = pd.DataFrame(
-            {
-                "Vehicle Type": class_data_dir1["Vehicle Type"],
-                structure["dir1_name"]: class_data_dir1["Count"],
-                structure["dir2_name"]: class_data_dir2["Count"],
-            }
-        )
-        fig = px.bar(
-            plot_data,
-            x="Vehicle Type",
-            y=[structure["dir1_name"], structure["dir2_name"]],
-            barmode="group",
-            title="Vehicle Classification Distribution",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning(
-            "Insufficient vehicle classification data available for visualization."
-        )
-except Exception as e:
-    st.error(f"Error generating vehicle classification chart: {str(e)}")
-    st.warning(
-        "Vehicle classification data may be incomplete or in an unexpected format."
-    )
+classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
+st.pyplot(classification_fig)
 
 st.subheader("Raw Data")
 st.dataframe(filtered_df, use_container_width=True)

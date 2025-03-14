@@ -262,3 +262,37 @@ def plot_speed_violation_severity(
         return fig
     else:
         return None
+
+
+def plot_vehicle_classification_distribution(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> plt.Figure:
+    """Create vehicle classification distribution visualizations."""
+    class_counts_dir1 = [filtered_df[col].sum() for col in structure["dir1_class_cols"]]
+    class_counts_dir2 = [filtered_df[col].sum() for col in structure["dir2_class_cols"]]
+
+    class_data = pd.DataFrame(
+        {
+            "Vehicle Type": [
+                "Class 1 - Motorcycles",
+                "Class 2 - Passenger Cars",
+                "Class 3 - Pickups, Vans",
+                "Class 4 - Buses",
+                "Class 5 - 2 Axles, 6 Tires",
+                "Class 6 - 3 Axles",
+            ],
+            structure["dir1_name"]: class_counts_dir1,
+            structure["dir2_name"]: class_counts_dir2,
+        }
+    )
+
+    fig, ax = plt.subplots(figsize=(15, 8))
+    class_data.plot(kind="bar", x="Vehicle Type", ax=ax)
+    ax.set_title("Vehicle Classification Distribution", pad=20, fontsize=14)
+    ax.set_xlabel("Vehicle Type", fontsize=12)
+    ax.set_ylabel("Count", fontsize=12)
+    ax.legend(fontsize=10)
+    ax.grid(True, alpha=0.3)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    return fig
