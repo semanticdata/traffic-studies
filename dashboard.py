@@ -294,159 +294,131 @@ with col12:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-# Create tabs for visualizations
-tab1, tab2, tab3, tab4 = st.tabs(
-    [
-        "📈 Traffic Volume",
-        "🚗 Speed Analysis",
-        "🚛 Vehicle Classification",
-        "📊 Raw Data",
-    ]
-)
+# Visualizations
+st.subheader("Traffic Volume Analysis")
+fig1 = plot_traffic_volume(filtered_df, structure)
+st.pyplot(fig1)
 
-with tab1:
-    # st.subheader("Directional Traffic Volume by Hour")
-    fig1 = plot_traffic_volume(filtered_df, structure)
-    st.pyplot(fig1)
+temporal_fig = plot_temporal_patterns(filtered_df, structure)
+st.pyplot(temporal_fig)
 
-    # st.subheader("Daily Traffic Volume Patterns")
-    temporal_fig = plot_temporal_patterns(filtered_df, structure)
-    st.pyplot(temporal_fig)
+st.subheader("Speed Analysis")
+severity_fig = plot_speed_violation_severity(filtered_df, structure)
+st.pyplot(severity_fig)
 
+fig2 = plot_speed_distribution(filtered_df, structure)
+st.pyplot(fig2)
 
-with tab2:
-    # st.subheader("Speed Violation Severity")
-    severity_fig = plot_speed_violation_severity(filtered_df, structure)
-    st.pyplot(severity_fig)
+fig3 = plot_speed_compliance(filtered_df, structure)
+st.pyplot(fig3)
 
-    # st.subheader("Speed Distribution by Direction")
-    fig2 = plot_speed_distribution(filtered_df, structure)
-    st.pyplot(fig2)
+st.subheader("Vehicle Classification Analysis")
+dir1_col, dir2_col = st.columns(2)
 
-    # st.subheader("Speed Compliance by Direction")
-    fig3 = plot_speed_compliance(filtered_df, structure)
-    st.pyplot(fig3)
-
-with tab3:
-    st.subheader("Vehicle Classification Analysis")
-
-    # Create two columns for directional analysis
-    dir1_col, dir2_col = st.columns(2)
-
-    with dir1_col:
-        st.markdown(f"#### {structure['dir1_name']}")
-
-        # Create classification data for direction 1
-        try:
-            class_counts_dir1 = []
-            for i in range(6):
-                if i < len(structure.get("dir1_class_cols", [])):
-                    class_counts_dir1.append(filtered_df[structure["dir1_class_cols"][i]].sum())
-                else:
-                    class_counts_dir1.append(0)  # Default to 0 if column doesn't exist
-                    
-            class_data_dir1 = pd.DataFrame(
-                {
-                    "Vehicle Type": [
-                        "🏍️ Class 1 - Motorcycles",
-                        "🚗 Class 2 - Passenger Cars",
-                        "🚐 Class 3 - Pickups, Vans",
-                        "🚌 Class 4 - Buses",
-                        "🚛 Class 5 - 2 Axles, 6 Tires",
-                        "🚛 Class 6 - 3 Axles",
-                    ],
-                    "Count": class_counts_dir1,
-                }
-            )
-
-            # Calculate percentages
-            total_dir1 = class_data_dir1["Count"].sum()
-            class_data_dir1["Percentage"] = (
-                class_data_dir1["Count"] / total_dir1 * 100 if total_dir1 > 0 else 0
-            ).round(1)
-
-            # Display as a formatted table
-            for _, row in class_data_dir1.iterrows():
-                st.markdown(
-                    f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
-                )
-
-            st.markdown(f"**Total Vehicles: {total_dir1:,}**")
-        except Exception as e:
-            st.error(f"Error processing {structure['dir1_name']} classification data: {str(e)}")
-            class_data_dir1 = pd.DataFrame({"Vehicle Type": [], "Count": []})
-
-    with dir2_col:
-        st.markdown(f"#### {structure['dir2_name']}")
-
-        # Create classification data for direction 2
-        try:
-            class_counts_dir2 = []
-            for i in range(6):
-                if i < len(structure.get("dir2_class_cols", [])):
-                    class_counts_dir2.append(filtered_df[structure["dir2_class_cols"][i]].sum())
-                else:
-                    class_counts_dir2.append(0)  # Default to 0 if column doesn't exist
-                    
-            class_data_dir2 = pd.DataFrame(
-                {
-                    "Vehicle Type": [
-                        "🏍️ Class 1 - Motorcycles",
-                        "🚗 Class 2 - Passenger Cars",
-                        "🚐 Class 3 - Pickups, Vans",
-                        "🚌 Class 4 - Buses",
-                        "🚛 Class 5 - 2 Axles, 6 Tires",
-                        "🚛 Class 6 - 3 Axles",
-                    ],
-                    "Count": class_counts_dir2,
-                }
-            )
-
-            # Calculate percentages
-            total_dir2 = class_data_dir2["Count"].sum()
-            class_data_dir2["Percentage"] = (
-                class_data_dir2["Count"] / total_dir2 * 100 if total_dir2 > 0 else 0
-            ).round(1)
-
-            # Display as a formatted table
-            for _, row in class_data_dir2.iterrows():
-                st.markdown(
-                    f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
-                )
-
-            st.markdown(f"**Total Vehicles: {total_dir2:,}**")
-        except Exception as e:
-            st.error(f"Error processing {structure['dir2_name']} classification data: {str(e)}")
-            class_data_dir2 = pd.DataFrame({"Vehicle Type": [], "Count": []})
-
-    # Add a visualization section
-    st.subheader("Vehicle Classification Distribution")
-
-    # Create a combined DataFrame for plotting
+with dir1_col:
+    st.markdown(f"#### {structure['dir1_name']}")
     try:
-        # Check if we have enough classification columns
-        if (len(structure.get("dir1_class_cols", [])) >= 6 and 
-            len(structure.get("dir2_class_cols", [])) >= 6):
-            
-            plot_data = pd.DataFrame(
-                {
-                    "Vehicle Type": class_data_dir1["Vehicle Type"],
-                    structure["dir1_name"]: class_data_dir1["Count"],
-                    structure["dir2_name"]: class_data_dir2["Count"],
-                }
+        class_counts_dir1 = []
+        for i in range(6):
+            if i < len(structure.get("dir1_class_cols", [])):
+                class_counts_dir1.append(
+                    filtered_df[structure["dir1_class_cols"][i]].sum()
+                )
+            else:
+                class_counts_dir1.append(0)
+        class_data_dir1 = pd.DataFrame(
+            {
+                "Vehicle Type": [
+                    "🏍️ Class 1 - Motorcycles",
+                    "🚗 Class 2 - Passenger Cars",
+                    "🚐 Class 3 - Pickups, Vans",
+                    "🚌 Class 4 - Buses",
+                    "🚛 Class 5 - 2 Axles, 6 Tires",
+                    "🚛 Class 6 - 3 Axles",
+                ],
+                "Count": class_counts_dir1,
+            }
+        )
+        total_dir1 = class_data_dir1["Count"].sum()
+        class_data_dir1["Percentage"] = (
+            class_data_dir1["Count"] / total_dir1 * 100 if total_dir1 > 0 else 0
+        ).round(1)
+        for _, row in class_data_dir1.iterrows():
+            st.markdown(
+                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
             )
-
-            # Create a bar chart using Streamlit
-            st.bar_chart(plot_data.set_index("Vehicle Type"), use_container_width=True)
-        else:
-            st.warning("Insufficient vehicle classification data available for visualization.")
+        st.markdown(f"**Total Vehicles: {total_dir1:,}**")
     except Exception as e:
-        st.error(f"Error generating vehicle classification chart: {str(e)}")
-        st.warning("Vehicle classification data may be incomplete or in an unexpected format.")
+        st.error(
+            f"Error processing {structure['dir1_name']} classification data: {str(e)}"
+        )
+        class_data_dir1 = pd.DataFrame({"Vehicle Type": [], "Count": []})
 
-# Rename the existing tab3 to tab4 for Raw Data
-with tab4:
-    st.dataframe(filtered_df, use_container_width=True)
+with dir2_col:
+    st.markdown(f"#### {structure['dir2_name']}")
+    try:
+        class_counts_dir2 = []
+        for i in range(6):
+            if i < len(structure.get("dir2_class_cols", [])):
+                class_counts_dir2.append(
+                    filtered_df[structure["dir2_class_cols"][i]].sum()
+                )
+            else:
+                class_counts_dir2.append(0)
+        class_data_dir2 = pd.DataFrame(
+            {
+                "Vehicle Type": [
+                    "🏍️ Class 1 - Motorcycles",
+                    "🚗 Class 2 - Passenger Cars",
+                    "🚐 Class 3 - Pickups, Vans",
+                    "🚌 Class 4 - Buses",
+                    "🚛 Class 5 - 2 Axles, 6 Tires",
+                    "🚛 Class 6 - 3 Axles",
+                ],
+                "Count": class_counts_dir2,
+            }
+        )
+        total_dir2 = class_data_dir2["Count"].sum()
+        class_data_dir2["Percentage"] = (
+            class_data_dir2["Count"] / total_dir2 * 100 if total_dir2 > 0 else 0
+        ).round(1)
+        for _, row in class_data_dir2.iterrows():
+            st.markdown(
+                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
+            )
+        st.markdown(f"**Total Vehicles: {total_dir2:,}**")
+    except Exception as e:
+        st.error(
+            f"Error processing {structure['dir2_name']} classification data: {str(e)}"
+        )
+        class_data_dir2 = pd.DataFrame({"Vehicle Type": [], "Count": []})
+
+st.subheader("Vehicle Classification Distribution")
+try:
+    if (
+        len(structure.get("dir1_class_cols", [])) >= 6
+        and len(structure.get("dir2_class_cols", [])) >= 6
+    ):
+        plot_data = pd.DataFrame(
+            {
+                "Vehicle Type": class_data_dir1["Vehicle Type"],
+                structure["dir1_name"]: class_data_dir1["Count"],
+                structure["dir2_name"]: class_data_dir2["Count"],
+            }
+        )
+        st.bar_chart(plot_data.set_index("Vehicle Type"), use_container_width=True)
+    else:
+        st.warning(
+            "Insufficient vehicle classification data available for visualization."
+        )
+except Exception as e:
+    st.error(f"Error generating vehicle classification chart: {str(e)}")
+    st.warning(
+        "Vehicle classification data may be incomplete or in an unexpected format."
+    )
+
+st.subheader("Raw Data")
+st.dataframe(filtered_df, use_container_width=True)
 
 # Enhanced footer
 st.markdown("---")
