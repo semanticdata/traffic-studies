@@ -15,6 +15,7 @@ from utils.styles import CUSTOM_CSS
 import numpy as np
 import pandas as pd
 from typing import Tuple, Dict
+import plotly.express as px
 
 
 # Set page config
@@ -384,7 +385,14 @@ try:
                 structure["dir2_name"]: class_data_dir2["Count"],
             }
         )
-        st.bar_chart(plot_data.set_index("Vehicle Type"), use_container_width=True)
+        fig = px.bar(
+            plot_data,
+            x="Vehicle Type",
+            y=[structure["dir1_name"], structure["dir2_name"]],
+            barmode="group",
+            title="Vehicle Classification Distribution",
+        )
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.warning(
             "Insufficient vehicle classification data available for visualization."

@@ -6,7 +6,7 @@ CUSTOM_CSS = """
         padding: 2rem;
     }
     .stMetric {
-        padding: 1rem;
+        padding: 0.5rem;
         border-radius: 0.5rem;
         background-color: rgba(128, 128, 128, 0.1);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -20,7 +20,7 @@ CUSTOM_CSS = """
     }
     .stMetric > div[data-testid="stMetricValue"] {
         color: var(--text-color);
-        font-size: 1.6rem;
+        font-size: 1.5rem;
     }
     h1, h2, h3 {
         color: var(--text-color);
