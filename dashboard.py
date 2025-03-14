@@ -15,6 +15,7 @@ import os
 import numpy as np
 import pandas as pd
 from typing import Tuple
+import plotly.express as px
 
 
 # Function to calculate weighted average speed
@@ -284,8 +285,20 @@ st.subheader("Traffic Volume")
 fig1 = plot_traffic_volume(filtered_df, structure)
 st.pyplot(fig1)
 
+# Plotly Traffic Volume
+plotly_fig1 = px.line(
+    filtered_df, x="Date/Time", y="Total", title="Traffic Volume Over Time"
+)
+st.plotly_chart(plotly_fig1)
+
 temporal_fig = plot_temporal_patterns(filtered_df, structure)
 st.pyplot(temporal_fig)
+
+# Plotly Temporal Patterns
+plotly_temporal_fig = px.histogram(
+    filtered_df, x="Hour", y="Total", title="Temporal Traffic Patterns", nbins=24
+)
+st.plotly_chart(plotly_temporal_fig)
 
 st.subheader("Speed Analysis")
 severity_fig = plot_speed_violation_severity(filtered_df, structure)
