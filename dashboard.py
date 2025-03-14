@@ -85,6 +85,74 @@ st.title("Traffic Analysis Dashboard")
 st.subheader(f"Location: {location_name}")
 
 
+# Function to calculate weighted average speed
+def calculate_weighted_speed(df: pd.DataFrame, speed_cols: list) -> float:
+    """Calculate the weighted average speed."""
+    total_count = 0
+    weighted_sum = 0
+    for col in speed_cols:
+        speed = int(col.split("-")[0].strip())
+        count = df[col].sum()
+        weighted_sum += speed * count
+        total_count += count
+    return weighted_sum / total_count if total_count > 0 else 0
+
+
+# Function to calculate compliance
+def calculate_compliance(
+    df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
+) -> Tuple[int, int]:
+    """Calculate the number of compliant and non-compliant vehicles."""
+    compliant = 0
+    total = 0
+    for col in speed_cols:
+        speed = int(col.split("-")[0].strip())
+        count = df[col].sum()
+        if speed <= speed_limit:
+            compliant += count
+        total += count
+    return compliant, total
+
+
+# Function to calculate 85th percentile speed
+def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: list) -> float:
+    """Calculate the 85th percentile speed."""
+    speeds = []
+    for col in speed_cols:
+        speed_range = col.split("MPH")[0].strip().split("-")
+        lower = float(speed_range[0].strip())
+        upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
+        mid_speed = (lower + upper) / 2
+        count = df[col].sum()
+        speeds.extend([mid_speed] * int(count))
+    return np.percentile(speeds, 85) if speeds else 0
+
+
+# Function to calculate peak hour factor (PHF)
+def calculate_phf(df: pd.DataFrame) -> float:
+    """Calculate the Peak Hour Factor (PHF)."""
+    hourly_volumes = df.groupby("Hour")["Total"].sum()
+    peak_hour_volume = hourly_volumes.max()
+    if peak_hour_volume == 0:
+        return 0
+    peak_hour_idx = hourly_volumes.idxmax()
+    peak_15min = df[df["Hour"] == peak_hour_idx]["Total"].max() * 4
+    return peak_hour_volume / peak_15min if peak_15min > 0 else 0
+
+
+# Function to count high-speed violators
+def count_high_speeders(
+    df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
+) -> int:
+    """Count the number of high-speed violators (15+ mph over limit)."""
+    high_speeders = 0
+    for col in speed_cols:
+        speed = int(col.split("-")[0].strip())
+        if speed >= speed_limit + 15:
+            high_speeders += df[col].sum()
+    return high_speeders
+
+
 # Display key metrics with enhanced styling
 st.markdown("<div style='margin: 2rem 0;'>", unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4)
@@ -94,57 +162,26 @@ with col1:
     st.metric("📊 Total Vehicles", f"{total_vehicles:,}")
 
 with col2:
-    # Calculate average speeds using weighted average
-    def calculate_weighted_speed(df: pd.DataFrame, speed_cols: list) -> float:
-        """Calculate the weighted average speed."""
-        total_count = 0
-        weighted_sum = 0
-        for col in speed_cols:
-            speed = int(col.split("-")[0].strip())
-            count = df[col].sum()
-            weighted_sum += speed * count
-            total_count += count
-        return weighted_sum / total_count if total_count > 0 else 0
-
     dir2_avg_speed = calculate_weighted_speed(filtered_df, structure["dir2_speed_cols"])
     st.metric(
         "🏎️ Average Speed ({})".format(structure["dir2_name"]),
         f"{dir2_avg_speed:.1f} mph",
     )
 
-
 with col3:
-
     dir1_avg_speed = calculate_weighted_speed(filtered_df, structure["dir1_speed_cols"])
     st.metric(
         "🏎️ Average Speed ({})".format(structure["dir1_name"]),
         f"{dir1_avg_speed:.1f} mph",
     )
 
-
 with col4:
-    # Calculate compliance directly from speed columns
-    def calculate_compliance(
-        df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
-    ) -> Tuple[int, int]:
-        """Calculate the number of compliant and non-compliant vehicles."""
-        compliant = 0
-        total = 0
-        for col in speed_cols:
-            speed = int(col.split("-")[0].strip())
-            count = df[col].sum()
-            if speed <= speed_limit:
-                compliant += count
-            total += count
-        return compliant, total
-
     dir1_compliant, dir1_total = calculate_compliance(
         filtered_df, structure["dir1_speed_cols"]
     )
     dir2_compliant, dir2_total = calculate_compliance(
         filtered_df, structure["dir2_speed_cols"]
     )
-
     total_compliant = dir1_compliant + dir2_compliant
     total_speed_readings = dir1_total + dir2_total
     compliance_rate = (
@@ -200,42 +237,6 @@ with col8:
 col9, col10, col11, col12 = st.columns(4)
 
 with col9:
-    # Calculate 85th percentile speed
-    def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: list) -> float:
-        """Calculate the 85th percentile speed."""
-        speeds = []
-        # print("\nAnalyzing speed columns:", speed_cols)
-
-        for col in speed_cols:
-            # Extract both lower and upper bounds from the range
-            speed_range = col.split("MPH")[0].strip().split("-")
-            lower = float(speed_range[0].strip())
-            upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
-            mid_speed = (lower + upper) / 2
-            count = df[col].sum()
-
-            # Print details for each speed bin
-            # print(f"\nColumn: {col}")
-            # print(f"Speed range: {lower}-{upper} mph")
-            # print(f"Using mid-speed: {mid_speed} mph")
-            # print(f"Count in this bin: {count}")
-
-            speeds.extend([mid_speed] * int(count))
-
-        # Print overall statistics
-        if speeds:
-            speeds_series = pd.Series(speeds)
-            # print("\nOverall Statistics:")
-            # print(f"Min speed: {min(speeds)}")
-            # print(f"Max speed: {max(speeds)}")
-            # print(f"Mean speed: {np.mean(speeds):.1f}")
-            # print(f"Speed distribution:\n{speeds_series.value_counts().sort_index()}")
-
-            percentile_85 = np.percentile(speeds, 85)
-            # print(f"\nCalculated 85th percentile: {percentile_85:.1f} mph")
-            return percentile_85
-        return 0
-
     dir1_85th = calculate_85th_percentile_speed(
         filtered_df, structure["dir1_speed_cols"]
     )
@@ -245,33 +246,10 @@ with col9:
     st.metric("🎯 85th Percentile Speed", f"{max(dir1_85th, dir2_85th):.1f} mph")
 
 with col10:
-    # Peak hour factor (PHF)
-    def calculate_phf(df: pd.DataFrame) -> float:
-        """Calculate the Peak Hour Factor (PHF)."""
-        hourly_volumes = df.groupby("Hour")["Total"].sum()
-        peak_hour_volume = hourly_volumes.max()
-        if peak_hour_volume == 0:
-            return 0
-        peak_hour_idx = hourly_volumes.idxmax()
-        peak_15min = df[df["Hour"] == peak_hour_idx]["Total"].max() * 4
-        return peak_hour_volume / peak_15min if peak_15min > 0 else 0
-
     phf = calculate_phf(filtered_df)
     st.metric("📈 Peak Hour Factor", f"{phf:.2f}")
 
 with col11:
-    # High speed violations (15+ mph over limit)
-    def count_high_speeders(
-        df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
-    ) -> int:
-        """Count the number of high-speed violators (15+ mph over limit)."""
-        high_speeders = 0
-        for col in speed_cols:
-            speed = int(col.split("-")[0].strip())
-            if speed >= speed_limit + 15:
-                high_speeders += df[col].sum()
-        return high_speeders
-
     total_high_speeders = count_high_speeders(
         filtered_df, structure["dir1_speed_cols"]
     ) + count_high_speeders(filtered_df, structure["dir2_speed_cols"])
