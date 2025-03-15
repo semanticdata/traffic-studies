@@ -399,6 +399,7 @@ if show_raw_data:
     st.subheader("Raw Data")
     st.dataframe(filtered_df, use_container_width=True)
 
-st.info(
-    "**Note:** The data displayed above is filtered based on the selected location, date range, and hour range."
+st.markdown("---")
+st.markdown(
+    "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), and exported from [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html). Dashboard created with [Streamlit](https://streamlit.io)."
 )
