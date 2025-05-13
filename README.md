@@ -1,65 +1,75 @@
 # Traffic Studies
 
-Dashboard for analyzing traffic studies data for Crystal, Minnesota.
+A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with Streamlit. This project processes and visualizes traffic data collected from [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html) traffic counters, providing detailed insights into traffic patterns, speed compliance, and vehicle classifications.
 
-## 🚀 Usage
+## 🌟 Features
 
-1. Clone the repository:
+- Interactive dashboard with real-time filtering by location, date, and time
+- Comprehensive traffic metrics and visualizations
+- Vehicle classification analysis
+- Speed compliance monitoring
+- Temporal traffic pattern analysis
 
-```bash
-git clone https://github.com/semanticdata/traffic-studies.git
-cd traffic-studies
-```
+## 🚀 Getting Started
 
-2. Create a virtual environment (optional but recommended):
+### Prerequisites
 
-```bash
-python -m venv .venv
-.venv\Scripts\activate  # On Windows
-```
+- Python 3.12 or higher
+- [uv](https://github.com/astral-sh/uv) - Fast Python package installer and resolver
 
-3. Install dependencies using uv:
+### Installation
 
-```bash
-pip install uv
-uv pip install .
-```
+1. Clone the repository
 
-4. Run the dashboard:
+    ```shell
+    git clone https://github.com/semanticdata/traffic-studies.git
+    cd traffic-studies
+    ```
 
-```bash
-streamlit run dashboard.py
-```
+2. Create and activate a virtual environment using uv
 
-## 📦 Data
+    ```shell
+    uv venv
+    .venv/Scripts/activate  # On Windows
+    source .venv/bin/activate  # On Unix or MacOS
+    ```
 
-Key Metrics:
+3. Install dependencies
 
-- Total Vehicles
-- Average Speed (Northbound/Eastbound)
-- Average Speed (Southbound/Westbound)
-- Speed Compliance (%)
-- Daily Traffic - Average and Max
-- Peak Hour (Number of Vehicles)
-- Dominant Direction
-- Busiest Day
+    ```shell
+    uv pip install -r requirements.txt
+    ```
+
+4. Run the dashboard
+
+    ```shell
+    streamlit run main.py
+    ```
+
+## 📊 Available Metrics
+
+### Key Performance Indicators
+
+- Total Vehicle Count
+- Average Speed (Northbound/Eastbound and Southbound/Westbound)
+- Speed Compliance Rate
+- Daily Traffic (Average and Maximum)
+- Peak Hour Statistics
+- Dominant Direction Analysis
 - 85th Percentile Speed
 - Peak Hour Factor (PHF)
-- High Speed Violations
-- Weekday/Weekend Ratio
+- High Speed Violation Tracking
+- Weekday/Weekend Traffic Ratio
 
-Traffic Volume:
+### Traffic Analysis
 
-- Hourly Traffic Volume Distribution (per direction of travel)
-- Daily Traffic Volume Patterns
+- Hourly Volume Distribution (by direction)
+- Daily Traffic Patterns
+- Speed Distribution Analysis
+- Speed Violation Severity (+5, +10, +15 mph over limit)
+- Directional Speed Compliance
 
-Speed Analysis:
-
-- Speed Violation Severity Analysis (+5, +10, +15 mph over)
-- Speed Distribution (per direction of travel)
-- Speed Compliance Analysis by Direction
-
-Vehicle Classifications:
+### Vehicle Classifications
 
 - 🏍️ Class 1: Motorcycles
 - 🚗 Class 2: Passenger Cars
@@ -68,6 +78,10 @@ Vehicle Classifications:
 - 🚛 Class 5: 2 Axles, 6 Tires
 - 🚛 Class 6: 3 Axles
 
+## 📝 Data Sources
+
+Traffic data is collected using PicoCount 2500 traffic counters and processed through TrafficViewer Pro software. The dashboard provides a user-friendly interface for analyzing this data, making it accessible for traffic planning and decision-making purposes.
+
 ## 📜 License
 
-The code in this repository is available under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
