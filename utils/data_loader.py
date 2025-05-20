@@ -1,6 +1,7 @@
-import pandas as pd
 from pathlib import Path
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
+
+import pandas as pd
 
 
 def get_data_directory() -> Path:

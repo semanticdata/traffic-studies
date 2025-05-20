@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
 from typing import Dict, Optional
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
 
 
 def plot_traffic_volume(
@@ -57,7 +58,7 @@ def plot_speed_distribution(
         color="skyblue",
         ax=ax2a,
     )
-    ax2a.set_title(f'{structure["dir1_name"]} Speed Distribution')
+    ax2a.set_title(f"{structure['dir1_name']} Speed Distribution")
     ax2a.set_xlabel("Speed Range (MPH)")
     ax2a.set_ylabel("Average Vehicle Count")
     ax2a.tick_params(axis="x", rotation=45)
@@ -69,7 +70,7 @@ def plot_speed_distribution(
         color="lightgreen",
         ax=ax2b,
     )
-    ax2b.set_title(f'{structure["dir2_name"]} Speed Distribution')
+    ax2b.set_title(f"{structure['dir2_name']} Speed Distribution")
     ax2b.set_xlabel("Speed Range (MPH)")
     ax2b.set_ylabel("Average Vehicle Count")
     ax2b.tick_params(axis="x", rotation=45)

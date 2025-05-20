@@ -1,21 +1,23 @@
 # This is the main dashboard for the traffic analysis project.
 # It will display the data and allow for filtering and visualization.
 
-import streamlit as st
-from utils.data_loader import load_data, get_available_locations
-from utils.visualizations import (
-    plot_traffic_volume,
-    plot_speed_distribution,
-    plot_speed_compliance,
-    plot_temporal_patterns,
-    plot_speed_violation_severity,
-    plot_vehicle_classification_distribution,
-)
 import os
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
-from typing import Tuple
 import plotly.express as px
+import streamlit as st
+
+from utils.data_loader import get_available_locations, load_data
+from utils.visualizations import (
+    plot_speed_compliance,
+    plot_speed_distribution,
+    plot_speed_violation_severity,
+    plot_temporal_patterns,
+    plot_traffic_volume,
+    plot_vehicle_classification_distribution,
+)
 
 
 # Function to calculate weighted average speed
