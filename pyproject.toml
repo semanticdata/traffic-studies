@@ -1,7 +1,7 @@
 [project]
 name = "traffic-studies"
 version = "0.1.0"
-description = "Add your description here"
+description = "A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with Streamlit."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
