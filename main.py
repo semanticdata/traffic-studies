@@ -170,7 +170,7 @@ def load_custom_css(file_path: str) -> str:
 
 
 # Apply custom CSS
-css_file_path = os.path.join(os.path.dirname(__file__), "utils", "styles.css")
+css_file_path = "styles.css"
 st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
 # Main dashboard layout
