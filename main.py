@@ -1,5 +1,26 @@
-# This is the main dashboard for the traffic analysis project.
-# It will display the data and allow for filtering and visualization.
+"""
+Traffic Studies Dashboard - Main Application
+
+A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with Streamlit.
+This application processes and visualizes traffic data collected from PicoCount 2500
+traffic counters, providing detailed insights into traffic patterns, speed compliance,
+and vehicle classifications.
+
+Features:
+- Interactive filtering by location, date range, and time periods
+- 12+ key performance indicators and metrics
+- Vehicle classification analysis (6 FHWA classes)
+- Speed compliance monitoring and violation tracking
+- Temporal traffic pattern analysis
+- Multiple visualization formats (Matplotlib and Plotly)
+
+Data Sources:
+- PicoCount 2500 traffic counters
+- TrafficViewer Pro software exports
+
+Author: Miguel Pimentel
+License: MIT
+"""
 
 import os
 from typing import Tuple

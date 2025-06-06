@@ -4,84 +4,152 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 
 ## 🌟 Features
 
-- Interactive dashboard with real-time filtering by location, date, and time
-- Comprehensive traffic metrics and visualizations
-- Vehicle classification analysis
-- Speed compliance monitoring
-- Temporal traffic pattern analysis
+- **Interactive Dashboard**: Real-time filtering by location, date range, and time periods
+- **Comprehensive Metrics**: 12+ key performance indicators including speed compliance, peak hour analysis, and traffic volume
+- **Vehicle Classification**: Detailed analysis of 6 vehicle classes from motorcycles to heavy trucks
+- **Speed Analysis**: Compliance monitoring, violation severity tracking, and 85th percentile calculations
+- **Temporal Patterns**: Hourly, daily, and weekly traffic pattern visualization
+- **Multi-format Visualizations**: Both Matplotlib and Plotly charts for different analysis needs
+
+## 🏗️ Project Structure
+
+```text
+traffic-studies/
+├── main.py                 # Main Streamlit dashboard application
+├── utils/
+│   ├── data_loader.py     # Data loading and CSV parsing utilities
+│   ├── visualizations.py # Chart generation and plotting functions
+│   └── styles.css         # Custom CSS styling for the dashboard
+├── data/                  # Directory for CSV data files
+├── pyproject.toml         # Project dependencies and metadata
+└── README.md              # This file
+```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Python 3.12 or higher
+- Python 3.13 or higher
 - [uv](https://github.com/astral-sh/uv) - Fast Python package installer and resolver
 
 ### Installation
 
-1. Clone the repository
+1. **Clone the repository**
 
-    ```shell
-    git clone https://github.com/semanticdata/traffic-studies.git
-    cd traffic-studies
-    ```
+   ```shell
+   git clone https://github.com/semanticdata/traffic-studies.git
+   cd traffic-studies
+   ```
 
-2. Create and activate a virtual environment using uv
+2. **Create and activate a virtual environment**
 
-    ```shell
-    uv venv
-    .venv/Scripts/activate  # On Windows
-    source .venv/bin/activate  # On Unix or MacOS
-    ```
+   ```shell
+   uv venv
+   .venv/Scripts/activate  # On Windows
+   source .venv/bin/activate  # On Unix or MacOS
+   ```
 
-3. Install dependencies
+3. **Install dependencies**
 
-    ```shell
-    uv pip install -r requirements.txt
-    ```
+   ```shell
+   uv sync
+   ```
 
-4. Run the dashboard
+4. **Add your data files**
 
-    ```shell
-    streamlit run main.py
-    ```
+   Place your CSV files from TrafficViewer Pro in the `data/` directory
+
+5. **Run the dashboard**
+
+   ```shell
+   streamlit run main.py
+   ```
+
+The dashboard will open in your web browser at `http://localhost:8501`
 
 ## 📊 Available Metrics
 
 ### Key Performance Indicators
 
-- Total Vehicle Count
-- Average Speed (Northbound/Eastbound and Southbound/Westbound)
-- Speed Compliance Rate
-- Daily Traffic (Average and Maximum)
-- Peak Hour Statistics
-- Dominant Direction Analysis
-- 85th Percentile Speed
-- Peak Hour Factor (PHF)
-- High Speed Violation Tracking
-- Weekday/Weekend Traffic Ratio
+- **Total Vehicle Count**: Aggregate count of all vehicles detected
+- **Average Speed**: Directional speed analysis (Northbound/Eastbound and Southbound/Westbound)
+- **Speed Compliance Rate**: Percentage of vehicles adhering to speed limits
+- **Daily Traffic**: Average and maximum daily vehicle counts
+- **Peak Hour Statistics**: Busiest hour identification and vehicle counts
+- **Dominant Direction Analysis**: Traffic flow direction preferences
+- **85th Percentile Speed**: Critical speed measurement for traffic engineering
+- **Peak Hour Factor (PHF)**: Traffic flow consistency measurement
+- **High Speed Violation Tracking**: Vehicles exceeding speed limits by 15+ mph
+- **Weekday/Weekend Traffic Ratio**: Temporal traffic pattern comparison
 
-### Traffic Analysis
+### Traffic Analysis Visualizations
 
-- Hourly Volume Distribution (by direction)
-- Daily Traffic Patterns
-- Speed Distribution Analysis
-- Speed Violation Severity (+5, +10, +15 mph over limit)
-- Directional Speed Compliance
+- **Hourly Volume Distribution**: Stacked bar charts showing directional traffic flow
+- **Daily Traffic Patterns**: Weekly traffic variation analysis
+- **Speed Distribution Analysis**: Detailed speed range breakdowns by direction
+- **Speed Violation Severity**: Categorized analysis of speeding violations (+5, +10, +15 mph over limit)
+- **Temporal Patterns**: Interactive time-based traffic pattern exploration
 
 ### Vehicle Classifications
 
-- 🏍️ Class 1: Motorcycles
-- 🚗 Class 2: Passenger Cars
-- 🚐 Class 3: Pickups, Vans
-- 🚌 Class 4: Buses
-- 🚛 Class 5: 2 Axles, 6 Tires
-- 🚛 Class 6: 3 Axles
+The dashboard analyzes six FHWA vehicle classes:
+
+- 🏍️ **Class 1**: Motorcycles
+- 🚗 **Class 2**: Passenger Cars
+- 🚐 **Class 3**: Pickups, Vans
+- 🚌 **Class 4**: Buses
+- 🚛 **Class 5**: 2 Axles, 6 Tires
+- 🚛 **Class 6**: 3 Axles
+
+## 📁 Data Format
+
+The application expects CSV files exported from TrafficViewer Pro with the following structure:
+
+- **Metadata rows**: Location, comments, and title information
+- **Date/Time column**: Timestamp for each data point
+- **Volume columns**: Directional traffic counts
+- **Speed range columns**: Speed distribution data (e.g., "35-39 MPH - Northbound")
+- **Classification columns**: Vehicle class counts by direction
+
+## 🎯 Use Cases
+
+- **Traffic Engineering**: Speed limit assessment and road safety analysis
+- **Urban Planning**: Peak hour identification and capacity planning
+- **Policy Making**: Data-driven traffic management decisions
+- **Research**: Academic traffic pattern studies
+- **Compliance Monitoring**: Speed enforcement effectiveness evaluation
+
+## 🔧 Technical Details
+
+### Dependencies
+
+- **Streamlit**: Web application framework
+- **Pandas**: Data manipulation and analysis
+- **Matplotlib**: Static plotting and visualization
+- **Plotly**: Interactive charting
+- **Seaborn**: Statistical data visualization
+- **NumPy**: Numerical computing
+
+### Performance
+
+- Handles large datasets efficiently through pandas optimization
+- Interactive filtering with real-time updates
+- Responsive design for desktop and tablet viewing
 
 ## 📝 Data Sources
 
-Traffic data is collected using PicoCount 2500 traffic counters and processed through TrafficViewer Pro software. The dashboard provides a user-friendly interface for analyzing this data, making it accessible for traffic planning and decision-making purposes.
+Traffic data is collected using [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html) traffic counters and processed through [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html) software. The dashboard provides a user-friendly interface for analyzing this data, making it accessible for traffic planning and decision-making purposes.
 
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
+
+## Common Issues
+
+- Ensure CSV files have proper TrafficViewer Pro metadata rows
+- Check that column names match expected patterns
+- Verify Date/Time column format
+- Large datasets may cause slow filtering - consider data sampling for very large files
+- Caching can be added with `@st.cache_data` decorator for expensive operations
+- Matplotlib figures should use `plt.tight_layout()` for proper spacing
+- Always return Figure objects, not display them directly

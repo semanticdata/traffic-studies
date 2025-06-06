@@ -1,3 +1,19 @@
+"""
+Visualization utilities for Traffic Studies dashboard.
+
+This module contains functions to create various charts and visualizations for
+traffic data analysis. All functions return matplotlib Figure objects that can
+be displayed in the Streamlit dashboard.
+
+Functions:
+    plot_traffic_volume(filtered_df, structure) -> plt.Figure: Hourly volume charts
+    plot_speed_distribution(filtered_df, structure) -> plt.Figure: Speed range analysis
+    plot_speed_compliance(filtered_df, structure, speed_limit=30) -> plt.Figure: Compliance charts
+    plot_temporal_patterns(filtered_df, structure) -> plt.Figure: Daily/weekly patterns
+    plot_speed_violation_severity(filtered_df, structure, speed_limit=30) -> Optional[plt.Figure]: Violation analysis
+    plot_vehicle_classification_distribution(filtered_df, structure) -> plt.Figure: Vehicle class charts
+"""
+
 from typing import Dict, Optional
 
 import matplotlib.pyplot as plt

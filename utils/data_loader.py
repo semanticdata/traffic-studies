@@ -1,3 +1,18 @@
+"""
+Data loading utilities for Traffic Studies dashboard.
+
+This module provides functions to load and process traffic data from CSV files
+exported from TrafficViewer Pro software. It handles file structure detection,
+metadata extraction, and data preprocessing for the Streamlit dashboard.
+
+Functions:
+    get_data_directory() -> Path: Get the data directory path
+    get_location_from_file(file_path: str) -> str: Extract location from CSV metadata
+    detect_file_structure(file_path: str) -> Optional[Dict]: Detect CSV structure
+    load_data(file_path: str, speed_limit: int = 30) -> Tuple: Load and process data
+    get_available_locations() -> Dict[str, str]: Get available data files
+"""
+
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
