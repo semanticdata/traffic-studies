@@ -17,6 +17,7 @@ Functions:
 from typing import Dict, Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -279,6 +280,115 @@ def plot_speed_violation_severity(
         return fig
     else:
         return None
+
+
+def plot_speeding_by_hour(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> plt.Figure:
+    """
+    Create a visualization showing when speeding occurs throughout the day.
+
+    Args:
+        filtered_df: Filtered DataFrame containing the traffic data
+        structure: Dictionary containing data structure information
+        speed_limit: Speed limit in MPH (default: 30)
+
+    Returns:
+        matplotlib.figure.Figure: Figure containing the speeding by hour visualization
+    """
+    # Create a copy to avoid modifying the original DataFrame
+    df = filtered_df.copy()
+
+    # Get speed columns for both directions
+    speed_cols_dir1 = structure["dir1_speed_cols"]
+    speed_cols_dir2 = structure["dir2_speed_cols"]
+
+    # Initialize DataFrames to store speeding data by hour
+    hours = range(24)
+    dir1_speeding = pd.Series(0, index=hours, dtype=float)
+    dir2_speeding = pd.Series(0, index=hours, dtype=float)
+    dir1_total = pd.Series(0, index=hours, dtype=float)
+    dir2_total = pd.Series(0, index=hours, dtype=float)
+
+    # Process each speed column for direction 1
+    for col in speed_cols_dir1:
+        # Extract speed range (e.g., '30-35' -> 30)
+        try:
+            speed = int(col.split("-")[0].strip().split()[0])
+            is_speeding = speed > speed_limit
+
+            # Add to appropriate series based on whether it's speeding
+            for hour in hours:
+                hour_data = df[df["Hour"] == hour][col].sum()
+                dir1_total[hour] += hour_data
+                if is_speeding:
+                    dir1_speeding[hour] += hour_data
+        except (ValueError, IndexError):
+            continue
+
+    # Process each speed column for direction 2
+    for col in speed_cols_dir2:
+        try:
+            speed = int(col.split("-")[0].strip().split()[0])
+            is_speeding = speed > speed_limit
+
+            for hour in hours:
+                hour_data = df[df["Hour"] == hour][col].sum()
+                dir2_total[hour] += hour_data
+                if is_speeding:
+                    dir2_speeding[hour] += hour_data
+        except (ValueError, IndexError):
+            continue
+
+    # Calculate percentage of speeding vehicles by hour
+    dir1_percent = (dir1_speeding / dir1_total.replace(0, np.nan)) * 100
+    dir2_percent = (dir2_speeding / dir2_total.replace(0, np.nan)) * 100
+
+    # Create the figure
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(15, 12))
+
+    # Plot direction 1
+    ax1.bar(hours, dir1_total, color="lightgray", alpha=0.5, label="Total Vehicles")
+    ax1_twin = ax1.twinx()
+    ax1_twin.plot(hours, dir1_percent, "r-", marker="o", label="% Speeding")
+
+    ax1.set_title(
+        f"{structure['dir1_name']} - Speeding by Hour of Day", pad=20, fontsize=14
+    )
+    ax1.set_xlabel("Hour of Day", fontsize=12)
+    ax1.set_ylabel("Number of Vehicles", fontsize=12)
+    ax1_twin.set_ylabel("% of Vehicles Speeding", fontsize=12, color="r")
+    ax1_twin.tick_params(axis="y", labelcolor="r")
+    ax1.set_xticks(hours)
+    ax1.grid(True, alpha=0.3)
+
+    # Add legend
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax1_twin.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+
+    # Plot direction 2
+    ax2.bar(hours, dir2_total, color="lightgray", alpha=0.5, label="Total Vehicles")
+    ax2_twin = ax2.twinx()
+    ax2_twin.plot(hours, dir2_percent, "r-", marker="o", label="% Speeding")
+
+    ax2.set_title(
+        f"{structure['dir2_name']} - Speeding by Hour of Day", pad=20, fontsize=14
+    )
+    ax2.set_xlabel("Hour of Day", fontsize=12)
+    ax2.set_ylabel("Number of Vehicles", fontsize=12)
+    ax2_twin.set_ylabel("% of Vehicles Speeding", fontsize=12, color="r")
+    ax2_twin.tick_params(axis="y", labelcolor="r")
+    ax2.set_xticks(hours)
+    ax2.grid(True, alpha=0.3)
+
+    # Add legend
+    lines1, labels1 = ax2.get_legend_handles_labels()
+    lines2, labels2 = ax2_twin.get_legend_handles_labels()
+    ax2.legend(lines1 + lines2, labels1 + labels2, loc="upper left")
+
+    plt.tight_layout()
+    return fig
 
 
 def plot_vehicle_classification_distribution(

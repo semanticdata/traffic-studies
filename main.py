@@ -22,7 +22,6 @@ Author: Miguel Pimentel
 License: MIT
 """
 
-import os
 from typing import Tuple
 
 import numpy as np
@@ -35,6 +34,7 @@ from utils.visualizations import (
     plot_speed_compliance,
     plot_speed_distribution,
     plot_speed_violation_severity,
+    plot_speeding_by_hour,
     plot_temporal_patterns,
     plot_traffic_volume,
     plot_vehicle_classification_distribution,
@@ -332,6 +332,14 @@ st.pyplot(fig2)
 
 fig3 = plot_speed_compliance(filtered_df, structure)
 st.pyplot(fig3)
+
+# Add speeding by hour visualization
+st.subheader("Speeding by Hour of Day")
+st.markdown(
+    "This visualization shows when speeding occurs throughout the day, with the total number of vehicles and the percentage of vehicles speeding for each hour."
+)
+speeding_fig = plot_speeding_by_hour(filtered_df, structure)
+st.pyplot(speeding_fig)
 
 st.subheader("Vehicle Classification")
 classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
