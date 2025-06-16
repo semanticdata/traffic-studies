@@ -84,11 +84,33 @@ The dashboard will open in your web browser at `http://localhost:8501`
 
 ### Traffic Analysis Visualizations
 
-- **Hourly Volume Distribution**: Stacked bar charts showing directional traffic flow
-- **Daily Traffic Patterns**: Weekly traffic variation analysis
-- **Speed Distribution Analysis**: Detailed speed range breakdowns by direction
-- **Speed Violation Severity**: Categorized analysis of speeding violations (+5, +10, +15 mph over limit)
-- **Temporal Patterns**: Interactive time-based traffic pattern exploration
+#### 1. Hourly Volume Distribution
+
+Displays the average number of vehicles per hour for each direction of traffic. The stacked bar chart shows the breakdown of traffic volume, making it easy to identify peak hours and directional traffic patterns throughout the day.
+
+#### 2. Speed Distribution Analysis
+
+Shows the distribution of vehicle speeds in different ranges for each direction. The bar charts help identify common speed patterns and compare speed distributions between different traffic directions.
+
+#### 3. Speed Compliance Visualization
+
+Presents the compliance rate with speed limits through a donut chart, showing the percentage of vehicles that were compliant versus non-compliant. This helps quickly assess overall speed limit adherence.
+
+#### 4. Speed Violation Severity
+
+Categorizes speeding violations by severity (+5, +10, +15 mph over the limit) using a bar chart. This helps identify the most common types of speed violations and their relative frequencies.
+
+#### 5. Speeding by Hour of Day
+
+Combines bar and line charts to show both the total number of vehicles and the percentage of vehicles speeding for each hour. This dual-axis visualization helps identify patterns in speeding behavior throughout the day.
+
+#### 6. Temporal Traffic Patterns
+
+Illustrates how traffic volume varies by day of week and hour of day using a heatmap. This helps identify weekly patterns, peak periods, and off-peak times.
+
+#### 7. Vehicle Classification Distribution
+
+Shows the distribution of different vehicle classes (from motorcycles to heavy trucks) using pie charts. This helps understand the composition of traffic in terms of vehicle types.
 
 ### Vehicle Classifications
 
