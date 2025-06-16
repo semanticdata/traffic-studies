@@ -36,35 +36,12 @@ def get_location_from_file(file_path: str) -> str:
 
         for line in header_lines:
             if "Location:" in line:
-                location = (
-                    line.split("Location:")[1]
-                    .strip()
-                    .strip('"')
-                    .strip("'")
-                    .strip(",")
-                    .strip()
-                )
+                location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
                 return location
 
-        return (
-            Path(file_path)
-            .stem.split("-")[1]
-            .replace("_", " ")
-            .strip()
-            .strip('"')
-            .strip("'")
-            .title()
-        )
+        return Path(file_path).stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
     except Exception:
-        return (
-            Path(file_path)
-            .stem.split("-")[1]
-            .replace("_", " ")
-            .strip()
-            .strip('"')
-            .strip("'")
-            .title()
-        )
+        return Path(file_path).stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
 
 
 def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
@@ -84,14 +61,7 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
                 if len(parts) > 1:
                     location = parts[1].replace('"', "").strip()
                 else:
-                    location = (
-                        line.split("Location:")[1]
-                        .strip()
-                        .strip('"')
-                        .strip("'")
-                        .strip(",")
-                        .strip()
-                    )
+                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
             elif "Comments:" in line:
                 comments = line.split("Comments:")[1].strip().strip('"').strip(",")
             elif "Title:" in line:
@@ -201,9 +171,7 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
         return None
 
 
-def load_data(
-    file_path: str, speed_limit: int = 30
-) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
+def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
     """Load and process traffic data from CSV file."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -221,23 +189,13 @@ def load_data(
         dir1_speed_cols = structure["dir1_speed_cols"]
         dir2_speed_cols = structure["dir2_speed_cols"]
 
-        df["Dir1_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x <= speed_limit).sum(), axis=1
-        )
-        df["Dir1_Non_Compliant"] = df[dir1_speed_cols].apply(
-            lambda x: (x > speed_limit).sum(), axis=1
-        )
+        df["Dir1_Compliant"] = df[dir1_speed_cols].apply(lambda x: (x <= speed_limit).sum(), axis=1)
+        df["Dir1_Non_Compliant"] = df[dir1_speed_cols].apply(lambda x: (x > speed_limit).sum(), axis=1)
 
-        df["Dir2_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x <= speed_limit).sum(), axis=1
-        )
-        df["Dir2_Non_Compliant"] = df[dir2_speed_cols].apply(
-            lambda x: (x > speed_limit).sum(), axis=1
-        )
+        df["Dir2_Compliant"] = df[dir2_speed_cols].apply(lambda x: (x <= speed_limit).sum(), axis=1)
+        df["Dir2_Non_Compliant"] = df[dir2_speed_cols].apply(lambda x: (x > speed_limit).sum(), axis=1)
 
-        df["Total"] = (
-            df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
-        )
+        df["Total"] = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
 
         return df, location_name, structure
 

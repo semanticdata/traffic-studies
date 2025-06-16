@@ -55,9 +55,7 @@ def calculate_weighted_speed(df: pd.DataFrame, speed_cols: list) -> float:
 
 
 # Function to calculate compliance
-def calculate_compliance(
-    df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
-) -> Tuple[int, int]:
+def calculate_compliance(df: pd.DataFrame, speed_cols: list, speed_limit: int = 30) -> Tuple[int, int]:
     """Calculate the number of compliant and non-compliant vehicles."""
     compliant = 0
     total = 0
@@ -97,9 +95,7 @@ def calculate_phf(df: pd.DataFrame) -> float:
 
 
 # Function to count high-speed violators
-def count_high_speeders(
-    df: pd.DataFrame, speed_cols: list, speed_limit: int = 30
-) -> int:
+def count_high_speeders(df: pd.DataFrame, speed_cols: list, speed_limit: int = 30) -> int:
     """Count the number of high-speed violators (15+ mph over limit)."""
     high_speeders = 0
     for col in speed_cols:
@@ -110,18 +106,14 @@ def count_high_speeders(
 
 
 # Set page config
-st.set_page_config(
-    page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide"
-)
+st.set_page_config(page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide")
 
 # Sidebar for filters
 st.sidebar.title("Filters")
 locations = get_available_locations()
 
 if not locations:
-    st.sidebar.error(
-        "❌ No data files found. Please add CSV files to the 'data' directory."
-    )
+    st.sidebar.error("❌ No data files found. Please add CSV files to the 'data' directory.")
     st.stop()
 
 selected_location = st.sidebar.selectbox(
@@ -175,9 +167,7 @@ st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
 # Main dashboard layout
 st.title("Traffic Analysis Dashboard")
-st.markdown(
-    "This dashboard provides insights into traffic data, including volume, speed, and vehicle classification."
-)
+st.markdown("This dashboard provides insights into traffic data, including volume, speed, and vehicle classification.")
 st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
 
 # Display key metrics with enhanced styling
@@ -205,28 +195,16 @@ with col3:
 col4, col5, col6 = st.columns(3)
 
 with col4:
-    dir1_compliant, dir1_total = calculate_compliance(
-        filtered_df, structure["dir1_speed_cols"]
-    )
-    dir2_compliant, dir2_total = calculate_compliance(
-        filtered_df, structure["dir2_speed_cols"]
-    )
+    dir1_compliant, dir1_total = calculate_compliance(filtered_df, structure["dir1_speed_cols"])
+    dir2_compliant, dir2_total = calculate_compliance(filtered_df, structure["dir2_speed_cols"])
     total_compliant = dir1_compliant + dir2_compliant
     total_speed_readings = dir1_total + dir2_total
-    compliance_rate = (
-        (total_compliant / total_speed_readings * 100)
-        if total_speed_readings > 0
-        else 0
-    )
+    compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
     st.metric("🚦 Speed Compliance", f"{compliance_rate:.1f}%")
 
 with col5:
-    dir1_85th = calculate_85th_percentile_speed(
-        filtered_df, structure["dir1_speed_cols"]
-    )
-    dir2_85th = calculate_85th_percentile_speed(
-        filtered_df, structure["dir2_speed_cols"]
-    )
+    dir1_85th = calculate_85th_percentile_speed(filtered_df, structure["dir1_speed_cols"])
+    dir2_85th = calculate_85th_percentile_speed(filtered_df, structure["dir2_speed_cols"])
     st.metric("🎯 85th Percentile Speed", f"{max(dir1_85th, dir2_85th):.1f} mph")
 
 with col6:
@@ -241,21 +219,17 @@ col7, col8, col9 = st.columns(3)
 with col7:
     dir1_volume = filtered_df[structure["dir1_volume_col"]].sum()
     dir2_volume = filtered_df[structure["dir2_volume_col"]].sum()
-    dominant_direction = (
-        structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
-    )
+    dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
     dominant_pct = (
-        max(dir1_volume, dir2_volume) / (dir1_volume + dir2_volume) * 100
-        if (dir1_volume + dir2_volume) > 0
-        else 0
+        max(dir1_volume, dir2_volume) / (dir1_volume + dir2_volume) * 100 if (dir1_volume + dir2_volume) > 0 else 0
     )
     st.metric("🔄 Dominant Direction", f"{dominant_direction}", f"{dominant_pct:.1f}%")
 
 with col8:
     # Group by both date and day name to get accurate daily totals
-    daily_volumes = filtered_df.groupby(
-        [filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.day_name()]
-    )["Total"].sum()
+    daily_volumes = filtered_df.groupby([filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.day_name()])[
+        "Total"
+    ].sum()
 
     # Calculate true average by day of week
     dow_averages = daily_volumes.groupby(level=1).mean()
@@ -265,9 +239,9 @@ with col8:
 
 with col9:
     # Group by date and hour to get unique peak hours
-    hourly_volumes = filtered_df.groupby(
-        [filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.hour]
-    )["Total"].sum()
+    hourly_volumes = filtered_df.groupby([filtered_df["Date/Time"].dt.date, filtered_df["Date/Time"].dt.hour])[
+        "Total"
+    ].sum()
 
     # Find the overall peak hour
     peak_hour_idx = hourly_volumes.idxmax()
@@ -283,15 +257,11 @@ with col10:
     st.metric("📈 Peak Hour Factor", f"{phf:.2f}")
 
 with col11:
-    total_high_speeders = count_high_speeders(
-        filtered_df, structure["dir1_speed_cols"]
-    ) + count_high_speeders(filtered_df, structure["dir2_speed_cols"])
-    high_speeder_pct = (
-        (total_high_speeders / total_vehicles * 100) if total_vehicles > 0 else 0
+    total_high_speeders = count_high_speeders(filtered_df, structure["dir1_speed_cols"]) + count_high_speeders(
+        filtered_df, structure["dir2_speed_cols"]
     )
-    st.metric(
-        "⚠️ High Speed Violations", f"{total_high_speeders:,} ({high_speeder_pct:.1f}%)"
-    )
+    high_speeder_pct = (total_high_speeders / total_vehicles * 100) if total_vehicles > 0 else 0
+    st.metric("⚠️ High Speed Violations", f"{total_high_speeders:,} ({high_speeder_pct:.1f}%)")
 
 with col12:
     weekday_mask = filtered_df["Date/Time"].dt.weekday < 5
@@ -309,18 +279,14 @@ fig1 = plot_traffic_volume(filtered_df, structure)
 st.pyplot(fig1)
 
 # Plotly Traffic Volume
-plotly_fig1 = px.line(
-    filtered_df, x="Date/Time", y="Total", title="Traffic Volume Over Time"
-)
+plotly_fig1 = px.line(filtered_df, x="Date/Time", y="Total", title="Traffic Volume Over Time")
 st.plotly_chart(plotly_fig1)
 
 temporal_fig = plot_temporal_patterns(filtered_df, structure)
 st.pyplot(temporal_fig)
 
 # Plotly Temporal Patterns
-plotly_temporal_fig = px.histogram(
-    filtered_df, x="Hour", y="Total", title="Temporal Traffic Patterns", nbins=24
-)
+plotly_temporal_fig = px.histogram(filtered_df, x="Hour", y="Total", title="Temporal Traffic Patterns", nbins=24)
 st.plotly_chart(plotly_temporal_fig)
 
 st.subheader("Speed Analysis")
@@ -336,7 +302,8 @@ st.pyplot(fig3)
 # Add speeding by hour visualization
 st.subheader("Speeding by Hour of Day")
 st.markdown(
-    "This visualization shows when speeding occurs throughout the day, with the total number of vehicles and the percentage of vehicles speeding for each hour."
+    "This visualization shows when speeding occurs throughout the day, with the total number of vehicles "
+    "and the percentage of vehicles speeding for each hour."
 )
 speeding_fig = plot_speeding_by_hour(filtered_df, structure)
 st.pyplot(speeding_fig)
@@ -353,9 +320,7 @@ with dir1_col:
         class_counts_dir1 = []
         for i in range(6):
             if i < len(structure.get("dir1_class_cols", [])):
-                class_counts_dir1.append(
-                    filtered_df[structure["dir1_class_cols"][i]].sum()
-                )
+                class_counts_dir1.append(filtered_df[structure["dir1_class_cols"][i]].sum())
             else:
                 class_counts_dir1.append(0)
         class_data_dir1 = pd.DataFrame(
@@ -372,18 +337,12 @@ with dir1_col:
             }
         )
         total_dir1 = class_data_dir1["Count"].sum()
-        class_data_dir1["Percentage"] = (
-            class_data_dir1["Count"] / total_dir1 * 100 if total_dir1 > 0 else 0
-        ).round(1)
+        class_data_dir1["Percentage"] = (class_data_dir1["Count"] / total_dir1 * 100 if total_dir1 > 0 else 0).round(1)
         for _, row in class_data_dir1.iterrows():
-            st.markdown(
-                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
-            )
+            st.markdown(f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)")
         st.markdown(f"**Total Vehicles: {total_dir1:,}**")
     except Exception as e:
-        st.error(
-            f"Error processing {structure['dir1_name']} classification data: {str(e)}"
-        )
+        st.error(f"Error processing {structure['dir1_name']} classification data: {str(e)}")
         class_data_dir1 = pd.DataFrame({"Vehicle Type": [], "Count": []})
 
 with dir2_col:
@@ -392,9 +351,7 @@ with dir2_col:
         class_counts_dir2 = []
         for i in range(6):
             if i < len(structure.get("dir2_class_cols", [])):
-                class_counts_dir2.append(
-                    filtered_df[structure["dir2_class_cols"][i]].sum()
-                )
+                class_counts_dir2.append(filtered_df[structure["dir2_class_cols"][i]].sum())
             else:
                 class_counts_dir2.append(0)
         class_data_dir2 = pd.DataFrame(
@@ -411,18 +368,12 @@ with dir2_col:
             }
         )
         total_dir2 = class_data_dir2["Count"].sum()
-        class_data_dir2["Percentage"] = (
-            class_data_dir2["Count"] / total_dir2 * 100 if total_dir2 > 0 else 0
-        ).round(1)
+        class_data_dir2["Percentage"] = (class_data_dir2["Count"] / total_dir2 * 100 if total_dir2 > 0 else 0).round(1)
         for _, row in class_data_dir2.iterrows():
-            st.markdown(
-                f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)"
-            )
+            st.markdown(f"{row['Vehicle Type']}: **{row['Count']:,}** ({row['Percentage']}%)")
         st.markdown(f"**Total Vehicles: {total_dir2:,}**")
     except Exception as e:
-        st.error(
-            f"Error processing {structure['dir2_name']} classification data: {str(e)}"
-        )
+        st.error(f"Error processing {structure['dir2_name']} classification data: {str(e)}")
         class_data_dir2 = pd.DataFrame({"Vehicle Type": [], "Count": []})
 
 show_raw_data = st.checkbox("Show Raw Data")
@@ -432,5 +383,7 @@ if show_raw_data:
 
 st.markdown("---")
 st.markdown(
-    "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), and exported from [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html). Dashboard created with [Streamlit](https://streamlit.io)."
+    "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), "
+    "and exported from [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html). "
+    "Dashboard created with [Streamlit](https://streamlit.io)."
 )
