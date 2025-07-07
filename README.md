@@ -5,23 +5,27 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 ## 🌟 Features
 
 - **Interactive Dashboard**: Real-time filtering by location, date range, and time periods
-- **Comprehensive Metrics**: 12+ key performance indicators including speed compliance, peak hour analysis, and traffic volume
+- **Core Metrics**: 6 essential key performance indicators including speed compliance, peak hour analysis, and traffic volume
 - **Vehicle Classification**: Detailed analysis of 6 vehicle classes from motorcycles to heavy trucks
 - **Speed Analysis**: Compliance monitoring, violation severity tracking, and 85th percentile calculations
 - **Temporal Patterns**: Hourly, daily, and weekly traffic pattern visualization
-- **Multi-format Visualizations**: Both Matplotlib and Plotly charts for different analysis needs
+- **Professional Visualizations**: Matplotlib charts with consistent styling and clear presentation
 
 ## 🏗️ Project Structure
 
 ```text
 traffic-studies/
-├── main.py                 # Main Streamlit dashboard application
+├── main.py                # Main Streamlit dashboard
 ├── utils/
 │   ├── data_loader.py     # Data loading and CSV parsing utilities
-│   ├── visualizations.py # Chart generation and plotting functions
+│   ├── metrics.py         # Traffic metrics and KPI calculations
+│   ├── visualizations.py  # Chart generation and plotting functions
 │   └── styles.css         # Custom CSS styling for the dashboard
+├── .streamlit/
+│   └── config.toml        # Streamlit configuration settings
 ├── data/                  # Directory for CSV data files
 ├── pyproject.toml         # Project dependencies and metadata
+├── CLAUDE.md              # AI assistant guidance file
 └── README.md              # This file
 ```
 
@@ -62,25 +66,33 @@ traffic-studies/
 5. **Run the dashboard**
 
    ```shell
-   streamlit run main.py
+   uv run streamlit run main.py
    ```
 
 The dashboard will open in your web browser at `http://localhost:8501`
 
-## 📊 Available Metrics
+### Configuration
 
-### Key Performance Indicators
+6. **Optional: Disable usage statistics**
+
+   Usage statistics collection is already disabled via `.streamlit/config.toml`. To modify settings:
+
+   ```shell
+   # Edit .streamlit/config.toml
+   [browser]
+   gatherUsageStats = false
+   ```
+
+## 📊 Core Metrics Dashboard
+
+### 6 Essential Key Performance Indicators
 
 - **Total Vehicle Count**: Aggregate count of all vehicles detected
-- **Average Speed**: Directional speed analysis (Northbound/Eastbound and Southbound/Westbound)
+- **Average Speed**: Combined directional speed analysis
 - **Speed Compliance Rate**: Percentage of vehicles adhering to speed limits
-- **Daily Traffic**: Average and maximum daily vehicle counts
-- **Peak Hour Statistics**: Busiest hour identification and vehicle counts
-- **Dominant Direction Analysis**: Traffic flow direction preferences
 - **85th Percentile Speed**: Critical speed measurement for traffic engineering
-- **Peak Hour Factor (PHF)**: Traffic flow consistency measurement
-- **High Speed Violation Tracking**: Vehicles exceeding speed limits by 15+ mph
-- **Weekday/Weekend Traffic Ratio**: Temporal traffic pattern comparison
+- **Peak Hour Statistics**: Busiest hour identification and vehicle counts
+- **Dominant Direction Analysis**: Traffic flow direction preferences with percentages
 
 ### Traffic Analysis Visualizations
 
@@ -148,15 +160,8 @@ The application expects CSV files exported from TrafficViewer Pro with the follo
 - **Streamlit**: Web application framework
 - **Pandas**: Data manipulation and analysis
 - **Matplotlib**: Static plotting and visualization
-- **Plotly**: Interactive charting
 - **Seaborn**: Statistical data visualization
 - **NumPy**: Numerical computing
-
-### Performance
-
-- Handles large datasets efficiently through pandas optimization
-- Interactive filtering with real-time updates
-- Responsive design for desktop and tablet viewing
 
 ## 📝 Data Sources
 
@@ -165,13 +170,3 @@ Traffic data is collected using [PicoCount 2500](https://vehiclecounts.com/picoc
 ## 📜 License
 
 This project is licensed under the [MIT License](LICENSE).
-
-## Common Issues
-
-- Ensure CSV files have proper TrafficViewer Pro metadata rows
-- Check that column names match expected patterns
-- Verify Date/Time column format
-- Large datasets may cause slow filtering - consider data sampling for very large files
-- Caching can be added with `@st.cache_data` decorator for expensive operations
-- Matplotlib figures should use `plt.tight_layout()` for proper spacing
-- Always return Figure objects, not display them directly
