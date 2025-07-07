@@ -3,20 +3,125 @@ Data loading utilities for Traffic Studies dashboard.
 
 This module provides functions to load and process traffic data from CSV files
 exported from TrafficViewer Pro software. It handles file structure detection,
-metadata extraction, and data preprocessing for the Streamlit dashboard.
+metadata extraction, data preprocessing, validation, and optimization for the Streamlit dashboard.
 
 Functions:
+    validate_traffic_data(df: pd.DataFrame, structure: Dict) -> Dict: Validate traffic data
     get_data_directory() -> Path: Get the data directory path
     get_location_from_file(file_path: str) -> str: Extract location from CSV metadata
     detect_file_structure(file_path: str) -> Optional[Dict]: Detect CSV structure
-    load_data(file_path: str, speed_limit: int = 30) -> Tuple: Load and process data
+    load_data(file_path: str, speed_limit: int = 30) -> Tuple: Load and process data with validation
+    get_memory_usage(df: pd.DataFrame) -> Dict: Get memory usage statistics
+    load_large_traffic_data(file_path: str, speed_limit: int = 30, chunk_size: int = 50000)
+        -> Tuple: Memory-efficient loading
     get_available_locations() -> Dict[str, str]: Get available data files
+
+Exceptions:
+    TrafficDataError: Base exception for traffic data processing
+    DataValidationError: Raised when data validation fails
+    FileStructureError: Raised when CSV structure doesn't match expected format
 """
 
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 import pandas as pd
+
+
+class TrafficDataError(Exception):
+    """Base exception for traffic data processing."""
+
+    pass
+
+
+class DataValidationError(TrafficDataError):
+    """Raised when data validation fails."""
+
+    def __init__(self, message, validation_details=None):
+        super().__init__(message)
+        self.validation_details = validation_details or {}
+
+
+class FileStructureError(TrafficDataError):
+    """Raised when CSV structure doesn't match expected format."""
+
+    pass
+
+
+def validate_traffic_data(df: pd.DataFrame, structure: Dict[str, any]) -> Dict[str, any]:
+    """Comprehensive data validation with detailed reporting."""
+    validation_results = {"is_valid": True, "warnings": [], "errors": [], "stats": {}}
+
+    # Volume validation
+    vol_cols = [structure["dir1_volume_col"], structure["dir2_volume_col"]]
+
+    for col in vol_cols:
+        if col in df.columns:
+            # Check for negative values
+            negative_count = (df[col] < 0).sum()
+            if negative_count > 0:
+                validation_results["errors"].append(f"Found {negative_count} negative values in {col}")
+                validation_results["is_valid"] = False
+
+            # Check for unrealistic maximum values (>1000 vehicles/hour)
+            max_val = df[col].max()
+            if max_val > 1000:
+                validation_results["warnings"].append(
+                    f"Unusually high traffic volume in {col}: {max_val} vehicles/hour"
+                )
+
+            # Store statistics
+            validation_results["stats"][f"{col}_max"] = max_val
+            validation_results["stats"][f"{col}_mean"] = df[col].mean()
+
+    # Cross-check total vs sum of directional volumes
+    if "Total" in df.columns and all(col in df.columns for col in vol_cols):
+        total_diff = abs(df["Total"] - (df[vol_cols[0]] + df[vol_cols[1]])).sum()
+        if total_diff > 0:
+            validation_results["errors"].append(
+                f"Total column doesn't match sum of directional volumes (difference: {total_diff})"
+            )
+            validation_results["is_valid"] = False
+
+    # Speed validation
+    speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
+    for col in speed_cols:
+        if col in df.columns:
+            # Check for negative values
+            negative_count = (df[col] < 0).sum()
+            if negative_count > 0:
+                validation_results["errors"].append(f"Found {negative_count} negative values in speed column {col}")
+                validation_results["is_valid"] = False
+
+    # Temporal validation
+    if "Date/Time" in df.columns:
+        # Check for missing time periods (assuming hourly data)
+        time_diffs = df["Date/Time"].diff().dropna()
+        expected_diff = pd.Timedelta(hours=1)
+        irregular_intervals = (time_diffs != expected_diff).sum()
+        if irregular_intervals > 0:
+            validation_results["warnings"].append(f"Found {irregular_intervals} irregular time intervals")
+
+        # Store temporal statistics
+        validation_results["stats"]["date_range"] = {
+            "start": df["Date/Time"].min(),
+            "end": df["Date/Time"].max(),
+            "total_hours": len(df),
+        }
+
+    # Classification validation
+    class_cols = structure["dir1_class_cols"] + structure["dir2_class_cols"]
+    for col in class_cols:
+        if col in df.columns:
+            # Check for negative values
+            negative_count = (df[col] < 0).sum()
+            if negative_count > 0:
+                validation_results["errors"].append(
+                    f"Found {negative_count} negative values in classification column {col}"
+                )
+                validation_results["is_valid"] = False
+
+    return validation_results
 
 
 def get_data_directory() -> Path:
@@ -230,35 +335,236 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
 
 
 def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
-    """Load and process traffic data from CSV file."""
+    """Load and process traffic data from CSV file with enhanced validation and optimization."""
     structure = detect_file_structure(file_path)
     if not structure:
-        raise ValueError("Could not detect file structure")
+        raise FileStructureError(
+            f"Could not detect file structure for '{file_path}'. Expected TrafficViewer Pro format."
+        )
 
     location_name = structure["location"]
     if location_name and isinstance(location_name, str):
         location_name = location_name.strip().strip('"').strip("'").strip(",").strip()
 
     try:
-        df = pd.read_csv(file_path, skiprows=structure["metadata_rows"])
+        # Enhanced error handling for CSV reading
+        try:
+            df = pd.read_csv(file_path, skiprows=structure["metadata_rows"])
+        except pd.errors.EmptyDataError:
+            raise DataValidationError(f"CSV file '{file_path}' is empty or contains no data rows")
+        except pd.errors.ParserError as e:
+            raise FileStructureError(
+                f"CSV parsing failed for '{file_path}': {str(e)}\n"
+                f"Expected TrafficViewer Pro format with metadata headers"
+            )
+
+        # Validate required columns exist
+        required_columns = ["Date/Time", structure["dir1_volume_col"], structure["dir2_volume_col"]]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise DataValidationError(
+                f"Missing required columns in '{file_path}': {missing_columns}\n"
+                f"Expected columns: Date/Time, Volume columns, Speed ranges"
+            )
+
+        # Process datetime with validation
         df["Date/Time"] = pd.to_datetime(df["Date/Time"], errors="coerce")
+        invalid_dates = df["Date/Time"].isna().sum()
+        if invalid_dates > 0:
+            raise DataValidationError(f"Found {invalid_dates} invalid date/time values in '{file_path}'")
+
         df["Hour"] = df["Date/Time"].dt.hour
 
+        # Store original row count for filtering statistics
+        original_row_count = len(df)
+
+        # Vectorized speed compliance calculations (optimized)
         dir1_speed_cols = structure["dir1_speed_cols"]
         dir2_speed_cols = structure["dir2_speed_cols"]
 
-        df["Dir1_Compliant"] = df[dir1_speed_cols].apply(lambda x: (x <= speed_limit).sum(), axis=1)
-        df["Dir1_Non_Compliant"] = df[dir1_speed_cols].apply(lambda x: (x > speed_limit).sum(), axis=1)
+        # Vectorized operations instead of apply() for better performance
+        if dir1_speed_cols:
+            dir1_speed_data = df[dir1_speed_cols].values
+            dir1_compliant_mask = dir1_speed_data <= speed_limit
+            dir1_non_compliant_mask = dir1_speed_data > speed_limit
 
-        df["Dir2_Compliant"] = df[dir2_speed_cols].apply(lambda x: (x <= speed_limit).sum(), axis=1)
-        df["Dir2_Non_Compliant"] = df[dir2_speed_cols].apply(lambda x: (x > speed_limit).sum(), axis=1)
+            df["Dir1_Compliant"] = dir1_compliant_mask.sum(axis=1)
+            df["Dir1_Non_Compliant"] = dir1_non_compliant_mask.sum(axis=1)
+        else:
+            df["Dir1_Compliant"] = 0
+            df["Dir1_Non_Compliant"] = 0
 
+        if dir2_speed_cols:
+            dir2_speed_data = df[dir2_speed_cols].values
+            dir2_compliant_mask = dir2_speed_data <= speed_limit
+            dir2_non_compliant_mask = dir2_speed_data > speed_limit
+
+            df["Dir2_Compliant"] = dir2_compliant_mask.sum(axis=1)
+            df["Dir2_Non_Compliant"] = dir2_non_compliant_mask.sum(axis=1)
+        else:
+            df["Dir2_Compliant"] = 0
+            df["Dir2_Non_Compliant"] = 0
+
+        # Vectorized total calculation
         df["Total"] = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
 
-        return df, location_name, structure
+        # Filter out rows where both volume columns are 0 (no traffic activity)
+        df = df[(df[structure["dir1_volume_col"]] > 0) | (df[structure["dir2_volume_col"]] > 0)]
+
+        # Calculate filtering statistics
+        filtered_row_count = len(df)
+        filtering_stats = {
+            "original_rows": original_row_count,
+            "filtered_rows": filtered_row_count,
+            "removed_rows": original_row_count - filtered_row_count,
+            "removal_percentage": (
+                ((original_row_count - filtered_row_count) / original_row_count) * 100 if original_row_count > 0 else 0
+            ),
+            "date_range": {"start": df["Date/Time"].min(), "end": df["Date/Time"].max()} if len(df) > 0 else None,
+            "active_hours": filtered_row_count,
+            "inactive_hours": original_row_count - filtered_row_count,
+        }
+
+        # Perform data validation
+        validation_results = validate_traffic_data(df, structure)
+
+        # Add validation warnings to console if any
+        if validation_results["warnings"]:
+            print(f"Data validation warnings for '{file_path}':")
+            for warning in validation_results["warnings"]:
+                print(f"  - {warning}")
+
+        # Raise errors if validation failed
+        if not validation_results["is_valid"]:
+            error_details = "; ".join(validation_results["errors"])
+            raise DataValidationError(f"Data validation failed for '{file_path}': {error_details}", validation_results)
+
+        # Enhanced structure with metadata
+        enhanced_structure = {**structure, "filtering_stats": filtering_stats, "data_quality": validation_results}
+
+        return df, location_name, enhanced_structure
+
+    except (TrafficDataError, pd.errors.EmptyDataError, pd.errors.ParserError):
+        # Re-raise our custom exceptions
+        raise
+    except KeyError as e:
+        raise DataValidationError(
+            f"Missing required column in '{file_path}': {str(e)}\n"
+            f"Expected columns: Date/Time, Volume columns, Speed ranges"
+        )
+    except Exception as e:
+        raise TrafficDataError(f"Unexpected error loading data from '{file_path}': {e}")
+
+
+def get_memory_usage(df: pd.DataFrame) -> Dict[str, str]:
+    """Get memory usage statistics for dataframe."""
+    memory_usage = df.memory_usage(deep=True).sum()
+    return {
+        "total_memory": f"{memory_usage / 1024**2:.2f} MB",
+        "rows": len(df),
+        "columns": len(df.columns),
+        "memory_per_row": f"{memory_usage / len(df):.2f} bytes" if len(df) > 0 else "0 bytes",
+    }
+
+
+def load_large_traffic_data(
+    file_path: str, speed_limit: int = 30, chunk_size: int = 50000
+) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
+    """Memory-efficient loading for large traffic datasets using chunked processing."""
+    structure = detect_file_structure(file_path)
+    if not structure:
+        raise FileStructureError(
+            f"Could not detect file structure for '{file_path}'. Expected TrafficViewer Pro format."
+        )
+
+    location_name = structure["location"]
+    if location_name and isinstance(location_name, str):
+        location_name = location_name.strip().strip('"').strip("'").strip(",").strip()
+
+    try:
+        # Process data in chunks for memory efficiency
+        processed_chunks = []
+        original_row_count = 0
+
+        for chunk in pd.read_csv(file_path, skiprows=structure["metadata_rows"], chunksize=chunk_size):
+            original_row_count += len(chunk)
+
+            # Process datetime
+            chunk["Date/Time"] = pd.to_datetime(chunk["Date/Time"], errors="coerce")
+            chunk["Hour"] = chunk["Date/Time"].dt.hour
+
+            # Vectorized speed compliance calculations
+            dir1_speed_cols = structure["dir1_speed_cols"]
+            dir2_speed_cols = structure["dir2_speed_cols"]
+
+            if dir1_speed_cols:
+                dir1_speed_data = chunk[dir1_speed_cols].values
+                chunk["Dir1_Compliant"] = (dir1_speed_data <= speed_limit).sum(axis=1)
+                chunk["Dir1_Non_Compliant"] = (dir1_speed_data > speed_limit).sum(axis=1)
+            else:
+                chunk["Dir1_Compliant"] = 0
+                chunk["Dir1_Non_Compliant"] = 0
+
+            if dir2_speed_cols:
+                dir2_speed_data = chunk[dir2_speed_cols].values
+                chunk["Dir2_Compliant"] = (dir2_speed_data <= speed_limit).sum(axis=1)
+                chunk["Dir2_Non_Compliant"] = (dir2_speed_data > speed_limit).sum(axis=1)
+            else:
+                chunk["Dir2_Compliant"] = 0
+                chunk["Dir2_Non_Compliant"] = 0
+
+            # Calculate total
+            chunk["Total"] = chunk[structure["dir1_volume_col"]] + chunk[structure["dir2_volume_col"]]
+
+            # Filter zero rows
+            filtered_chunk = chunk[
+                (chunk[structure["dir1_volume_col"]] > 0) | (chunk[structure["dir2_volume_col"]] > 0)
+            ]
+
+            if len(filtered_chunk) > 0:
+                processed_chunks.append(filtered_chunk)
+
+        # Combine all processed chunks
+        if processed_chunks:
+            df = pd.concat(processed_chunks, ignore_index=True)
+        else:
+            # Return empty dataframe with proper structure
+            df = pd.DataFrame()
+
+        # Calculate filtering statistics
+        filtered_row_count = len(df)
+        filtering_stats = {
+            "original_rows": original_row_count,
+            "filtered_rows": filtered_row_count,
+            "removed_rows": original_row_count - filtered_row_count,
+            "removal_percentage": (
+                ((original_row_count - filtered_row_count) / original_row_count) * 100 if original_row_count > 0 else 0
+            ),
+            "date_range": {"start": df["Date/Time"].min(), "end": df["Date/Time"].max()} if len(df) > 0 else None,
+            "active_hours": filtered_row_count,
+            "inactive_hours": original_row_count - filtered_row_count,
+            "memory_usage": get_memory_usage(df),
+        }
+
+        # Perform data validation
+        validation_results = (
+            validate_traffic_data(df, structure)
+            if len(df) > 0
+            else {"is_valid": True, "warnings": [], "errors": [], "stats": {}}
+        )
+
+        # Enhanced structure with metadata
+        enhanced_structure = {
+            **structure,
+            "filtering_stats": filtering_stats,
+            "data_quality": validation_results,
+            "processing_method": "chunked",
+        }
+
+        return df, location_name, enhanced_structure
 
     except Exception as e:
-        raise Exception(f"Error loading data: {e}")
+        raise TrafficDataError(f"Error loading large dataset from '{file_path}': {e}")
 
 
 def get_available_locations() -> Dict[str, str]:

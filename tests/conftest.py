@@ -111,7 +111,18 @@ def sample_structure():
 @pytest.fixture
 def sample_csv_content():
     """Create sample CSV content for testing data_loader."""
-    return """Location,Hampshire Ave between Noble Ave and Adair Ave
+    header = (
+        "Date/Time,Northbound,Southbound,"
+        "5-14 MPH - Northbound,15-19 MPH - Northbound,20-24 MPH - Northbound,25-29 MPH - Northbound,"
+        "30-34 MPH - Northbound,35-39 MPH - Northbound,40-44 MPH - Northbound,45-50 MPH - Northbound,"
+        "5-14 MPH - Southbound,15-19 MPH - Southbound,20-24 MPH - Southbound,25-29 MPH - Southbound,"
+        "30-34 MPH - Southbound,35-39 MPH - Southbound,40-44 MPH - Southbound,45-50 MPH - Southbound,"
+        "Class 1 - Northbound,Class 2 - Northbound,Class 3 - Northbound,Class 4 - Northbound,"
+        "Class 5 - Northbound,Class 6 - Northbound,Class 1 - Southbound,Class 2 - Southbound,"
+        "Class 3 - Southbound,Class 4 - Southbound,Class 5 - Southbound,Class 6 - Southbound"
+    )
+
+    return f"""Location,Hampshire Ave between Noble Ave and Adair Ave
 Comments,Crystal Traffic Study
 Title,Hampshire Ave between Noble Ave and Adair Ave
 Start Date,6/11/2024 0:00
@@ -119,7 +130,7 @@ End Date,6/18/2024 0:00
 Study Duration,7 days
 Created By,TrafficViewer Pro v1.0
 
-Date/Time,Northbound,Southbound,5-14 MPH - Northbound,15-19 MPH - Northbound,20-24 MPH - Northbound,25-29 MPH - Northbound,30-34 MPH - Northbound,35-39 MPH - Northbound,40-44 MPH - Northbound,45-50 MPH - Northbound,5-14 MPH - Southbound,15-19 MPH - Southbound,20-24 MPH - Southbound,25-29 MPH - Southbound,30-34 MPH - Southbound,35-39 MPH - Southbound,40-44 MPH - Southbound,45-50 MPH - Southbound,Class 1 - Northbound,Class 2 - Northbound,Class 3 - Northbound,Class 4 - Northbound,Class 5 - Northbound,Class 6 - Northbound,Class 1 - Southbound,Class 2 - Southbound,Class 3 - Southbound,Class 4 - Southbound,Class 5 - Southbound,Class 6 - Southbound
+{header}
 6/11/2024 0:00,15,12,0,2,5,6,2,0,0,0,0,1,4,5,2,0,0,0,0,12,2,0,1,0,0,10,1,0,1,0
 6/11/2024 1:00,8,5,0,1,2,4,1,0,0,0,0,0,1,3,1,0,0,0,0,6,1,0,1,0,0,4,1,0,0,0
 6/11/2024 2:00,5,3,0,0,1,3,1,0,0,0,0,0,1,2,0,0,0,0,0,4,1,0,0,0,0,2,1,0,0,0

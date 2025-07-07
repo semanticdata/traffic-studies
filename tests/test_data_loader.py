@@ -111,8 +111,14 @@ class TestDetectFileStructure:
 
     def test_detect_file_structure_eastwest(self, tmp_path):
         """Test file structure detection for East/West directions."""
-        csv_content = """Location,Test Location
-Date/Time,Eastbound,Westbound,25-29 MPH - Eastbound,30-34 MPH - Eastbound,25-29 MPH - Westbound,30-34 MPH - Westbound,Class 2 - Eastbound,Class 2 - Westbound
+        header = (
+            "Date/Time,Eastbound,Westbound,"
+            "25-29 MPH - Eastbound,30-34 MPH - Eastbound,"
+            "25-29 MPH - Westbound,30-34 MPH - Westbound,"
+            "Class 2 - Eastbound,Class 2 - Westbound"
+        )
+        csv_content = f"""Location,Test Location
+{header}
 1/1/2024 0:00,15,12,10,5,8,4,12,10
 """
         csv_file = tmp_path / "eastwest.csv"
@@ -173,7 +179,9 @@ class TestLoadData:
 
     def test_load_data_nonexistent_file(self):
         """Test data loading for nonexistent file."""
-        with pytest.raises((FileNotFoundError, ValueError)):
+        from utils.data_loader import FileStructureError
+
+        with pytest.raises((FileNotFoundError, ValueError, FileStructureError)):
             load_data("nonexistent_file.csv")
 
     def test_load_data_invalid_structure(self, tmp_path):
@@ -200,6 +208,137 @@ class TestLoadData:
         # Hour should match hour from Date/Time
         expected_hours = df["Date/Time"].dt.hour
         pd.testing.assert_series_equal(df["Hour"], expected_hours, check_names=False)
+
+
+class TestValidateTrafficData:
+    """Test suite for validate_traffic_data function."""
+
+    def test_validate_traffic_data_valid_data(self):
+        """Test validation with valid data."""
+        from utils.data_loader import validate_traffic_data
+
+        # Create sample valid data
+        df = pd.DataFrame(
+            {
+                "Date/Time": pd.date_range("2024-01-01", periods=24, freq="h"),
+                "Volume - Northbound": [10, 20, 30, 40] * 6,
+                "Volume - Southbound": [15, 25, 35, 45] * 6,
+                "Total": [25, 45, 65, 85] * 6,
+                "20-25 MPH - Northbound": [5, 10, 15, 20] * 6,
+                "20-25 MPH - Southbound": [8, 12, 18, 22] * 6,
+                "Class #1 - Northbound": [8, 15, 22, 30] * 6,
+                "Class #1 - Southbound": [12, 20, 28, 35] * 6,
+            }
+        )
+
+        structure = {
+            "dir1_volume_col": "Volume - Northbound",
+            "dir2_volume_col": "Volume - Southbound",
+            "dir1_speed_cols": ["20-25 MPH - Northbound"],
+            "dir2_speed_cols": ["20-25 MPH - Southbound"],
+            "dir1_class_cols": ["Class #1 - Northbound"],
+            "dir2_class_cols": ["Class #1 - Southbound"],
+        }
+
+        result = validate_traffic_data(df, structure)
+        assert result["is_valid"] is True
+        assert len(result["errors"]) == 0
+        assert "Volume - Northbound_max" in result["stats"]
+        assert "Volume - Southbound_max" in result["stats"]
+
+    def test_validate_traffic_data_negative_values(self):
+        """Test validation with negative values."""
+        from utils.data_loader import validate_traffic_data
+
+        # Create sample data with negative values
+        df = pd.DataFrame(
+            {
+                "Date/Time": pd.date_range("2024-01-01", periods=5, freq="h"),
+                "Volume - Northbound": [10, -5, 30, 40, 50],  # Negative value
+                "Volume - Southbound": [15, 25, 35, 45, 55],
+                "Total": [25, 20, 65, 85, 105],
+                "20-25 MPH - Northbound": [5, 10, 15, 20, 25],
+                "20-25 MPH - Southbound": [8, 12, 18, 22, 28],
+            }
+        )
+
+        structure = {
+            "dir1_volume_col": "Volume - Northbound",
+            "dir2_volume_col": "Volume - Southbound",
+            "dir1_speed_cols": ["20-25 MPH - Northbound"],
+            "dir2_speed_cols": ["20-25 MPH - Southbound"],
+            "dir1_class_cols": [],
+            "dir2_class_cols": [],
+        }
+
+        result = validate_traffic_data(df, structure)
+        assert result["is_valid"] is False
+        assert len(result["errors"]) > 0
+        assert any("negative values" in error for error in result["errors"])
+
+
+class TestMemoryUsage:
+    """Test suite for memory usage functions."""
+
+    def test_get_memory_usage(self):
+        """Test memory usage calculation."""
+        from utils.data_loader import get_memory_usage
+
+        df = pd.DataFrame(
+            {"col1": [1, 2, 3, 4, 5], "col2": ["a", "b", "c", "d", "e"], "col3": [1.1, 2.2, 3.3, 4.4, 5.5]}
+        )
+
+        result = get_memory_usage(df)
+        assert "total_memory" in result
+        assert "rows" in result
+        assert "columns" in result
+        assert "memory_per_row" in result
+        assert result["rows"] == 5
+        assert result["columns"] == 3
+        assert "MB" in result["total_memory"]
+        assert "bytes" in result["memory_per_row"]
+
+    def test_get_memory_usage_empty_dataframe(self):
+        """Test memory usage calculation with empty dataframe."""
+        from utils.data_loader import get_memory_usage
+
+        df = pd.DataFrame()
+        result = get_memory_usage(df)
+        assert result["rows"] == 0
+        assert result["memory_per_row"] == "0 bytes"
+
+
+class TestEnhancedLoadData:
+    """Test suite for enhanced load_data functionality."""
+
+    def test_load_data_with_filtering_stats(self):
+        """Test that filtering statistics are included in enhanced structure."""
+        # Using actual data file
+        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+
+        assert "filtering_stats" in structure
+        stats = structure["filtering_stats"]
+        assert "original_rows" in stats
+        assert "filtered_rows" in stats
+        assert "removed_rows" in stats
+        assert "removal_percentage" in stats
+        assert "active_hours" in stats
+        assert "inactive_hours" in stats
+        assert stats["original_rows"] >= stats["filtered_rows"]
+
+    def test_load_data_with_validation_results(self):
+        """Test that data quality validation results are included."""
+        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+
+        assert "data_quality" in structure
+        quality = structure["data_quality"]
+        assert "is_valid" in quality
+        assert "warnings" in quality
+        assert "errors" in quality
+        assert "stats" in quality
+        assert isinstance(quality["is_valid"], bool)
+        assert isinstance(quality["warnings"], list)
+        assert isinstance(quality["errors"], list)
 
 
 class TestGetAvailableLocations:
