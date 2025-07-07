@@ -161,6 +161,7 @@ The application expects CSV files exported from TrafficViewer Pro with the follo
 ## 🧪 Development and Testing
 
 ### Testing
+
 ```bash
 # Run all tests
 uv run pytest
@@ -179,6 +180,7 @@ uv sync --dev
 ```
 
 ### Code Quality
+
 ```bash
 # Run linting and formatting
 uv run ruff check .
@@ -188,6 +190,7 @@ uv run ruff format .
 ### Test Coverage
 
 The test suite includes comprehensive tests for:
+
 - **Metrics calculations**: All 6 core KPIs and helper functions
 - **Data loading**: CSV parsing, structure detection, and error handling  
 - **Visualizations**: Chart generation and matplotlib figure validation

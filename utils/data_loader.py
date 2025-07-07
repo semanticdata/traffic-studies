@@ -123,9 +123,12 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
             # Debug print
             # print(f"\nDirections detected: {dir1_name}, {dir2_name}")
 
-            # Detect speed columns
-            dir1_speed_cols = [col for col in columns if f"MPH - {dir1_name}" in col]
-            dir2_speed_cols = [col for col in columns if f"MPH - {dir2_name}" in col]
+            # Detect speed columns - handle both single and double space formats
+            dir1_speed_cols = [col for col in columns if f"MPH - {dir1_name}" in col or f"MPH  - {dir1_name}" in col]
+            dir2_speed_cols = [col for col in columns if f"MPH - {dir2_name}" in col or f"MPH  - {dir2_name}" in col]
+
+            # print(f"\nSpeed columns found for {dir1_name}:", dir1_speed_cols)
+            # print(f"Speed columns found for {dir2_name}:", dir2_speed_cols)
 
             # Detect classification columns - try multiple patterns
             dir1_class_cols = []
@@ -198,6 +201,10 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
                 if pattern in columns:
                     dir2_volume_col = pattern
                     break
+
+            # print(f"\nVolume columns found:")
+            # print(f"  {dir1_name}: {dir1_volume_col}")
+            # print(f"  {dir2_name}: {dir2_volume_col}")
 
             return {
                 "metadata_rows": metadata_rows,
