@@ -32,23 +32,44 @@ def get_location_from_file(file_path: str) -> str:
     """Extract location name from the CSV file metadata."""
     try:
         with open(file_path, "r") as f:
-            header_lines = [next(f) for _ in range(6)]
+            header_lines = []
+            for _ in range(6):
+                try:
+                    header_lines.append(next(f))
+                except StopIteration:
+                    break
 
         for line in header_lines:
-            if "Location:" in line:
-                location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
-                return location
+            # Handle both "Location," and "Location:" formats
+            if line.startswith("Location,") or "Location:" in line:
+                if "Location," in line:
+                    location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
+                else:
+                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
 
-        return Path(file_path).stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
+                if location:
+                    return location
+
+        # Fallback: try to extract from filename
+        stem = Path(file_path).stem
+        if "-" in stem:
+            return stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
+        else:
+            return "Unknown Location"
     except Exception:
-        return Path(file_path).stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
+        return "Unknown Location"
 
 
 def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
     """Detect the structure of the CSV file and return appropriate parsing parameters."""
     try:
         with open(file_path, "r") as f:
-            header_lines = [next(f) for _ in range(15)]
+            header_lines = []
+            for _ in range(15):
+                try:
+                    header_lines.append(next(f))
+                except StopIteration:
+                    break
 
         # Extract metadata information
         location = None
@@ -56,16 +77,26 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
         title = None
 
         for line in header_lines:
-            if "Location:" in line:
-                parts = line.strip().split('","')
-                if len(parts) > 1:
-                    location = parts[1].replace('"', "").strip()
+            # Handle CSV format (comma-separated) and other formats
+            if line.startswith("Location,") or "Location:" in line:
+                if "Location," in line:
+                    location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
                 else:
-                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
-            elif "Comments:" in line:
-                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
-            elif "Title:" in line:
-                title = line.split("Title:")[1].strip().strip('"').strip(",")
+                    parts = line.strip().split('","')
+                    if len(parts) > 1:
+                        location = parts[1].replace('"', "").strip()
+                    else:
+                        location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
+            elif line.startswith("Comments,") or "Comments:" in line:
+                if "Comments," in line:
+                    comments = line.split("Comments,")[1].strip().strip('"').strip(",")
+                else:
+                    comments = line.split("Comments:")[1].strip().strip('"').strip(",")
+            elif line.startswith("Title,") or "Title:" in line:
+                if "Title," in line:
+                    title = line.split("Title,")[1].strip().strip('"').strip(",")
+                else:
+                    title = line.split("Title:")[1].strip().strip('"').strip(",")
 
         # Find data columns
         column_line = None
@@ -93,8 +124,8 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
             # print(f"\nDirections detected: {dir1_name}, {dir2_name}")
 
             # Detect speed columns
-            dir1_speed_cols = [col for col in columns if f"MPH  - {dir1_name}" in col]
-            dir2_speed_cols = [col for col in columns if f"MPH  - {dir2_name}" in col]
+            dir1_speed_cols = [col for col in columns if f"MPH - {dir1_name}" in col]
+            dir2_speed_cols = [col for col in columns if f"MPH - {dir2_name}" in col]
 
             # Detect classification columns - try multiple patterns
             dir1_class_cols = []
@@ -151,6 +182,23 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
             # print(f"{dir1_name}:", dir1_class_cols)
             # print(f"{dir2_name}:", dir2_class_cols)
 
+            # Detect volume columns - try multiple patterns
+            dir1_volume_col = None
+            dir2_volume_col = None
+
+            volume_patterns1 = [f"Volume - {dir1_name}", dir1_name, f"{dir1_name} Volume"]
+            volume_patterns2 = [f"Volume - {dir2_name}", dir2_name, f"{dir2_name} Volume"]
+
+            for pattern in volume_patterns1:
+                if pattern in columns:
+                    dir1_volume_col = pattern
+                    break
+
+            for pattern in volume_patterns2:
+                if pattern in columns:
+                    dir2_volume_col = pattern
+                    break
+
             return {
                 "metadata_rows": metadata_rows,
                 "columns": columns,
@@ -161,13 +209,16 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
                 "dir2_name": dir2_name,
                 "dir1_speed_cols": dir1_speed_cols,
                 "dir2_speed_cols": dir2_speed_cols,
-                "dir1_volume_col": f"Volume - {dir1_name}",
-                "dir2_volume_col": f"Volume - {dir2_name}",
+                "dir1_volume_col": dir1_volume_col,
+                "dir2_volume_col": dir2_volume_col,
                 "dir1_class_cols": dir1_class_cols,
                 "dir2_class_cols": dir2_class_cols,
             }
     except Exception as e:
+        import traceback
+
         print(f"Error detecting file structure: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return None
 
 

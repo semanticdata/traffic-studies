@@ -24,10 +24,22 @@ def calculate_weighted_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
     total_count = 0
     weighted_sum = 0
     for col in speed_cols:
-        speed = int(col.split("-")[0].strip())
-        count = df[col].sum()
-        weighted_sum += speed * count
-        total_count += count
+        try:
+            # Extract speed from column name, handle formats like "25-29 MPH" and "45+ MPH"
+            speed_part = col.split("MPH")[0].strip()
+            if "+" in speed_part:
+                # Handle "45+" format - use the number as-is
+                speed = float(speed_part.replace("+", "").strip())
+            else:
+                # Handle "25-29" format - use lower bound
+                speed = float(speed_part.split("-")[0].strip())
+
+            count = df[col].sum()
+            weighted_sum += speed * count
+            total_count += count
+        except (ValueError, IndexError):
+            # Skip columns that don't have valid speed format
+            continue
     return weighted_sum / total_count if total_count > 0 else 0
 
 
@@ -36,11 +48,23 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
     compliant = 0
     total = 0
     for col in speed_cols:
-        speed = int(col.split("-")[0].strip())
-        count = df[col].sum()
-        if speed <= speed_limit:
-            compliant += count
-        total += count
+        try:
+            # Extract speed from column name, handle formats like "25-29 MPH" and "45+ MPH"
+            speed_part = col.split("MPH")[0].strip()
+            if "+" in speed_part:
+                # Handle "45+" format - use the number as-is
+                speed = float(speed_part.replace("+", "").strip())
+            else:
+                # Handle "25-29" format - use lower bound
+                speed = float(speed_part.split("-")[0].strip())
+
+            count = df[col].sum()
+            if speed <= speed_limit:
+                compliant += count
+            total += count
+        except (ValueError, IndexError):
+            # Skip columns that don't have valid speed format
+            continue
     return compliant, total
 
 
@@ -48,12 +72,24 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
     """Calculate the 85th percentile speed."""
     speeds = []
     for col in speed_cols:
-        speed_range = col.split("MPH")[0].strip().split("-")
-        lower = float(speed_range[0].strip())
-        upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
-        mid_speed = (lower + upper) / 2
-        count = df[col].sum()
-        speeds.extend([mid_speed] * int(count))
+        try:
+            speed_part = col.split("MPH")[0].strip()
+            if "+" in speed_part:
+                # Handle "45+" format - use the number plus 5 as upper bound
+                lower = float(speed_part.replace("+", "").strip())
+                upper = lower + 5  # Assume +5 mph range for "+" speeds
+            else:
+                # Handle "25-29" format
+                speed_range = speed_part.split("-")
+                lower = float(speed_range[0].strip())
+                upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
+
+            mid_speed = (lower + upper) / 2
+            count = df[col].sum()
+            speeds.extend([mid_speed] * int(count))
+        except (ValueError, IndexError):
+            # Skip columns that don't have valid speed format
+            continue
     return np.percentile(speeds, 85) if speeds else 0
 
 
@@ -72,21 +108,33 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
     """Count the number of high-speed violators (15+ mph over limit)."""
     high_speeders = 0
     for col in speed_cols:
-        speed = int(col.split("-")[0].strip())
-        if speed >= speed_limit + 15:
-            high_speeders += df[col].sum()
+        try:
+            # Extract speed from column name, handle formats like "25-29 MPH" and "45+ MPH"
+            speed_part = col.split("MPH")[0].strip()
+            if "+" in speed_part:
+                # Handle "45+" format - use the number as-is
+                speed = float(speed_part.replace("+", "").strip())
+            else:
+                # Handle "25-29" format - use lower bound
+                speed = float(speed_part.split("-")[0].strip())
+
+            if speed >= speed_limit + 15:
+                high_speeders += df[col].sum()
+        except (ValueError, IndexError):
+            # Skip columns that don't have valid speed format
+            continue
     return high_speeders
 
 
 def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict:
     """
     Calculate all core metrics for the dashboard.
-    
+
     Args:
         df: Filtered DataFrame containing traffic data
         structure: Dictionary containing data structure information
         speed_limit: Speed limit in MPH
-        
+
     Returns:
         Dictionary containing all calculated metrics
     """
@@ -94,37 +142,36 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     total_vehicles = df["Total"].sum()
     dir1_volume = df[structure["dir1_volume_col"]].sum()
     dir2_volume = df[structure["dir2_volume_col"]].sum()
-    
+
     # Speed calculations
     dir1_avg_speed = calculate_weighted_speed(df, structure["dir1_speed_cols"])
     dir2_avg_speed = calculate_weighted_speed(df, structure["dir2_speed_cols"])
     combined_avg_speed = (dir1_avg_speed + dir2_avg_speed) / 2
-    
+
     # Compliance calculations
     dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)
     dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
     total_compliant = dir1_compliant + dir2_compliant
     total_speed_readings = dir1_total + dir2_total
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
-    
+
     # 85th percentile speed
     dir1_85th = calculate_85th_percentile_speed(df, structure["dir1_speed_cols"])
     dir2_85th = calculate_85th_percentile_speed(df, structure["dir2_speed_cols"])
     percentile_85th = max(dir1_85th, dir2_85th)
-    
+
     # Peak hour analysis
     hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
     peak_hour_idx = hourly_volumes.idxmax()
     peak_hour = peak_hour_idx[1]
     peak_vehicles = hourly_volumes.max()
-    
+
     # Dominant direction
     dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
     dominant_pct = (
-        max(dir1_volume, dir2_volume) / (dir1_volume + dir2_volume) * 100 
-        if (dir1_volume + dir2_volume) > 0 else 0
+        max(dir1_volume, dir2_volume) / (dir1_volume + dir2_volume) * 100 if (dir1_volume + dir2_volume) > 0 else 0
     )
-    
+
     return {
         "total_vehicles": total_vehicles,
         "combined_avg_speed": combined_avg_speed,

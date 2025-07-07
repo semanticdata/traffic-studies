@@ -21,6 +21,11 @@ traffic-studies/
 │   ├── metrics.py         # Traffic metrics and KPI calculations
 │   ├── visualizations.py  # Chart generation and plotting functions
 │   └── styles.css         # Custom CSS styling for the dashboard
+├── tests/                 # Test suite
+│   ├── conftest.py        # Test fixtures and sample data
+│   ├── test_metrics.py    # Tests for metrics calculations
+│   ├── test_data_loader.py # Tests for data loading
+│   └── test_visualizations.py # Tests for chart generation
 ├── .streamlit/
 │   └── config.toml        # Streamlit configuration settings
 ├── data/                  # Directory for CSV data files
@@ -152,6 +157,40 @@ The application expects CSV files exported from TrafficViewer Pro with the follo
 - **Policy Making**: Data-driven traffic management decisions
 - **Research**: Academic traffic pattern studies
 - **Compliance Monitoring**: Speed enforcement effectiveness evaluation
+
+## 🧪 Development and Testing
+
+### Testing
+```bash
+# Run all tests
+uv run pytest
+
+# Run tests with coverage report
+uv run pytest --cov=utils --cov-report=term-missing
+
+# Run specific test file
+uv run pytest tests/test_metrics.py
+
+# Run tests with verbose output
+uv run pytest -v
+
+# Install development dependencies (includes pytest)
+uv sync --dev
+```
+
+### Code Quality
+```bash
+# Run linting and formatting
+uv run ruff check .
+uv run ruff format .
+```
+
+### Test Coverage
+
+The test suite includes comprehensive tests for:
+- **Metrics calculations**: All 6 core KPIs and helper functions
+- **Data loading**: CSV parsing, structure detection, and error handling  
+- **Visualizations**: Chart generation and matplotlib figure validation
 
 ## 🔧 Technical Details
 

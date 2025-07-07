@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["ruff>=0.11.13"]
+dev = ["ruff>=0.11.13", "pytest>=8.0.0", "pytest-cov>=6.0.0"]
 
 [tool.ruff]
 line-length = 120
@@ -24,3 +24,16 @@ lint.select = ["E", "F", "I"]
 lint.ignore = []
 lint.fixable = ["ALL"]
 lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=utils",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+]
