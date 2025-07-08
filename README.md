@@ -276,12 +276,16 @@ uv run ruff format .
 
 The test suite includes comprehensive tests for:
 
-- **Metrics calculations**: All 6 core KPIs and helper functions
+- **Metrics calculations**: All 6 core KPIs and helper functions with real data validation
+- **Calculation accuracy**: Tests using actual traffic data files with known expected results
 - **Enhanced data loading**: CSV parsing, structure detection, validation framework, and error handling
 - **Data validation**: Traffic data quality checks, negative value detection, and temporal validation
 - **Memory efficiency**: Memory usage monitoring and chunked processing
 - **Performance optimization**: Vectorized operations and speed compliance calculations
 - **Visualizations**: Chart generation and matplotlib figure validation
+- **Real-world validation**: Tests against 11 actual traffic data files from Crystal, Minnesota
+- **Edge case handling**: Zero traffic periods, single data points, and boundary conditions
+- **Cross-file consistency**: Ensures calculations are consistent across different data sources
 
 ## 🔧 Technical Details
 
