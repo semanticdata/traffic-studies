@@ -44,6 +44,11 @@ def load_custom_css(file_path: str) -> str:
         return f"<style>{f.read()}</style>"
 
 
+def clean_location_name(location_name: str) -> str:
+    """Clean location name by removing quotes, commas, and extra whitespace."""
+    return location_name.strip().strip('"').strip("'").strip(",").strip()
+
+
 def setup_sidebar_filters():
     """Set up sidebar filters and return selected values."""
     st.sidebar.title("Filters")
@@ -57,7 +62,7 @@ def setup_sidebar_filters():
         "Select Location",
         options=sorted(list(locations.keys())),
         index=0,
-        format_func=lambda x: x.strip().strip('"').strip("'").strip(",").strip(),
+        format_func=clean_location_name,
     )
 
     return selected_location, locations
@@ -84,10 +89,15 @@ def load_and_filter_data(selected_location: str, locations: dict):
 
     hour_range = st.sidebar.slider("Hour Range", min_value=0, max_value=23, value=(0, 23))
 
-    # Apply filters
+    # Apply filters - handle both tuple and single date cases
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        start_date, end_date = date_range
+    else:
+        start_date = end_date = date_range
+
     mask = (
-        (df["Date/Time"].dt.date >= date_range[0])
-        & (df["Date/Time"].dt.date <= date_range[1])
+        (df["Date/Time"].dt.date >= start_date)
+        & (df["Date/Time"].dt.date <= end_date)
         & (df["Hour"].between(hour_range[0], hour_range[1]))
     )
     filtered_df = df[mask].copy()
@@ -99,8 +109,9 @@ def load_and_filter_data(selected_location: str, locations: dict):
     return filtered_df, structure
 
 
-def display_core_metrics(filtered_df: pd.DataFrame, structure: dict):
+def display_core_metrics(filtered_df: pd.DataFrame, structure: dict, selected_location: str):
     """Display the 6 core metrics in a clean layout."""
+    st.subheader(f"Core Metrics - {selected_location}")
     metrics = get_core_metrics(filtered_df, structure)
 
     # First row - Primary metrics
@@ -127,50 +138,148 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: dict):
     with col6:
         st.metric("🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%")
 
+    date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")
+    date_max = filtered_df["Date/Time"].max().strftime("%B %d, %Y")
+    st.info(f"📅 **Analysis Period:** {date_min} to {date_max}")
+    st.divider()
+
 
 def display_visualizations(filtered_df: pd.DataFrame, structure: dict):
     """Display all visualizations in organized sections."""
 
     # Traffic Volume Section
-    st.subheader("Traffic Volume Analysis")
+    st.subheader("📊 Traffic Volume Analysis")
+
+    # Hourly Traffic Volume
+    st.markdown("##### Hourly Traffic Volume")
     fig1 = plot_traffic_volume(filtered_df, structure)
     st.pyplot(fig1)
 
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This stacked bar chart shows the average hourly traffic volume throughout the day
+        - Each bar represents one hour (0-23), with the height showing total vehicles per hour
+        - The two colors represent traffic in each direction (typically N/S or E/W)
+        - **Peak hours** appear as the tallest bars, usually during morning and evening commutes
+        - **Off-peak hours** (late night/early morning) show lower traffic volumes
+        - Use this to identify busy periods and plan accordingly for traffic management
+        """)
+
+    # Daily Traffic Patterns
+    st.markdown("##### Daily Traffic Patterns")
     temporal_fig = plot_temporal_patterns(filtered_df, structure)
     st.pyplot(temporal_fig)
 
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This bar chart shows total traffic volume for each day of the week
+        - Each bar represents one day, with separate colors for each traffic direction
+        - **Weekday patterns** typically show higher volumes Monday-Friday
+        - **Weekend patterns** may show different traffic distributions
+        - Compare bar heights to identify the busiest and quietest days
+        - Useful for understanding weekly traffic cycles and planning maintenance schedules
+        """)
+
+    st.divider()
+
     # Speed Analysis Section
-    st.subheader("Speed Analysis")
+    st.subheader("🚗 Speed Analysis")
+
+    # Speed Violation Severity
     severity_fig = plot_speed_violation_severity(filtered_df, structure)
     if severity_fig:
+        st.markdown("##### Speed Violation Severity")
         st.pyplot(severity_fig)
 
+        with st.expander("See explanation"):
+            st.markdown("""
+            **How to read this chart:**
+            - This chart categorizes speeding violations by severity level
+            - **0-5 mph over**: Minor speeding, typically considered acceptable tolerance
+            - **5-10 mph over**: Moderate speeding, may warrant attention
+            - **10-15 mph over**: Significant speeding, safety concern
+            - **15+ mph over**: Severe speeding, major safety risk
+            - Colors progress from light to dark indicating increasing severity
+            - Use this to prioritize enforcement efforts and identify dangerous speeding patterns
+            """)
+
+    # Speed Distribution
+    st.markdown("##### Speed Distribution by Direction")
     fig2 = plot_speed_distribution(filtered_df, structure)
     st.pyplot(fig2)
 
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - These charts show the distribution of vehicle speeds in each direction
+        - Each bar represents a speed range (e.g., 25-30 MPH, 30-35 MPH)
+        - Bar height indicates the average number of vehicles in that speed range
+        - **Normal distribution** typically peaks around the speed limit
+        - **Right-skewed distribution** may indicate speeding issues
+        - Compare the two directions to identify if one has more speeding than the other
+        - Use this to understand overall speed compliance patterns
+        """)
+
+    # Speed Compliance
+    st.markdown("##### Speed Compliance Analysis")
     fig3 = plot_speed_compliance(filtered_df, structure)
     st.pyplot(fig3)
 
-    # Speeding by Hour Section
-    st.subheader("Speeding by Hour of Day")
-    st.markdown(
-        "This visualization shows when speeding occurs throughout the day, with the total number of vehicles "
-        "and the percentage of vehicles speeding for each hour."
-    )
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This chart compares compliant vs. non-compliant vehicles by direction
+        - **Green bars** represent vehicles traveling at or below the speed limit
+        - **Red bars** represent vehicles exceeding the speed limit
+        - Compare bar heights to see the compliance rate for each direction
+        - Higher green bars indicate better speed compliance
+        - Use this to quickly assess overall speed compliance and identify problem directions
+        """)
+
+    # Speeding by Hour
+    st.markdown("##### Speeding Patterns by Hour")
     speeding_fig = plot_speeding_by_hour(filtered_df, structure)
     st.pyplot(speeding_fig)
+
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This dual-axis chart shows when speeding occurs throughout the day
+        - **Gray bars** (left axis) show total vehicle count by hour
+        - **Red line with dots** (right axis) shows percentage of vehicles speeding
+        - **High percentage + high volume** indicates peak enforcement opportunities
+        - **High percentage + low volume** may indicate off-peak speeding patterns
+        - Compare the two directions to identify directional speeding patterns
+        - Use this to optimize enforcement timing and identify when speeding is most problematic
+        """)
+
+    st.divider()
 
 
 def display_vehicle_classification(filtered_df: pd.DataFrame, structure: dict):
     """Display vehicle classification with chart and legend."""
-    st.subheader("Vehicle Classification")
+    st.subheader("🚛 Vehicle Classification")
 
     # Display the chart
     classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
     st.pyplot(classification_fig)
 
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This chart shows the distribution of different vehicle types in each direction
+        - Each bar represents a vehicle classification based on the Federal Highway Administration (FHWA) system
+        - **Class 2 (Passenger Cars)** typically dominates traffic in residential areas
+        - **Class 3 (Pickups, Vans)** represents light commercial and personal vehicles
+        - **Classes 4-6** represent larger commercial vehicles (buses, trucks)
+        - Compare the two directions to identify if one has more commercial traffic
+        - Use this data for infrastructure planning and understanding traffic composition
+        """)
+
     # Display vehicle class legend
-    st.markdown("### Vehicle Class Legend")
+    st.markdown("##### Vehicle Class Legend")
     st.markdown("""
     - 🏍️ **Class 1**: Motorcycles  
     - 🚗 **Class 2**: Passenger Cars  
@@ -192,36 +301,42 @@ def display_optional_data(filtered_df: pd.DataFrame):
 def main():
     """Main application function."""
     # Page configuration
-    st.set_page_config(page_title="Traffic Analysis Dashboard", page_icon="🚗", layout="wide")
+    st.set_page_config(
+        page_title="Traffic Analysis Dashboard",
+        page_icon="🚗",
+        layout="centered",
+        menu_items={
+            "About": "Built for the [City of Crystal](https://www.crystalmn.gov/) by Miguel Pimentel. Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), and exported using [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html).",
+            "Get help": "mailto:miguel.pimentel@crystalmn.gov",
+        },
+    )
 
     # Apply custom CSS
     css_file_path = "styles.css"
     st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
     # Header
-    st.title("Traffic Analysis Dashboard")
+    st.title("🚸 Traffic Analysis Dashboard")
     st.markdown(
-        "This dashboard provides insights into traffic data, including volume, speed, and vehicle classification."
+        "Comprehensive traffic analysis for the City of Crystal, Minnesota. "
+        "This dashboard analyzes traffic patterns, speed compliance, and vehicle classifications "
+        "to support data-driven traffic management decisions."
     )
-    st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
+    # st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
+    # st.divider()
 
     # Setup sidebar and load data
     selected_location, locations = setup_sidebar_filters()
     filtered_df, structure = load_and_filter_data(selected_location, locations)
 
+    # Clean the location name for display
+    clean_location = clean_location_name(selected_location)
+
     # Display dashboard sections
-    display_core_metrics(filtered_df, structure)
+    display_core_metrics(filtered_df, structure, clean_location)
     display_visualizations(filtered_df, structure)
     display_vehicle_classification(filtered_df, structure)
     display_optional_data(filtered_df)
-
-    # Footer
-    st.markdown("---")
-    st.markdown(
-        "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), "
-        "and exported from [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html). "
-        "Dashboard created with [Streamlit](https://streamlit.io)."
-    )
 
 
 if __name__ == "__main__":
