@@ -1,4 +1,4 @@
-# Traffic Studies - Test Suite
+# Test Suite
 
 This page provides comprehensive testing of the traffic data loading and metrics calculation process, based on learnings from debugging Observable Framework issues.
 
@@ -10,6 +10,7 @@ import { getCoreMetrics } from "./lib/metrics.js";
 ## 🧪 Observable Framework Compatibility Tests
 
 ### Test 1: Basic Value Types
+
 **Purpose**: Verify Observable can render basic JavaScript values
 
 ```js
@@ -26,6 +27,7 @@ true
 ```
 
 ### Test 2: Collections
+
 **Purpose**: Test Observable's handling of arrays and objects
 
 ```js
@@ -43,6 +45,7 @@ true
 ```
 
 ### Test 3: Table-like Data
+
 **Purpose**: Test Observable's table rendering capabilities
 
 ```js
@@ -57,6 +60,7 @@ true
 ## 📊 Data Loading Tests
 
 ### Test 4: CSV Structure Detection
+
 **Purpose**: Verify CSV parsing and structure detection
 
 ```js
@@ -76,6 +80,7 @@ console.log("Structure detected:", structure);
 ```
 
 ### Test 5: Full Data Loading
+
 **Purpose**: Test complete data loading pipeline
 
 ```js
@@ -98,6 +103,7 @@ console.log("Traffic data loaded:", trafficResult);
 ## ⚠️ Known Issues Tests
 
 ### Test 6: Data Row Access (May Fail)
+
 **Purpose**: Test accessing individual data rows - known to cause issues
 
 ```js
@@ -112,6 +118,7 @@ try {
 ```
 
 ### Test 7: GetCoreMetrics Function (Known to Fail)
+
 **Purpose**: Test the getCoreMetrics function - known to break Observable cells
 
 ```js
@@ -128,6 +135,7 @@ try {
 ## ✅ Working Solutions
 
 ### Test 8: Hardcoded Metrics Table (Works)
+
 **Purpose**: Display metrics using hardcoded values from console output
 
 ```js
@@ -143,6 +151,7 @@ try {
 ```
 
 ### Test 9: Data Length Access (Works)
+
 **Purpose**: Test accessing data properties that work in Observable
 
 ```js
@@ -155,6 +164,7 @@ try {
 ```
 
 ### Test 10: Sample Data Display (Works)
+
 **Purpose**: Display sample data in a way that works in Observable
 
 ```js
@@ -165,6 +175,7 @@ trafficResult.data.slice(0, 3)
 ## 📝 Test Results Summary
 
 ### ✅ **What Works in Observable Framework:**
+
 - Basic JavaScript values (numbers, strings, booleans)
 - Simple arrays and objects (wrapped in parentheses)
 - Hardcoded data tables
@@ -174,6 +185,7 @@ trafficResult.data.slice(0, 3)
 - Simple data slicing (`.slice()`)
 
 ### ❌ **What Fails in Observable Framework:**
+
 - Complex function calls (`getCoreMetrics()`)
 - Accessing individual data row properties
 - Array iteration methods (`.reduce()`, `.forEach()`)
@@ -181,6 +193,7 @@ trafficResult.data.slice(0, 3)
 - Functions that work in console but not in cells
 
 ### 🔧 **Workarounds:**
+
 1. **Use hardcoded values**: Extract values from console logs
 2. **Simplify data access**: Use basic property access only
 3. **Avoid complex functions**: Keep cell logic simple

@@ -7,8 +7,6 @@ import {loadTrafficData} from "./lib/data-loader.js";
 import {getCoreMetrics} from "./lib/metrics.js";
 ```
 
-## Traffic Data Analysis
-
 ```js
 // Load and process traffic data with optimized async loading
 const trafficResult = await loadTrafficData(
@@ -20,7 +18,7 @@ const trafficResult = await loadTrafficData(
 trafficResult
 ```
 
-✅ **Data loaded successfully**: ${trafficResult.data.length} records from ${trafficResult.location}
+**Location Information**: ${trafficResult.location} (${trafficResult.data.length} records)
 
 ## Core Metrics
 
@@ -238,7 +236,3 @@ trafficResult
     </tr>
   </tbody>
 </table>
-
----
-
-**Status**: Observable Framework dashboard now uses optimized data loading and metrics calculations to prevent infinite loops and page hangs.
