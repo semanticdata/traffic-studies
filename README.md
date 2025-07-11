@@ -1,6 +1,8 @@
 # Traffic Studies
 
-A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with Streamlit. This project processes and visualizes traffic data collected from [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html) traffic counters, providing detailed insights into traffic patterns, speed compliance, and vehicle classifications.
+A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with [Observable Framework](https://observablehq.com/framework/). This project processes and visualizes traffic data collected from [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html) traffic counters across 13 monitoring locations, providing detailed insights into traffic patterns, speed compliance, and vehicle classifications.
+
+**Note**: This project has been transitioned from Streamlit to Observable Framework. Legacy Streamlit files are maintained for reference.
 
 ## 🌟 Features
 
@@ -18,14 +20,33 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 
 ## 🏗️ Project Structure
 
+### Observable Framework Implementation (Primary)
+
 ```text
 traffic-studies/
-├── main.py                # Main Streamlit dashboard
+├── src/
+│   ├── index.md           # Main Observable Framework dashboard
+│   ├── traffic-volume.md  # Detailed traffic volume analysis page
+│   ├── test.md            # Test suite for Observable Framework
+│   ├── lib/
+│   │   ├── data-loader.js # CSV parsing and data preprocessing
+│   │   └── metrics.js     # Traffic metrics calculations
+│   └── data/              # 13 CSV files for monitoring locations
+├── observablehq.config.js # Observable Framework configuration
+├── package.json           # Node.js dependencies and scripts
+├── CLAUDE.md              # AI assistant guidance file
+└── README.md              # This file
+```
+
+### Legacy Streamlit Implementation (Secondary)
+
+```text
+├── main.py                # Streamlit dashboard (archived)
 ├── utils/
-│   ├── data_loader.py     # Enhanced data loading with validation and optimization
+│   ├── data_loader.py     # Enhanced data loading with validation
 │   ├── metrics.py         # Traffic metrics and KPI calculations
 │   ├── visualizations.py  # Chart generation and plotting functions
-│   └── styles.css         # Custom CSS styling for the dashboard
+│   └── styles.css         # Custom CSS styling
 ├── tests/                 # Test suite
 │   ├── conftest.py        # Test fixtures and sample data
 │   ├── test_metrics.py    # Tests for metrics calculations
@@ -33,18 +54,15 @@ traffic-studies/
 │   └── test_visualizations.py # Tests for chart generation
 ├── .streamlit/
 │   └── config.toml        # Streamlit configuration settings
-├── data/                  # Directory for CSV data files
-├── pyproject.toml         # Project dependencies and metadata
-├── CLAUDE.md              # AI assistant guidance file
-└── README.md              # This file
+├── pyproject.toml         # Python dependencies and metadata
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Python 3.13 or higher
-- [uv](https://github.com/astral-sh/uv) - Fast Python package installer and resolver
+- Node.js 18 or higher
+- [pnpm](https://pnpm.io/) - Fast, disk space efficient package manager
 
 ### Installation
 
@@ -55,43 +73,63 @@ traffic-studies/
    cd traffic-studies
    ```
 
-2. **Create and activate a virtual environment**
+2. **Install dependencies**
 
    ```shell
-   uv venv
-   .venv/Scripts/activate  # On Windows
-   source .venv/bin/activate  # On Unix or MacOS
+   pnpm install
    ```
 
-3. **Install dependencies**
+3. **Add your data files**
+
+   Place your CSV files from TrafficViewer Pro in the `src/data/` directory
+
+4. **Run the development server**
 
    ```shell
-   uv sync
+   pnpm run dev
    ```
 
-4. **Add your data files**
+The dashboard will open in your web browser at `http://localhost:3000`
 
-   Place your CSV files from TrafficViewer Pro in the `data/` directory
-
-5. **Run the dashboard**
-
-   ```shell
-   uv run streamlit run main.py
-   ```
-
-The dashboard will open in your web browser at `http://localhost:8501`
-
-### Configuration
-
-#### Optional: Disable usage statistics
-
-Usage statistics collection is already disabled via `.streamlit/config.toml`. To modify settings:
+### Additional Commands
 
 ```shell
-# Edit .streamlit/config.toml
-[browser]
-gatherUsageStats = false
+# Build for production
+pnpm run build
+
+# Deploy to Observable
+pnpm run deploy
+
+# Clean cache
+pnpm run clean
 ```
+
+### Legacy Streamlit Version
+
+To run the legacy Streamlit version:
+
+```shell
+# Create virtual environment
+uv venv
+source .venv/bin/activate  # Unix/MacOS
+
+# Install dependencies
+uv sync
+
+# Run Streamlit dashboard
+uv run streamlit run main.py
+```
+
+### Supported Locations
+
+The Observable Framework dashboard supports 13 different traffic monitoring locations in Crystal, Minnesota:
+
+- 2809 Hampshire Ave, 2941 Hampshire Ave, 3528 Noble Ave
+- 3618 Adair Ave, 3624 Welcome Ave, 4017 Jersey Ave
+- 4848 Nevada Ave N, 5240 Maryland Ave N, 5336 Kentucky Ave N
+- 5716 Elmhurst Ave, 6420 41st Ave, 6702 45th Ave N, 7206 58th Ave
+
+Each location has its own CSV file in the `src/data/` directory with interactive location selection in the dashboard.
 
 ## 📊 Core Metrics Dashboard
 
@@ -245,7 +283,23 @@ The application expects CSV files exported from TrafficViewer Pro with the follo
 
 ## 🧪 Development and Testing
 
-### Testing
+### Observable Framework Development
+
+```bash
+# Start development server with hot reload
+pnpm run dev
+
+# Build and test production build
+pnpm run build
+
+# Clean cache if needed
+pnpm run clean
+
+# Test page at src/test.md
+open http://localhost:3000/test
+```
+
+### Legacy Streamlit Testing
 
 ```bash
 # Run all tests
@@ -267,7 +321,7 @@ uv sync --dev
 ### Code Quality
 
 ```bash
-# Run linting and formatting
+# Run linting and formatting (Python)
 uv run ruff check .
 uv run ruff format .
 ```
@@ -290,6 +344,15 @@ The test suite includes comprehensive tests for:
 ## 🔧 Technical Details
 
 ### Dependencies
+
+#### Observable Framework (Primary)
+
+- **Observable Framework**: Modern web application framework for data visualization
+- **D3.js**: Data visualization library (integrated with Observable)
+- **Plot**: Observable's grammar of graphics for data visualization
+- **JavaScript ES6+**: Modern JavaScript features and syntax
+
+#### Legacy Streamlit (Secondary)
 
 - **Streamlit**: Web application framework
 - **Pandas**: Data manipulation and analysis with enhanced validation
