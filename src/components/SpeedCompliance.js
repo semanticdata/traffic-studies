@@ -34,27 +34,56 @@ export function SpeedCompliance(speedLimit = 30) {
     
     .compliance-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .compliance-card {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
       text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
     
-    .compliance-direction {
-      font-weight: 600;
-      color: var(--theme-foreground, #374151);
+    .compliance-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .compliance-card.good {
+      border-left: 4px solid #10b981;
+    }
+    
+    .compliance-card.warning {
+      border-left: 4px solid #f59e0b;
+    }
+    
+    .compliance-card.poor {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .compliance-icon {
+      font-size: 1.5rem;
       margin-bottom: 0.5rem;
     }
     
+    .compliance-direction {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--theme-foreground-muted, #6b7280);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
     .compliance-rate {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       font-weight: 700;
       margin: 0.5rem 0;
     }
@@ -69,6 +98,12 @@ export function SpeedCompliance(speedLimit = 30) {
     
     .compliance-rate.poor {
       color: #ef4444;
+    }
+    
+    .compliance-label {
+      font-size: 0.8rem;
+      color: var(--theme-foreground-muted, #6b7280);
+      font-weight: 500;
     }
     
     .compliance-explanation {
@@ -110,25 +145,29 @@ export function SpeedCompliance(speedLimit = 30) {
   
   // Northbound card
   const northCard = document.createElement("div");
-  northCard.className = "compliance-card";
+  const northClass = northboundCompliance >= 70 ? 'good' : northboundCompliance >= 60 ? 'warning' : 'poor';
+  northCard.className = `compliance-card ${northClass}`;
   northCard.innerHTML = `
+    <div class="compliance-icon">⬆️</div>
     <div class="compliance-direction">Northbound</div>
-    <div class="compliance-rate ${northboundCompliance >= 70 ? 'good' : northboundCompliance >= 60 ? 'warning' : 'poor'}">
+    <div class="compliance-rate ${northClass}">
       ${northboundCompliance.toFixed(1)}%
     </div>
-    <div>Speed Compliant</div>
+    <div class="compliance-label">Speed Compliant</div>
   `;
   summaryContainer.appendChild(northCard);
   
   // Southbound card
   const southCard = document.createElement("div");
-  southCard.className = "compliance-card";
+  const southClass = southboundCompliance >= 70 ? 'good' : southboundCompliance >= 60 ? 'warning' : 'poor';
+  southCard.className = `compliance-card ${southClass}`;
   southCard.innerHTML = `
+    <div class="compliance-icon">⬇️</div>
     <div class="compliance-direction">Southbound</div>
-    <div class="compliance-rate ${southboundCompliance >= 70 ? 'good' : southboundCompliance >= 60 ? 'warning' : 'poor'}">
+    <div class="compliance-rate ${southClass}">
       ${southboundCompliance.toFixed(1)}%
     </div>
-    <div>Speed Compliant</div>
+    <div class="compliance-label">Speed Compliant</div>
   `;
   summaryContainer.appendChild(southCard);
   

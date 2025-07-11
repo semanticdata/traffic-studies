@@ -9,38 +9,95 @@ export function CoreMetrics(coreMetrics) {
   style.textContent = `
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 0.5rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .metric-card {
-      background: var(--theme-background-alt, #f8fafc);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
-      border-radius: 5px;
-      padding: 0.25rem 0.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
     
     .metric-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .metric-card.total {
+      border-left: 4px solid #10b981;
+    }
+    
+    .metric-card.speed {
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .metric-card.compliance {
+      border-left: 4px solid #10b981;
+    }
+    
+    .metric-card.percentile {
+      border-left: 4px solid #f59e0b;
+    }
+    
+    .metric-card.peak {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .metric-card.direction {
+      border-left: 4px solid #8b5cf6;
     }
     
     .metric-value {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: var(--theme-foreground-focus, #2563eb);
-      margin: 0 0 0.5rem 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--theme-foreground, #374151);
+      margin: 0.5rem 0;
+    }
+    
+    .metric-value.total {
+      color: #10b981;
+    }
+    
+    .metric-value.speed {
+      color: #3b82f6;
+    }
+    
+    .metric-value.compliance {
+      color: #10b981;
+    }
+    
+    .metric-value.percentile {
+      color: #f59e0b;
+    }
+    
+    .metric-value.peak {
+      color: #ef4444;
+    }
+    
+    .metric-value.direction {
+      color: #8b5cf6;
     }
     
     .metric-label {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
+      font-weight: 500;
       color: var(--theme-foreground-muted, #6b7280);
-      margin: 0;
+      margin-bottom: 0.5rem;
       text-transform: uppercase;
-      letter-spacing: 0.025em;
+      letter-spacing: 0.5px;
+    }
+    
+    .metric-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
     }
   `;
 
@@ -55,44 +112,61 @@ export function CoreMetrics(coreMetrics) {
   const metrics = [
     {
       value: coreMetrics.totalVehicles.toLocaleString(),
-      label: "Total Vehicles"
+      label: "Total Vehicles",
+      icon: "📊",
+      class: "total"
     },
     {
       value: `${coreMetrics.combinedAvgSpeed.toFixed(1)} mph`,
-      label: "Average Speed"
+      label: "Average Speed",
+      icon: "🏎️",
+      class: "speed"
     },
     {
       value: `${coreMetrics.complianceRate.toFixed(1)}%`,
-      label: "Speed Compliance"
+      label: "Speed Compliance",
+      icon: "🚦",
+      class: "compliance"
     },
     {
       value: `${coreMetrics.percentile85th.toFixed(0)} mph`,
-      label: "85th Percentile Speed"
+      label: "85th Percentile Speed",
+      icon: "🎯",
+      class: "percentile"
     },
     {
-      value: `${coreMetrics.peakHour}:00 (${coreMetrics.peakVehicles} vehicles)`,
-      label: "Peak Hour"
+      value: `${coreMetrics.peakHour}:00`,
+      label: "Peak Hour",
+      icon: "⏰",
+      class: "peak"
     },
     {
-      value: `${coreMetrics.dominantDirection} (${coreMetrics.dominantPct.toFixed(1)}%)`,
-      label: "Dominant Direction"
+      value: `${coreMetrics.dominantDirection}`,
+      label: "Dominant Direction",
+      icon: "🔄",
+      class: "direction"
     }
   ];
 
   metrics.forEach(metric => {
     const card = document.createElement("div");
-    card.className = "metric-card";
+    card.className = `metric-card ${metric.class}`;
     
-    const value = document.createElement("div");
-    value.className = "metric-value";
-    value.textContent = metric.value;
+    const icon = document.createElement("div");
+    icon.className = "metric-icon";
+    icon.textContent = metric.icon;
     
     const label = document.createElement("div");
     label.className = "metric-label";
     label.textContent = metric.label;
     
-    card.appendChild(value);
+    const value = document.createElement("div");
+    value.className = `metric-value ${metric.class}`;
+    value.textContent = metric.value;
+    
+    card.appendChild(icon);
     card.appendChild(label);
+    card.appendChild(value);
     metricsGrid.appendChild(card);
   });
 

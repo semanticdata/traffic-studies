@@ -23,29 +23,43 @@ export function VehicleClassification() {
   const style = document.createElement("style");
   style.textContent = `
     .vehicle-classification-container {
-      margin: 1rem 0;
+      margin: 2rem 0;
     }
     
     .classification-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
       color: var(--theme-foreground, #374151);
+      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
     }
     
     .classification-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .classification-card {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
       text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .classification-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
     
     .classification-card.dominant {
@@ -62,13 +76,15 @@ export function VehicleClassification() {
     
     .classification-type {
       font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--theme-foreground, #374151);
+      font-weight: 500;
+      color: var(--theme-foreground-muted, #6b7280);
       margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .classification-percentage {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 700;
       margin: 0.5rem 0;
     }
@@ -86,53 +102,96 @@ export function VehicleClassification() {
     }
     
     .classification-count {
-      font-size: 0.9rem;
+      font-size: 1rem;
       color: var(--theme-foreground-muted, #6b7280);
+      font-weight: 500;
     }
     
     .classification-legend {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
-      margin: 1rem 0;
-      border-left: 4px solid var(--theme-accent, #6366f1);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      border-left: 4px solid;
+      border-image: linear-gradient(135deg, #6366f1, #8b5cf6) 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .classification-legend h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .classification-legend h4::before {
+      content: '🚗';
+      font-size: 1.2rem;
     }
     
     .legend-item {
       display: flex;
       align-items: center;
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
       color: var(--theme-foreground-muted, #6b7280);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      padding: 0.5rem;
+      border-radius: 6px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .legend-item:hover {
+      background: var(--theme-background-alt, #f8fafc);
     }
     
     .legend-emoji {
-      margin-right: 0.5rem;
-      font-size: 1.2rem;
+      margin-right: 0.75rem;
+      font-size: 1.4rem;
     }
     
     .classification-explanation {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
-      margin: 1rem 0;
-      border-left: 4px solid var(--theme-accent, #6366f1);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      border-left: 4px solid;
+      border-image: linear-gradient(135deg, #6366f1, #8b5cf6) 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .classification-explanation h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .classification-explanation h4::before {
+      content: '📊';
+      font-size: 1.2rem;
     }
     
     .classification-explanation p {
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
       color: var(--theme-foreground-muted, #6b7280);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding-left: 1rem;
+      position: relative;
+    }
+    
+    .classification-explanation p::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #6366f1;
+      font-weight: bold;
     }
   `;
   container.appendChild(style);
@@ -193,13 +252,18 @@ export function VehicleClassification() {
     height: 500,
     marginLeft: 80,
     marginBottom: 100,
+    style: {
+      background: "transparent",
+      fontFamily: "system-ui, sans-serif"
+    },
     x: {
       label: "Vehicle Type",
       tickRotate: 45
     },
     y: {
       label: "Vehicle Count",
-      grid: true
+      grid: true,
+      tickFormat: "~s"
     },
     color: {
       legend: true,
@@ -211,7 +275,8 @@ export function VehicleClassification() {
         x: "vehicleType",
         y: "count",
         fill: "direction",
-        tip: true
+        tip: true,
+        rx: 3
       }),
       Plot.ruleY([0])
     ]

@@ -24,60 +24,133 @@ export function TemporalPatterns() {
   const style = document.createElement("style");
   style.textContent = `
     .temporal-patterns-container {
-      margin: 1rem 0;
+      margin: 2rem 0;
     }
     
     .temporal-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
       color: var(--theme-foreground, #374151);
+      background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
     }
     
     .temporal-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .temporal-card {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
       text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .temporal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .temporal-card.weekday {
+      border-left: 4px solid #3b82f6;
+    }
+    
+    .temporal-card.weekend {
+      border-left: 4px solid #06b6d4;
+    }
+    
+    .temporal-card.peak {
+      border-left: 4px solid #10b981;
+    }
+    
+    .temporal-card.quiet {
+      border-left: 4px solid #f59e0b;
     }
     
     .temporal-label {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
+      font-weight: 500;
       color: var(--theme-foreground-muted, #6b7280);
       margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .temporal-value {
-      font-size: 1.2rem;
-      font-weight: 600;
+      font-size: 1.6rem;
+      font-weight: 700;
       color: var(--theme-foreground, #374151);
+      margin: 0.5rem 0;
+    }
+    
+    .temporal-value.weekday {
+      color: #3b82f6;
+    }
+    
+    .temporal-value.weekend {
+      color: #06b6d4;
+    }
+    
+    .temporal-value.peak {
+      color: #10b981;
+    }
+    
+    .temporal-value.quiet {
+      color: #f59e0b;
     }
     
     .temporal-explanation {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
-      margin: 1rem 0;
-      border-left: 4px solid var(--theme-accent, #8b5cf6);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      border-left: 4px solid;
+      border-image: linear-gradient(135deg, #8b5cf6, #06b6d4) 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .temporal-explanation h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .temporal-explanation h4::before {
+      content: '📅';
+      font-size: 1.2rem;
     }
     
     .temporal-explanation p {
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
       color: var(--theme-foreground-muted, #6b7280);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding-left: 1rem;
+      position: relative;
+    }
+    
+    .temporal-explanation p::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #8b5cf6;
+      font-weight: bold;
     }
   `;
   container.appendChild(style);
@@ -99,18 +172,18 @@ export function TemporalPatterns() {
   summaryContainer.className = "temporal-summary";
   
   const cards = [
-    {label: "Weekday Average", value: `${Math.round(weekdayAvg).toLocaleString()}`},
-    {label: "Weekend Average", value: `${Math.round(weekendAvg).toLocaleString()}`},
-    {label: "Busiest Day", value: busiestDay.day},
-    {label: "Quietest Day", value: quietestDay.day}
+    {label: "Weekday Average", value: `${Math.round(weekdayAvg).toLocaleString()}`, class: "weekday"},
+    {label: "Weekend Average", value: `${Math.round(weekendAvg).toLocaleString()}`, class: "weekend"},
+    {label: "Busiest Day", value: busiestDay.day, class: "peak"},
+    {label: "Quietest Day", value: quietestDay.day, class: "quiet"}
   ];
 
   cards.forEach(card => {
     const cardElement = document.createElement("div");
-    cardElement.className = "temporal-card";
+    cardElement.className = `temporal-card ${card.class}`;
     cardElement.innerHTML = `
       <div class="temporal-label">${card.label}</div>
-      <div class="temporal-value">${card.value}</div>
+      <div class="temporal-value ${card.class}">${card.value}</div>
     `;
     summaryContainer.appendChild(cardElement);
   });
@@ -129,13 +202,18 @@ export function TemporalPatterns() {
     height: 400,
     marginLeft: 80,
     marginBottom: 60,
+    style: {
+      background: "transparent",
+      fontFamily: "system-ui, sans-serif"
+    },
     x: {
       label: "Day of Week",
       domain: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     },
     y: {
       label: "Total Vehicle Count",
-      grid: true
+      grid: true,
+      tickFormat: "~s"
     },
     color: {
       legend: true,
@@ -147,13 +225,15 @@ export function TemporalPatterns() {
         x: "day",
         y: "northbound",
         fill: "#3b82f6",
-        tip: true
+        tip: true,
+        rx: 3
       }),
       Plot.barY(dailyData, {
         x: "day",
         y: "southbound",
         fill: "#ef4444",
-        tip: true
+        tip: true,
+        rx: 3
       }),
       Plot.ruleY([0])
     ]

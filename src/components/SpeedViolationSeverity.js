@@ -38,17 +38,26 @@ export function SpeedViolationSeverity(speedLimit = 30) {
     
     .violation-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .violation-card {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
       text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .violation-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
     
     .violation-card.minor {
@@ -67,15 +76,22 @@ export function SpeedViolationSeverity(speedLimit = 30) {
       border-left: 4px solid #dc2626;
     }
     
-    .violation-range {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--theme-foreground, #374151);
+    .violation-icon {
+      font-size: 1.5rem;
       margin-bottom: 0.5rem;
     }
     
+    .violation-range {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--theme-foreground-muted, #6b7280);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
     .violation-count {
-      font-size: 1.4rem;
+      font-size: 1.8rem;
       font-weight: 700;
       margin: 0.5rem 0;
     }
@@ -97,8 +113,10 @@ export function SpeedViolationSeverity(speedLimit = 30) {
     }
     
     .violation-description {
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: var(--theme-foreground-muted, #6b7280);
+      font-weight: 500;
+      line-height: 1.4;
     }
     
     .violation-explanation {
@@ -154,11 +172,13 @@ export function SpeedViolationSeverity(speedLimit = 30) {
     "Significant speeding, safety concern",
     "Severe speeding, major safety risk"
   ];
+  const severityIcons = ["⚠️", "🚨", "🔥", "💥"];
 
   severityTotals.forEach((item, index) => {
     const cardElement = document.createElement("div");
     cardElement.className = `violation-card ${severityClasses[index]}`;
     cardElement.innerHTML = `
+      <div class="violation-icon">${severityIcons[index]}</div>
       <div class="violation-range">${item.range}</div>
       <div class="violation-count ${severityClasses[index]}">${item.total}</div>
       <div class="violation-description">${severityDescriptions[index]}</div>

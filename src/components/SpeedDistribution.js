@@ -36,33 +36,109 @@ export function SpeedDistribution() {
   const style = document.createElement("style");
   style.textContent = `
     .speed-distribution-container {
-      margin: 1rem 0;
+      margin: 2rem 0;
     }
     
     .speed-dist-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
       color: var(--theme-foreground, #374151);
+      background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+    
+    .speed-dist-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
+    }
+    
+    .speed-dist-card {
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--theme-foreground-muted, #e1e5e9);
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .speed-dist-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .speed-dist-label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--theme-foreground-muted, #6b7280);
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .speed-dist-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--theme-foreground, #374151);
+      margin: 0.5rem 0;
+    }
+    
+    .speed-dist-peak {
+      color: #10b981;
+    }
+    
+    .speed-dist-average {
+      color: #3b82f6;
     }
     
     .speed-dist-explanation {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
-      margin: 1rem 0;
-      border-left: 4px solid var(--theme-accent, #3b82f6);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      border-left: 4px solid;
+      border-image: linear-gradient(135deg, #3b82f6, #6366f1) 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .speed-dist-explanation h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .speed-dist-explanation h4::before {
+      content: '📊';
+      font-size: 1.2rem;
     }
     
     .speed-dist-explanation p {
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
       color: var(--theme-foreground-muted, #6b7280);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding-left: 1rem;
+      position: relative;
+    }
+    
+    .speed-dist-explanation p::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #3b82f6;
+      font-weight: bold;
     }
   `;
   container.appendChild(style);
@@ -72,6 +148,33 @@ export function SpeedDistribution() {
   title.className = "speed-dist-title";
   title.textContent = "Speed Distribution by Direction";
   container.appendChild(title);
+
+  // Calculate summary statistics
+  const peakSpeedRange = speedData.reduce((max, d) => d.count > max.count ? d : max);
+  const averageCount = speedData.reduce((sum, d) => sum + d.count, 0) / speedData.length;
+  const totalVehicles = speedData.reduce((sum, d) => sum + d.count, 0);
+
+  // Summary cards
+  const summaryContainer = document.createElement("div");
+  summaryContainer.className = "speed-dist-summary";
+  
+  const cards = [
+    {label: "Peak Speed Range", value: peakSpeedRange.speedRange, class: "speed-dist-peak"},
+    {label: "Average per Range", value: Math.round(averageCount).toLocaleString(), class: "speed-dist-average"},
+    {label: "Total Vehicles", value: totalVehicles.toLocaleString(), class: "speed-dist-value"}
+  ];
+
+  cards.forEach(card => {
+    const cardElement = document.createElement("div");
+    cardElement.className = "speed-dist-card";
+    cardElement.innerHTML = `
+      <div class="speed-dist-label">${card.label}</div>
+      <div class="speed-dist-value ${card.class}">${card.value}</div>
+    `;
+    summaryContainer.appendChild(cardElement);
+  });
+  
+  container.appendChild(summaryContainer);
 
   // Create chart container
   const chartContainer = document.createElement("div");
@@ -85,6 +188,10 @@ export function SpeedDistribution() {
     height: 500,
     marginLeft: 80,
     marginBottom: 80,
+    style: {
+      background: "transparent",
+      fontFamily: "system-ui, sans-serif"
+    },
     x: {
       label: "Speed Range (MPH)",
       domain: speedData.map(d => d.speedRange),
@@ -92,7 +199,8 @@ export function SpeedDistribution() {
     },
     y: {
       label: "Average Vehicle Count",
-      grid: true
+      grid: true,
+      tickFormat: "~s"
     },
     color: {
       legend: true,
@@ -104,7 +212,8 @@ export function SpeedDistribution() {
         x: "speedRange",
         y: "count",
         fill: "direction",
-        tip: true
+        tip: true,
+        rx: 3
       }),
       Plot.ruleY([0])
     ]

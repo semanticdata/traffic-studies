@@ -42,61 +42,81 @@ export function SpeedingByHour(speedLimit = 30) {
   const style = document.createElement("style");
   style.textContent = `
     .speeding-by-hour-container {
-      margin: 1rem 0;
+      margin: 2rem 0;
     }
     
     .speeding-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
       color: var(--theme-foreground, #374151);
+      background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
     }
     
     .speeding-summary {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin: 1rem 0;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin: 2rem 0;
     }
     
     .speeding-card {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
       border: 1px solid var(--theme-foreground-muted, #e1e5e9);
       text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .speeding-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     }
     
     .speeding-card.peak {
       border-left: 4px solid #ef4444;
     }
     
-    .speeding-card.lowest {
-      border-left: 4px solid #10b981;
-    }
-    
     .speeding-direction {
       font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--theme-foreground, #374151);
+      font-weight: 500;
+      color: var(--theme-foreground-muted, #6b7280);
       margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .speeding-peak-time {
-      font-size: 1.4rem;
+      font-size: 1.8rem;
       font-weight: 700;
       margin: 0.5rem 0;
       color: var(--theme-foreground, #374151);
     }
     
     .speeding-percentage {
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: 600;
       color: #ef4444;
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     
     .chart-container {
-      margin: 1rem 0;
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: var(--theme-background-alt, #f8fafc);
+      border-radius: 8px;
+      border: 1px solid var(--theme-foreground-muted, #e1e5e9);
     }
     
     .chart-section {
@@ -106,26 +126,51 @@ export function SpeedingByHour(speedLimit = 30) {
     .chart-section h4 {
       margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
-      font-size: 1.1rem;
+      font-size: 1.2rem;
+      font-weight: 600;
+      text-align: center;
     }
     
     .speeding-explanation {
-      background: var(--theme-background-alt, #f8fafc);
-      padding: 1rem;
-      border-radius: 5px;
-      margin: 1rem 0;
-      border-left: 4px solid var(--theme-accent, #ef4444);
+      background: linear-gradient(135deg, var(--theme-background-alt, #f8fafc) 0%, var(--theme-background, #ffffff) 100%);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin: 2rem 0;
+      border-left: 4px solid;
+      border-image: linear-gradient(135deg, #ef4444, #f97316) 1;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
     
     .speeding-explanation h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 1rem 0;
       color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .speeding-explanation h4::before {
+      content: '⚡';
+      font-size: 1.2rem;
     }
     
     .speeding-explanation p {
-      margin: 0.5rem 0;
+      margin: 0.75rem 0;
       color: var(--theme-foreground-muted, #6b7280);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding-left: 1rem;
+      position: relative;
+    }
+    
+    .speeding-explanation p::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      color: #ef4444;
+      font-weight: bold;
     }
   `;
   container.appendChild(style);
