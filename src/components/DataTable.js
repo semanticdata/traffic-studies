@@ -48,20 +48,20 @@ export function DataTable(sampleData) {
   // Create table header
   const thead = document.createElement("thead");
   const headerRow = document.createElement("tr");
-  
+
   const headers = ["Date/Time", "Northbound Volume", "Southbound Volume", "Total Volume", "Primary Direction"];
   headers.forEach(headerText => {
     const th = document.createElement("th");
     th.textContent = headerText;
     headerRow.appendChild(th);
   });
-  
+
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
   // Create table body with hardcoded data (following Observable best practices)
   const tbody = document.createElement("tbody");
-  
+
   const rows = [
     ["2024-02-23 00:00:00", "8", "7", "15", "Northbound"],
     ["2024-02-23 01:00:00", "5", "3", "8", "Northbound"],

@@ -9,14 +9,14 @@ import * as Plot from "npm:@observablehq/plot";
 export function SpeedViolationSeverity(speedLimit = 30) {
   // Hardcoded violation severity data (extracted from Python analysis)
   const violationData = [
-    {direction: "Northbound", violationRange: "0-5 mph over", count: 234, severity: 1},
-    {direction: "Northbound", violationRange: "5-10 mph over", count: 189, severity: 2},
-    {direction: "Northbound", violationRange: "10-15 mph over", count: 123, severity: 3},
-    {direction: "Northbound", violationRange: "15+ mph over", count: 45, severity: 4},
-    {direction: "Southbound", violationRange: "0-5 mph over", count: 198, severity: 1},
-    {direction: "Southbound", violationRange: "5-10 mph over", count: 156, severity: 2},
-    {direction: "Southbound", violationRange: "10-15 mph over", count: 98, severity: 3},
-    {direction: "Southbound", violationRange: "15+ mph over", count: 32, severity: 4}
+    { direction: "Northbound", violationRange: "0-5 mph over", count: 234, severity: 1 },
+    { direction: "Northbound", violationRange: "5-10 mph over", count: 189, severity: 2 },
+    { direction: "Northbound", violationRange: "10-15 mph over", count: 123, severity: 3 },
+    { direction: "Northbound", violationRange: "15+ mph over", count: 45, severity: 4 },
+    { direction: "Southbound", violationRange: "0-5 mph over", count: 198, severity: 1 },
+    { direction: "Southbound", violationRange: "5-10 mph over", count: 156, severity: 2 },
+    { direction: "Southbound", violationRange: "10-15 mph over", count: 98, severity: 3 },
+    { direction: "Southbound", violationRange: "15+ mph over", count: 32, severity: 4 }
   ];
 
   const container = document.createElement("div");
@@ -164,11 +164,11 @@ export function SpeedViolationSeverity(speedLimit = 30) {
   // Summary cards
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "violation-summary";
-  
+
   const severityClasses = ["minor", "moderate", "significant", "severe"];
   const severityDescriptions = [
     "Minor speeding, typically acceptable tolerance",
-    "Moderate speeding, may warrant attention", 
+    "Moderate speeding, may warrant attention",
     "Significant speeding, safety concern",
     "Severe speeding, major safety risk"
   ];
@@ -185,7 +185,7 @@ export function SpeedViolationSeverity(speedLimit = 30) {
     `;
     summaryContainer.appendChild(cardElement);
   });
-  
+
   container.appendChild(summaryContainer);
 
   // Create chart container

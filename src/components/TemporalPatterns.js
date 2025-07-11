@@ -8,13 +8,13 @@ import * as Plot from "npm:@observablehq/plot";
 export function TemporalPatterns() {
   // Hardcoded temporal data (extracted from Python analysis)
   const dailyData = [
-    {day: "Monday", dayOrder: 1, northbound: 6234, southbound: 5678, total: 11912},
-    {day: "Tuesday", dayOrder: 2, northbound: 6456, southbound: 5892, total: 12348},
-    {day: "Wednesday", dayOrder: 3, northbound: 6789, southbound: 6123, total: 12912},
-    {day: "Thursday", dayOrder: 4, northbound: 6543, southbound: 5987, total: 12530},
-    {day: "Friday", dayOrder: 5, northbound: 6890, southbound: 6234, total: 13124},
-    {day: "Saturday", dayOrder: 6, northbound: 4567, southbound: 4123, total: 8690},
-    {day: "Sunday", dayOrder: 7, northbound: 3456, southbound: 3234, total: 6690}
+    { day: "Monday", dayOrder: 1, northbound: 6234, southbound: 5678, total: 11912 },
+    { day: "Tuesday", dayOrder: 2, northbound: 6456, southbound: 5892, total: 12348 },
+    { day: "Wednesday", dayOrder: 3, northbound: 6789, southbound: 6123, total: 12912 },
+    { day: "Thursday", dayOrder: 4, northbound: 6543, southbound: 5987, total: 12530 },
+    { day: "Friday", dayOrder: 5, northbound: 6890, southbound: 6234, total: 13124 },
+    { day: "Saturday", dayOrder: 6, northbound: 4567, southbound: 4123, total: 8690 },
+    { day: "Sunday", dayOrder: 7, northbound: 3456, southbound: 3234, total: 6690 }
   ];
 
   const container = document.createElement("div");
@@ -170,12 +170,12 @@ export function TemporalPatterns() {
   // Summary cards
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "temporal-summary";
-  
+
   const cards = [
-    {label: "Weekday Average", value: `${Math.round(weekdayAvg).toLocaleString()}`, class: "weekday"},
-    {label: "Weekend Average", value: `${Math.round(weekendAvg).toLocaleString()}`, class: "weekend"},
-    {label: "Busiest Day", value: busiestDay.day, class: "peak"},
-    {label: "Quietest Day", value: quietestDay.day, class: "quiet"}
+    { label: "Weekday Average", value: `${Math.round(weekdayAvg).toLocaleString()}`, class: "weekday" },
+    { label: "Weekend Average", value: `${Math.round(weekendAvg).toLocaleString()}`, class: "weekend" },
+    { label: "Busiest Day", value: busiestDay.day, class: "peak" },
+    { label: "Quietest Day", value: quietestDay.day, class: "quiet" }
   ];
 
   cards.forEach(card => {
@@ -187,7 +187,7 @@ export function TemporalPatterns() {
     `;
     summaryContainer.appendChild(cardElement);
   });
-  
+
   container.appendChild(summaryContainer);
 
   // Create chart container

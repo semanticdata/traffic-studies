@@ -137,19 +137,19 @@ export function VolumeMetrics(volumeData) {
   volumes.forEach(volume => {
     const card = document.createElement("div");
     card.className = `volume-card ${volume.class}`;
-    
+
     const icon = document.createElement("div");
     icon.className = "volume-icon";
     icon.textContent = volume.icon;
-    
+
     const label = document.createElement("div");
     label.className = "volume-label";
     label.textContent = volume.label;
-    
+
     const value = document.createElement("div");
     value.className = `volume-value ${volume.class}`;
     value.textContent = volume.value;
-    
+
     card.appendChild(icon);
     card.appendChild(label);
     card.appendChild(value);

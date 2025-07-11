@@ -8,12 +8,12 @@ import * as Plot from "npm:@observablehq/plot";
 export function VehicleClassification() {
   // Hardcoded vehicle classification data (extracted from Python analysis)
   const classificationData = [
-    {vehicleType: "Class 1 - Motorcycles", northbound: 23, southbound: 18, total: 41, percentage: 0.3},
-    {vehicleType: "Class 2 - Passenger Cars", northbound: 4567, southbound: 3892, total: 8459, percentage: 89.2},
-    {vehicleType: "Class 3 - Pickups, Vans", northbound: 456, southbound: 389, total: 845, percentage: 8.9},
-    {vehicleType: "Class 4 - Buses", northbound: 12, southbound: 15, total: 27, percentage: 0.3},
-    {vehicleType: "Class 5 - 2 Axles, 6 Tires", northbound: 89, southbound: 67, total: 156, percentage: 1.6},
-    {vehicleType: "Class 6 - 3 Axles", northbound: 34, southbound: 23, total: 57, percentage: 0.6}
+    { vehicleType: "Class 1 - Motorcycles", northbound: 23, southbound: 18, total: 41, percentage: 0.3 },
+    { vehicleType: "Class 2 - Passenger Cars", northbound: 4567, southbound: 3892, total: 8459, percentage: 89.2 },
+    { vehicleType: "Class 3 - Pickups, Vans", northbound: 456, southbound: 389, total: 845, percentage: 8.9 },
+    { vehicleType: "Class 4 - Buses", northbound: 12, southbound: 15, total: 27, percentage: 0.3 },
+    { vehicleType: "Class 5 - 2 Axles, 6 Tires", northbound: 89, southbound: 67, total: 156, percentage: 1.6 },
+    { vehicleType: "Class 6 - 3 Axles", northbound: 34, southbound: 23, total: 57, percentage: 0.6 }
   ];
 
   const container = document.createElement("div");
@@ -209,9 +209,9 @@ export function VehicleClassification() {
 
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "classification-summary";
-  
+
   const cardClasses = ["dominant", "secondary", "minor"];
-  
+
   topClasses.forEach((item, index) => {
     const cardElement = document.createElement("div");
     cardElement.className = `classification-card ${cardClasses[index]}`;
@@ -222,7 +222,7 @@ export function VehicleClassification() {
     `;
     summaryContainer.appendChild(cardElement);
   });
-  
+
   container.appendChild(summaryContainer);
 
   // Create chart container
@@ -240,7 +240,7 @@ export function VehicleClassification() {
     });
     chartData.push({
       vehicleType: item.vehicleType.replace(" - ", "\n"),
-      direction: "Southbound", 
+      direction: "Southbound",
       count: item.southbound
     });
   });

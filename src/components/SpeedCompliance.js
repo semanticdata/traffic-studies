@@ -9,10 +9,10 @@ import * as Plot from "npm:@observablehq/plot";
 export function SpeedCompliance(speedLimit = 30) {
   // Hardcoded compliance data (extracted from Python analysis)
   const complianceData = [
-    {direction: "Northbound", compliance: "Compliant", count: 1521, percentage: 68.2},
-    {direction: "Northbound", compliance: "Non-Compliant", count: 702, percentage: 31.8},
-    {direction: "Southbound", compliance: "Compliant", count: 1342, percentage: 71.4},
-    {direction: "Southbound", compliance: "Non-Compliant", count: 537, percentage: 28.6}
+    { direction: "Northbound", compliance: "Compliant", count: 1521, percentage: 68.2 },
+    { direction: "Northbound", compliance: "Non-Compliant", count: 702, percentage: 31.8 },
+    { direction: "Southbound", compliance: "Compliant", count: 1342, percentage: 71.4 },
+    { direction: "Southbound", compliance: "Non-Compliant", count: 537, percentage: 28.6 }
   ];
 
   const container = document.createElement("div");
@@ -136,13 +136,13 @@ export function SpeedCompliance(speedLimit = 30) {
   // Summary cards
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "compliance-summary";
-  
+
   const northboundData = complianceData.filter(d => d.direction === "Northbound");
   const southboundData = complianceData.filter(d => d.direction === "Southbound");
-  
+
   const northboundCompliance = northboundData.find(d => d.compliance === "Compliant").percentage;
   const southboundCompliance = southboundData.find(d => d.compliance === "Compliant").percentage;
-  
+
   // Northbound card
   const northCard = document.createElement("div");
   const northClass = northboundCompliance >= 70 ? 'good' : northboundCompliance >= 60 ? 'warning' : 'poor';
@@ -156,7 +156,7 @@ export function SpeedCompliance(speedLimit = 30) {
     <div class="compliance-label">Speed Compliant</div>
   `;
   summaryContainer.appendChild(northCard);
-  
+
   // Southbound card
   const southCard = document.createElement("div");
   const southClass = southboundCompliance >= 70 ? 'good' : southboundCompliance >= 60 ? 'warning' : 'poor';
@@ -170,7 +170,7 @@ export function SpeedCompliance(speedLimit = 30) {
     <div class="compliance-label">Speed Compliant</div>
   `;
   summaryContainer.appendChild(southCard);
-  
+
   container.appendChild(summaryContainer);
 
   // Create chart container

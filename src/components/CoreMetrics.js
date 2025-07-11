@@ -151,19 +151,19 @@ export function CoreMetrics(coreMetrics) {
   metrics.forEach(metric => {
     const card = document.createElement("div");
     card.className = `metric-card ${metric.class}`;
-    
+
     const icon = document.createElement("div");
     icon.className = "metric-icon";
     icon.textContent = metric.icon;
-    
+
     const label = document.createElement("div");
     label.className = "metric-label";
     label.textContent = metric.label;
-    
+
     const value = document.createElement("div");
     value.className = `metric-value ${metric.class}`;
     value.textContent = metric.value;
-    
+
     card.appendChild(icon);
     card.appendChild(label);
     card.appendChild(value);

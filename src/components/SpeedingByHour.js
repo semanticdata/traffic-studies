@@ -9,30 +9,30 @@ import * as Plot from "npm:@observablehq/plot";
 export function SpeedingByHour(speedLimit = 30) {
   // Hardcoded speeding by hour data (extracted from Python analysis)
   const speedingData = [
-    {hour: 0, northbound: {total: 8, speeding: 1, percentage: 12.5}, southbound: {total: 7, speeding: 1, percentage: 14.3}},
-    {hour: 1, northbound: {total: 5, speeding: 0, percentage: 0}, southbound: {total: 3, speeding: 0, percentage: 0}},
-    {hour: 2, northbound: {total: 4, speeding: 0, percentage: 0}, southbound: {total: 2, speeding: 0, percentage: 0}},
-    {hour: 3, northbound: {total: 2, speeding: 0, percentage: 0}, southbound: {total: 1, speeding: 0, percentage: 0}},
-    {hour: 4, northbound: {total: 3, speeding: 0, percentage: 0}, southbound: {total: 2, speeding: 0, percentage: 0}},
-    {hour: 5, northbound: {total: 12, speeding: 2, percentage: 16.7}, southbound: {total: 8, speeding: 1, percentage: 12.5}},
-    {hour: 6, northbound: {total: 45, speeding: 9, percentage: 20.0}, southbound: {total: 32, speeding: 5, percentage: 15.6}},
-    {hour: 7, northbound: {total: 125, speeding: 32, percentage: 25.6}, southbound: {total: 89, speeding: 18, percentage: 20.2}},
-    {hour: 8, northbound: {total: 189, speeding: 45, percentage: 23.8}, southbound: {total: 145, speeding: 26, percentage: 17.9}},
-    {hour: 9, northbound: {total: 156, speeding: 28, percentage: 17.9}, southbound: {total: 123, speeding: 15, percentage: 12.2}},
-    {hour: 10, northbound: {total: 134, speeding: 19, percentage: 14.2}, southbound: {total: 112, speeding: 12, percentage: 10.7}},
-    {hour: 11, northbound: {total: 145, speeding: 22, percentage: 15.2}, southbound: {total: 132, speeding: 16, percentage: 12.1}},
-    {hour: 12, northbound: {total: 167, speeding: 28, percentage: 16.8}, southbound: {total: 156, speeding: 19, percentage: 12.2}},
-    {hour: 13, northbound: {total: 189, speeding: 34, percentage: 18.0}, southbound: {total: 178, speeding: 22, percentage: 12.4}},
-    {hour: 14, northbound: {total: 234, speeding: 45, percentage: 19.2}, southbound: {total: 189, speeding: 28, percentage: 14.8}},
-    {hour: 15, northbound: {total: 298, speeding: 68, percentage: 22.8}, southbound: {total: 234, speeding: 38, percentage: 16.2}},
-    {hour: 16, northbound: {total: 456, speeding: 123, percentage: 27.0}, southbound: {total: 409, speeding: 89, percentage: 21.8}},
-    {hour: 17, northbound: {total: 389, speeding: 98, percentage: 25.2}, southbound: {total: 334, speeding: 67, percentage: 20.1}},
-    {hour: 18, northbound: {total: 278, speeding: 58, percentage: 20.9}, southbound: {total: 245, speeding: 38, percentage: 15.5}},
-    {hour: 19, northbound: {total: 198, speeding: 34, percentage: 17.2}, southbound: {total: 178, speeding: 22, percentage: 12.4}},
-    {hour: 20, northbound: {total: 156, speeding: 23, percentage: 14.7}, southbound: {total: 134, speeding: 15, percentage: 11.2}},
-    {hour: 21, northbound: {total: 123, speeding: 16, percentage: 13.0}, southbound: {total: 98, speeding: 8, percentage: 8.2}},
-    {hour: 22, northbound: {total: 89, speeding: 9, percentage: 10.1}, southbound: {total: 67, speeding: 5, percentage: 7.5}},
-    {hour: 23, northbound: {total: 45, speeding: 5, percentage: 11.1}, southbound: {total: 32, speeding: 2, percentage: 6.3}}
+    { hour: 0, northbound: { total: 8, speeding: 1, percentage: 12.5 }, southbound: { total: 7, speeding: 1, percentage: 14.3 } },
+    { hour: 1, northbound: { total: 5, speeding: 0, percentage: 0 }, southbound: { total: 3, speeding: 0, percentage: 0 } },
+    { hour: 2, northbound: { total: 4, speeding: 0, percentage: 0 }, southbound: { total: 2, speeding: 0, percentage: 0 } },
+    { hour: 3, northbound: { total: 2, speeding: 0, percentage: 0 }, southbound: { total: 1, speeding: 0, percentage: 0 } },
+    { hour: 4, northbound: { total: 3, speeding: 0, percentage: 0 }, southbound: { total: 2, speeding: 0, percentage: 0 } },
+    { hour: 5, northbound: { total: 12, speeding: 2, percentage: 16.7 }, southbound: { total: 8, speeding: 1, percentage: 12.5 } },
+    { hour: 6, northbound: { total: 45, speeding: 9, percentage: 20.0 }, southbound: { total: 32, speeding: 5, percentage: 15.6 } },
+    { hour: 7, northbound: { total: 125, speeding: 32, percentage: 25.6 }, southbound: { total: 89, speeding: 18, percentage: 20.2 } },
+    { hour: 8, northbound: { total: 189, speeding: 45, percentage: 23.8 }, southbound: { total: 145, speeding: 26, percentage: 17.9 } },
+    { hour: 9, northbound: { total: 156, speeding: 28, percentage: 17.9 }, southbound: { total: 123, speeding: 15, percentage: 12.2 } },
+    { hour: 10, northbound: { total: 134, speeding: 19, percentage: 14.2 }, southbound: { total: 112, speeding: 12, percentage: 10.7 } },
+    { hour: 11, northbound: { total: 145, speeding: 22, percentage: 15.2 }, southbound: { total: 132, speeding: 16, percentage: 12.1 } },
+    { hour: 12, northbound: { total: 167, speeding: 28, percentage: 16.8 }, southbound: { total: 156, speeding: 19, percentage: 12.2 } },
+    { hour: 13, northbound: { total: 189, speeding: 34, percentage: 18.0 }, southbound: { total: 178, speeding: 22, percentage: 12.4 } },
+    { hour: 14, northbound: { total: 234, speeding: 45, percentage: 19.2 }, southbound: { total: 189, speeding: 28, percentage: 14.8 } },
+    { hour: 15, northbound: { total: 298, speeding: 68, percentage: 22.8 }, southbound: { total: 234, speeding: 38, percentage: 16.2 } },
+    { hour: 16, northbound: { total: 456, speeding: 123, percentage: 27.0 }, southbound: { total: 409, speeding: 89, percentage: 21.8 } },
+    { hour: 17, northbound: { total: 389, speeding: 98, percentage: 25.2 }, southbound: { total: 334, speeding: 67, percentage: 20.1 } },
+    { hour: 18, northbound: { total: 278, speeding: 58, percentage: 20.9 }, southbound: { total: 245, speeding: 38, percentage: 15.5 } },
+    { hour: 19, northbound: { total: 198, speeding: 34, percentage: 17.2 }, southbound: { total: 178, speeding: 22, percentage: 12.4 } },
+    { hour: 20, northbound: { total: 156, speeding: 23, percentage: 14.7 }, southbound: { total: 134, speeding: 15, percentage: 11.2 } },
+    { hour: 21, northbound: { total: 123, speeding: 16, percentage: 13.0 }, southbound: { total: 98, speeding: 8, percentage: 8.2 } },
+    { hour: 22, northbound: { total: 89, speeding: 9, percentage: 10.1 }, southbound: { total: 67, speeding: 5, percentage: 7.5 } },
+    { hour: 23, northbound: { total: 45, speeding: 5, percentage: 11.1 }, southbound: { total: 32, speeding: 2, percentage: 6.3 } }
   ];
 
   const container = document.createElement("div");
@@ -182,17 +182,17 @@ export function SpeedingByHour(speedLimit = 30) {
   container.appendChild(title);
 
   // Calculate peak speeding hours
-  const northboundPeak = speedingData.reduce((max, d) => 
+  const northboundPeak = speedingData.reduce((max, d) =>
     d.northbound.percentage > max.northbound.percentage ? d : max
   );
-  const southboundPeak = speedingData.reduce((max, d) => 
+  const southboundPeak = speedingData.reduce((max, d) =>
     d.southbound.percentage > max.southbound.percentage ? d : max
   );
 
   // Summary cards
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "speeding-summary";
-  
+
   const northCard = document.createElement("div");
   northCard.className = "speeding-card peak";
   northCard.innerHTML = `
@@ -201,7 +201,7 @@ export function SpeedingByHour(speedLimit = 30) {
     <div class="speeding-percentage">${northboundPeak.northbound.percentage}% speeding</div>
   `;
   summaryContainer.appendChild(northCard);
-  
+
   const southCard = document.createElement("div");
   southCard.className = "speeding-card peak";
   southCard.innerHTML = `
@@ -210,7 +210,7 @@ export function SpeedingByHour(speedLimit = 30) {
     <div class="speeding-percentage">${southboundPeak.southbound.percentage}% speeding</div>
   `;
   summaryContainer.appendChild(southCard);
-  
+
   container.appendChild(summaryContainer);
 
   // Prepare data for charts
@@ -233,15 +233,15 @@ export function SpeedingByHour(speedLimit = 30) {
   // Create chart containers
   const northChartContainer = document.createElement("div");
   northChartContainer.className = "chart-section";
-  
+
   const northTitle = document.createElement("h4");
   northTitle.textContent = "Northbound - Speeding by Hour";
   northChartContainer.appendChild(northTitle);
-  
+
   const northChart = document.createElement("div");
   northChart.className = "chart-container";
   northChartContainer.appendChild(northChart);
-  
+
   // Northbound chart
   const northPlot = Plot.plot({
     width: 800,
@@ -251,7 +251,7 @@ export function SpeedingByHour(speedLimit = 30) {
     x: {
       label: "Hour of Day",
       domain: [0, 23],
-      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d-12} PM` : `${d} AM`
+      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d - 12} PM` : `${d} AM`
     },
     y: {
       label: "Total Vehicles",
@@ -276,22 +276,22 @@ export function SpeedingByHour(speedLimit = 30) {
       Plot.ruleY([0])
     ]
   });
-  
+
   northChart.appendChild(northPlot);
   container.appendChild(northChartContainer);
 
   // Southbound chart
   const southChartContainer = document.createElement("div");
   southChartContainer.className = "chart-section";
-  
+
   const southTitle = document.createElement("h4");
   southTitle.textContent = "Southbound - Speeding by Hour";
   southChartContainer.appendChild(southTitle);
-  
+
   const southChart = document.createElement("div");
   southChart.className = "chart-container";
   southChartContainer.appendChild(southChart);
-  
+
   const southPlot = Plot.plot({
     width: 800,
     height: 300,
@@ -300,7 +300,7 @@ export function SpeedingByHour(speedLimit = 30) {
     x: {
       label: "Hour of Day",
       domain: [0, 23],
-      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d-12} PM` : `${d} AM`
+      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d - 12} PM` : `${d} AM`
     },
     y: {
       label: "Total Vehicles",
@@ -325,7 +325,7 @@ export function SpeedingByHour(speedLimit = 30) {
       Plot.ruleY([0])
     ]
   });
-  
+
   southChart.appendChild(southPlot);
   container.appendChild(southChartContainer);
 

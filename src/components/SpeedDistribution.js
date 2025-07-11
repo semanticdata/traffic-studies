@@ -9,24 +9,24 @@ export function SpeedDistribution() {
   // Hardcoded speed distribution data (extracted from Python analysis)
   const speedData = [
     // Northbound direction
-    {direction: "Northbound", speedRange: "15-20", count: 23, speed: 15},
-    {direction: "Northbound", speedRange: "20-25", count: 156, speed: 20},
-    {direction: "Northbound", speedRange: "25-30", count: 1342, speed: 25},
-    {direction: "Northbound", speedRange: "30-35", count: 2156, speed: 30},
-    {direction: "Northbound", speedRange: "35-40", count: 1789, speed: 35},
-    {direction: "Northbound", speedRange: "40-45", count: 456, speed: 40},
-    {direction: "Northbound", speedRange: "45-50", count: 89, speed: 45},
-    {direction: "Northbound", speedRange: "50+", count: 12, speed: 50},
-    
+    { direction: "Northbound", speedRange: "15-20", count: 23, speed: 15 },
+    { direction: "Northbound", speedRange: "20-25", count: 156, speed: 20 },
+    { direction: "Northbound", speedRange: "25-30", count: 1342, speed: 25 },
+    { direction: "Northbound", speedRange: "30-35", count: 2156, speed: 30 },
+    { direction: "Northbound", speedRange: "35-40", count: 1789, speed: 35 },
+    { direction: "Northbound", speedRange: "40-45", count: 456, speed: 40 },
+    { direction: "Northbound", speedRange: "45-50", count: 89, speed: 45 },
+    { direction: "Northbound", speedRange: "50+", count: 12, speed: 50 },
+
     // Southbound direction
-    {direction: "Southbound", speedRange: "15-20", count: 19, speed: 15},
-    {direction: "Southbound", speedRange: "20-25", count: 134, speed: 20},
-    {direction: "Southbound", speedRange: "25-30", count: 1189, speed: 25},
-    {direction: "Southbound", speedRange: "30-35", count: 1923, speed: 30},
-    {direction: "Southbound", speedRange: "35-40", count: 1634, speed: 35},
-    {direction: "Southbound", speedRange: "40-45", count: 398, speed: 40},
-    {direction: "Southbound", speedRange: "45-50", count: 67, speed: 45},
-    {direction: "Southbound", speedRange: "50+", count: 8, speed: 50}
+    { direction: "Southbound", speedRange: "15-20", count: 19, speed: 15 },
+    { direction: "Southbound", speedRange: "20-25", count: 134, speed: 20 },
+    { direction: "Southbound", speedRange: "25-30", count: 1189, speed: 25 },
+    { direction: "Southbound", speedRange: "30-35", count: 1923, speed: 30 },
+    { direction: "Southbound", speedRange: "35-40", count: 1634, speed: 35 },
+    { direction: "Southbound", speedRange: "40-45", count: 398, speed: 40 },
+    { direction: "Southbound", speedRange: "45-50", count: 67, speed: 45 },
+    { direction: "Southbound", speedRange: "50+", count: 8, speed: 50 }
   ];
 
   const container = document.createElement("div");
@@ -157,11 +157,11 @@ export function SpeedDistribution() {
   // Summary cards
   const summaryContainer = document.createElement("div");
   summaryContainer.className = "speed-dist-summary";
-  
+
   const cards = [
-    {label: "Peak Speed Range", value: peakSpeedRange.speedRange, class: "speed-dist-peak"},
-    {label: "Average per Range", value: Math.round(averageCount).toLocaleString(), class: "speed-dist-average"},
-    {label: "Total Vehicles", value: totalVehicles.toLocaleString(), class: "speed-dist-value"}
+    { label: "Peak Speed Range", value: peakSpeedRange.speedRange, class: "speed-dist-peak" },
+    { label: "Average per Range", value: Math.round(averageCount).toLocaleString(), class: "speed-dist-average" },
+    { label: "Total Vehicles", value: totalVehicles.toLocaleString(), class: "speed-dist-value" }
   ];
 
   cards.forEach(card => {
@@ -173,7 +173,7 @@ export function SpeedDistribution() {
     `;
     summaryContainer.appendChild(cardElement);
   });
-  
+
   container.appendChild(summaryContainer);
 
   // Create chart container

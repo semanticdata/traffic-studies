@@ -119,23 +119,23 @@ export function PeakHours(peakData) {
   peaks.forEach(peak => {
     const card = document.createElement("div");
     card.className = `peak-card ${peak.class}`;
-    
+
     const icon = document.createElement("div");
     icon.className = "peak-icon";
     icon.textContent = peak.icon;
-    
+
     const title = document.createElement("div");
     title.className = "peak-title";
     title.textContent = peak.title;
-    
+
     const time = document.createElement("div");
     time.className = `peak-time ${peak.class}`;
     time.textContent = peak.time;
-    
+
     const volume = document.createElement("div");
     volume.className = "peak-volume";
     volume.textContent = peak.volume;
-    
+
     card.appendChild(icon);
     card.appendChild(title);
     card.appendChild(time);
