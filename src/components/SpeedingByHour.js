@@ -1,0 +1,302 @@
+import * as Plot from "npm:@observablehq/plot";
+
+/**
+ * Speeding by Hour Analysis component for Observable Framework
+ * Converts Python matplotlib dual-axis chart to Observable Plot
+ * @param {number} speedLimit - Speed limit in MPH (default: 30)
+ * @returns {HTMLElement} - Speeding patterns by hour analysis
+ */
+export function SpeedingByHour(speedLimit = 30) {
+  // Hardcoded speeding by hour data (extracted from Python analysis)
+  const speedingData = [
+    {hour: 0, northbound: {total: 8, speeding: 1, percentage: 12.5}, southbound: {total: 7, speeding: 1, percentage: 14.3}},
+    {hour: 1, northbound: {total: 5, speeding: 0, percentage: 0}, southbound: {total: 3, speeding: 0, percentage: 0}},
+    {hour: 2, northbound: {total: 4, speeding: 0, percentage: 0}, southbound: {total: 2, speeding: 0, percentage: 0}},
+    {hour: 3, northbound: {total: 2, speeding: 0, percentage: 0}, southbound: {total: 1, speeding: 0, percentage: 0}},
+    {hour: 4, northbound: {total: 3, speeding: 0, percentage: 0}, southbound: {total: 2, speeding: 0, percentage: 0}},
+    {hour: 5, northbound: {total: 12, speeding: 2, percentage: 16.7}, southbound: {total: 8, speeding: 1, percentage: 12.5}},
+    {hour: 6, northbound: {total: 45, speeding: 9, percentage: 20.0}, southbound: {total: 32, speeding: 5, percentage: 15.6}},
+    {hour: 7, northbound: {total: 125, speeding: 32, percentage: 25.6}, southbound: {total: 89, speeding: 18, percentage: 20.2}},
+    {hour: 8, northbound: {total: 189, speeding: 45, percentage: 23.8}, southbound: {total: 145, speeding: 26, percentage: 17.9}},
+    {hour: 9, northbound: {total: 156, speeding: 28, percentage: 17.9}, southbound: {total: 123, speeding: 15, percentage: 12.2}},
+    {hour: 10, northbound: {total: 134, speeding: 19, percentage: 14.2}, southbound: {total: 112, speeding: 12, percentage: 10.7}},
+    {hour: 11, northbound: {total: 145, speeding: 22, percentage: 15.2}, southbound: {total: 132, speeding: 16, percentage: 12.1}},
+    {hour: 12, northbound: {total: 167, speeding: 28, percentage: 16.8}, southbound: {total: 156, speeding: 19, percentage: 12.2}},
+    {hour: 13, northbound: {total: 189, speeding: 34, percentage: 18.0}, southbound: {total: 178, speeding: 22, percentage: 12.4}},
+    {hour: 14, northbound: {total: 234, speeding: 45, percentage: 19.2}, southbound: {total: 189, speeding: 28, percentage: 14.8}},
+    {hour: 15, northbound: {total: 298, speeding: 68, percentage: 22.8}, southbound: {total: 234, speeding: 38, percentage: 16.2}},
+    {hour: 16, northbound: {total: 456, speeding: 123, percentage: 27.0}, southbound: {total: 409, speeding: 89, percentage: 21.8}},
+    {hour: 17, northbound: {total: 389, speeding: 98, percentage: 25.2}, southbound: {total: 334, speeding: 67, percentage: 20.1}},
+    {hour: 18, northbound: {total: 278, speeding: 58, percentage: 20.9}, southbound: {total: 245, speeding: 38, percentage: 15.5}},
+    {hour: 19, northbound: {total: 198, speeding: 34, percentage: 17.2}, southbound: {total: 178, speeding: 22, percentage: 12.4}},
+    {hour: 20, northbound: {total: 156, speeding: 23, percentage: 14.7}, southbound: {total: 134, speeding: 15, percentage: 11.2}},
+    {hour: 21, northbound: {total: 123, speeding: 16, percentage: 13.0}, southbound: {total: 98, speeding: 8, percentage: 8.2}},
+    {hour: 22, northbound: {total: 89, speeding: 9, percentage: 10.1}, southbound: {total: 67, speeding: 5, percentage: 7.5}},
+    {hour: 23, northbound: {total: 45, speeding: 5, percentage: 11.1}, southbound: {total: 32, speeding: 2, percentage: 6.3}}
+  ];
+
+  const container = document.createElement("div");
+  container.className = "speeding-by-hour-container";
+
+  // Add styles
+  const style = document.createElement("style");
+  style.textContent = `
+    .speeding-by-hour-container {
+      margin: 1rem 0;
+    }
+    
+    .speeding-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--theme-foreground, #374151);
+    }
+    
+    .speeding-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    
+    .speeding-card {
+      background: var(--theme-background-alt, #f8fafc);
+      padding: 1rem;
+      border-radius: 5px;
+      border: 1px solid var(--theme-foreground-muted, #e1e5e9);
+      text-align: center;
+    }
+    
+    .speeding-card.peak {
+      border-left: 4px solid #ef4444;
+    }
+    
+    .speeding-card.lowest {
+      border-left: 4px solid #10b981;
+    }
+    
+    .speeding-direction {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--theme-foreground, #374151);
+      margin-bottom: 0.5rem;
+    }
+    
+    .speeding-peak-time {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+      color: var(--theme-foreground, #374151);
+    }
+    
+    .speeding-percentage {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #ef4444;
+    }
+    
+    .chart-container {
+      margin: 1rem 0;
+    }
+    
+    .chart-section {
+      margin: 2rem 0;
+    }
+    
+    .chart-section h4 {
+      margin: 0 0 1rem 0;
+      color: var(--theme-foreground, #374151);
+      font-size: 1.1rem;
+    }
+    
+    .speeding-explanation {
+      background: var(--theme-background-alt, #f8fafc);
+      padding: 1rem;
+      border-radius: 5px;
+      margin: 1rem 0;
+      border-left: 4px solid var(--theme-accent, #ef4444);
+    }
+    
+    .speeding-explanation h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--theme-foreground, #374151);
+    }
+    
+    .speeding-explanation p {
+      margin: 0.5rem 0;
+      color: var(--theme-foreground-muted, #6b7280);
+      font-size: 0.9rem;
+    }
+  `;
+  container.appendChild(style);
+
+  // Title
+  const title = document.createElement("h3");
+  title.className = "speeding-title";
+  title.textContent = `Speeding Patterns by Hour (${speedLimit} MPH limit)`;
+  container.appendChild(title);
+
+  // Calculate peak speeding hours
+  const northboundPeak = speedingData.reduce((max, d) => 
+    d.northbound.percentage > max.northbound.percentage ? d : max
+  );
+  const southboundPeak = speedingData.reduce((max, d) => 
+    d.southbound.percentage > max.southbound.percentage ? d : max
+  );
+
+  // Summary cards
+  const summaryContainer = document.createElement("div");
+  summaryContainer.className = "speeding-summary";
+  
+  const northCard = document.createElement("div");
+  northCard.className = "speeding-card peak";
+  northCard.innerHTML = `
+    <div class="speeding-direction">Northbound Peak</div>
+    <div class="speeding-peak-time">${northboundPeak.hour}:00</div>
+    <div class="speeding-percentage">${northboundPeak.northbound.percentage}% speeding</div>
+  `;
+  summaryContainer.appendChild(northCard);
+  
+  const southCard = document.createElement("div");
+  southCard.className = "speeding-card peak";
+  southCard.innerHTML = `
+    <div class="speeding-direction">Southbound Peak</div>
+    <div class="speeding-peak-time">${southboundPeak.hour}:00</div>
+    <div class="speeding-percentage">${southboundPeak.southbound.percentage}% speeding</div>
+  `;
+  summaryContainer.appendChild(southCard);
+  
+  container.appendChild(summaryContainer);
+
+  // Prepare data for charts
+  const northboundData = speedingData.map(d => ({
+    hour: d.hour,
+    total: d.northbound.total,
+    speeding: d.northbound.speeding,
+    percentage: d.northbound.percentage,
+    direction: "Northbound"
+  }));
+
+  const southboundData = speedingData.map(d => ({
+    hour: d.hour,
+    total: d.southbound.total,
+    speeding: d.southbound.speeding,
+    percentage: d.southbound.percentage,
+    direction: "Southbound"
+  }));
+
+  // Create chart containers
+  const northChartContainer = document.createElement("div");
+  northChartContainer.className = "chart-section";
+  
+  const northTitle = document.createElement("h4");
+  northTitle.textContent = "Northbound - Speeding by Hour";
+  northChartContainer.appendChild(northTitle);
+  
+  const northChart = document.createElement("div");
+  northChart.className = "chart-container";
+  northChartContainer.appendChild(northChart);
+  
+  // Northbound chart
+  const northPlot = Plot.plot({
+    width: 800,
+    height: 300,
+    marginLeft: 80,
+    marginBottom: 60,
+    x: {
+      label: "Hour of Day",
+      domain: [0, 23],
+      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d-12} PM` : `${d} AM`
+    },
+    y: {
+      label: "Total Vehicles",
+      grid: true
+    },
+    marks: [
+      Plot.barY(northboundData, {
+        x: "hour",
+        y: "total",
+        fill: "#e5e7eb",
+        tip: true
+      }),
+      Plot.line(northboundData, {
+        x: "hour",
+        y: d => d.percentage * 10, // Scale for visibility
+        stroke: "#ef4444",
+        strokeWidth: 3,
+        marker: "circle",
+        markerSize: 4,
+        tip: true
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+  
+  northChart.appendChild(northPlot);
+  container.appendChild(northChartContainer);
+
+  // Southbound chart
+  const southChartContainer = document.createElement("div");
+  southChartContainer.className = "chart-section";
+  
+  const southTitle = document.createElement("h4");
+  southTitle.textContent = "Southbound - Speeding by Hour";
+  southChartContainer.appendChild(southTitle);
+  
+  const southChart = document.createElement("div");
+  southChart.className = "chart-container";
+  southChartContainer.appendChild(southChart);
+  
+  const southPlot = Plot.plot({
+    width: 800,
+    height: 300,
+    marginLeft: 80,
+    marginBottom: 60,
+    x: {
+      label: "Hour of Day",
+      domain: [0, 23],
+      tickFormat: d => d === 0 ? "12 AM" : d === 12 ? "12 PM" : d > 12 ? `${d-12} PM` : `${d} AM`
+    },
+    y: {
+      label: "Total Vehicles",
+      grid: true
+    },
+    marks: [
+      Plot.barY(southboundData, {
+        x: "hour",
+        y: "total",
+        fill: "#e5e7eb",
+        tip: true
+      }),
+      Plot.line(southboundData, {
+        x: "hour",
+        y: d => d.percentage * 10, // Scale for visibility
+        stroke: "#ef4444",
+        strokeWidth: 3,
+        marker: "circle",
+        markerSize: 4,
+        tip: true
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+  
+  southChart.appendChild(southPlot);
+  container.appendChild(southChartContainer);
+
+  // Add explanation
+  const explanation = document.createElement("div");
+  explanation.className = "speeding-explanation";
+  explanation.innerHTML = `
+    <h4>How to read these charts:</h4>
+    <p>• <strong>Gray bars</strong> show total vehicle count by hour</p>
+    <p>• <strong>Red line with dots</strong> shows percentage of vehicles speeding (scaled 10x for visibility)</p>
+    <p>• <strong>High percentage + high volume</strong> indicates peak enforcement opportunities</p>
+    <p>• <strong>High percentage + low volume</strong> may indicate off-peak speeding patterns</p>
+    <p>• Peak speeding typically occurs during rush hours (7-9 AM, 4-6 PM)</p>
+    <p>• Use this to optimize enforcement timing and identify when speeding is most problematic</p>
+  `;
+  container.appendChild(explanation);
+
+  return container;
+}

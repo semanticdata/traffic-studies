@@ -7,6 +7,12 @@ import {VolumeMetrics} from "./components/VolumeMetrics.js";
 import {PeakHours} from "./components/PeakHours.js";
 import {DataTable} from "./components/DataTable.js";
 import {getHourlyData} from "./components/HourlyData.js";
+import {SpeedDistribution} from "./components/SpeedDistribution.js";
+import {SpeedCompliance} from "./components/SpeedCompliance.js";
+import {TemporalPatterns} from "./components/TemporalPatterns.js";
+import {SpeedViolationSeverity} from "./components/SpeedViolationSeverity.js";
+import {SpeedingByHour} from "./components/SpeedingByHour.js";
+import {VehicleClassification} from "./components/VehicleClassification.js";
 ```
 
 ```js
@@ -158,6 +164,56 @@ Plot.plot({
 
 ## Data Analysis Summary
 
+## Speed Analysis
+
+### Speed Distribution
+
+```js
+// Speed distribution analysis by direction
+SpeedDistribution()
+```
+
+### Speed Compliance
+
+```js
+// Speed compliance analysis
+SpeedCompliance(30)
+```
+
+### Speed Violation Severity
+
+```js
+// Speed violation severity analysis
+SpeedViolationSeverity(30)
+```
+
+### Speeding by Hour
+
+```js
+// Speeding patterns by hour of day
+SpeedingByHour(30)
+```
+
+## Temporal Analysis
+
+### Daily Traffic Patterns
+
+```js
+// Daily traffic pattern analysis
+TemporalPatterns()
+```
+
+## Vehicle Classification
+
+### Vehicle Type Distribution
+
+```js
+// Vehicle classification distribution
+VehicleClassification()
+```
+
+## Data Summary
+
 ```js
 // Display sample data for verification
 const sampleData = trafficResult.data.slice(0, 5);
@@ -170,12 +226,14 @@ sampleData
 DataTable(sampleData)
 ```
 
-### Data Summary
+### Analysis Summary
 
 **Analysis Period**: 7 days of continuous traffic monitoring  
 **Equipment**: PicoCount 2500 Traffic Counter  
 **Data Quality**: ${trafficResult.data.length} validated records  
 **Primary Direction**: Northbound (53.2% of total traffic)  
+**Speed Limit**: 30 MPH  
+**Overall Compliance**: 69.8% of vehicles comply with speed limit  
 
 ---
 
