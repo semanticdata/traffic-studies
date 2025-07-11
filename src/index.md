@@ -33,8 +33,8 @@ trafficResult
   }
   
   .metric-card {
-    background: white;
-    border: 1px solid #e1e5e9;
+    background: var(--theme-background-alt, #f8fafc);
+    border: 1px solid var(--theme-foreground-muted, #e1e5e9);
     border-radius: 5px;
     padding: 0.25rem 0.5rem;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -49,13 +49,13 @@ trafficResult
   .metric-value {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #2563eb;
+    color: var(--theme-foreground-focus, #2563eb);
     margin: 0 0 0.5rem 0;
   }
   
   .metric-label {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--theme-foreground-muted, #6b7280);
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.025em;
@@ -91,29 +91,153 @@ trafficResult
 
 ## Data Structure Information
 
-```js
-// Display structure information for debugging
-({
-  location: trafficResult.structure.location,
-  directions: [trafficResult.structure.dir1Name, trafficResult.structure.dir2Name],
-  volumeColumns: [trafficResult.structure.dir1VolumeCol, trafficResult.structure.dir2VolumeCol],
-  speedColumnCounts: [trafficResult.structure.dir1SpeedCols.length, trafficResult.structure.dir2SpeedCols.length],
-  classificationColumnCounts: [trafficResult.structure.dir1ClassCols.length, trafficResult.structure.dir2ClassCols.length],
-  totalRecords: trafficResult.data.length,
-  speedColumns: {
-    dir1: trafficResult.structure.dir1SpeedCols,
-    dir2: trafficResult.structure.dir2SpeedCols
-  },
-  sampleColumns: trafficResult.structure.columns.slice(0, 10)
-})
-```
+<style>
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+  
+  .info-card {
+    background: var(--theme-background-alt, #f8fafc);
+    border: 1px solid var(--theme-foreground-muted, #e1e5e9);
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+  
+  .info-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--theme-foreground-focus, #2563eb);
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .info-label {
+    font-size: 0.8rem;
+    color: var(--theme-foreground-muted, #6b7280);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+</style>
+
+<div class="info-grid">
+  <div class="info-card">
+    <div class="info-value">4848 Nevada Ave N</div>
+    <div class="info-label">Location</div>
+  </div>
+  <div class="info-card">
+    <div class="info-value">Northbound, Southbound</div>
+    <div class="info-label">Directions</div>
+  </div>
+  <div class="info-card">
+    <div class="info-value">Total Volume - NB, SB</div>
+    <div class="info-label">Volume Columns</div>
+  </div>
+  <div class="info-card">
+    <div class="info-value">8 NB, 8 SB</div>
+    <div class="info-label">Speed Column Counts</div>
+  </div>
+  <div class="info-card">
+    <div class="info-value">6 NB, 6 SB</div>
+    <div class="info-label">Classification Columns</div>
+  </div>
+  <div class="info-card">
+    <div class="info-value">168 data points</div>
+    <div class="info-label">Total Records</div>
+  </div>
+</div>
 
 ## Sample Data
 
-```js
-// Display first few rows of processed data
-trafficResult.data.slice(0, 5)
-```
+<style>
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    background: var(--theme-background-alt, #f8fafc);
+    border: 1px solid var(--theme-foreground-muted, #e1e5e9);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  
+  .data-table th {
+    background: var(--theme-background-alt, #f1f5f9);
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid var(--theme-foreground-muted, #e2e8f0);
+    font-weight: 600;
+    color: var(--theme-foreground, #374151);
+  }
+  
+  .data-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--theme-foreground-muted, #e2e8f0);
+    color: var(--theme-foreground-muted, #6b7280);
+  }
+  
+  .data-table tr:hover {
+    background: var(--theme-background-alt, #f8fafc);
+  }
+</style>
+
+<table class="data-table">
+  <thead>
+    <tr>
+      <th>Date/Time</th>
+      <th>Northbound Volume</th>
+      <th>Southbound Volume</th>
+      <th>Total Volume</th>
+      <th>Primary Direction</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2024-02-23 00:00:00</td>
+      <td>8</td>
+      <td>7</td>
+      <td>15</td>
+      <td>Northbound</td>
+    </tr>
+    <tr>
+      <td>2024-02-23 01:00:00</td>
+      <td>5</td>
+      <td>3</td>
+      <td>8</td>
+      <td>Northbound</td>
+    </tr>
+    <tr>
+      <td>2024-02-23 02:00:00</td>
+      <td>4</td>
+      <td>2</td>
+      <td>6</td>
+      <td>Northbound</td>
+    </tr>
+    <tr>
+      <td>2024-02-23 03:00:00</td>
+      <td>2</td>
+      <td>1</td>
+      <td>3</td>
+      <td>Northbound</td>
+    </tr>
+    <tr>
+      <td>2024-02-23 04:00:00</td>
+      <td>3</td>
+      <td>2</td>
+      <td>5</td>
+      <td>Northbound</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
