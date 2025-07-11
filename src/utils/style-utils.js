@@ -1,5 +1,5 @@
 /**
- * Style utilities for loading shared CSS
+ * Style utilities for loading shared CSS and creating common UI elements
  */
 
 /**
@@ -208,7 +208,7 @@ export function loadSharedCardStyles() {
     .explanation-box__text--purple::before { color: #8b5cf6; }
     .explanation-box__text--indigo::before { color: #6366f1; }
   `;
-  
+
   return style;
 }
 
@@ -224,7 +224,7 @@ export function loadSharedCardStyles() {
  */
 export function createCard(options) {
   const { icon, label, value, description, theme = 'blue' } = options;
-  
+
   const card = document.createElement("div");
   card.className = \`card card--\${theme}\`;
   
@@ -282,6 +282,6 @@ export function createExplanationBox(title, texts, theme = 'blue', emoji = '📊
   return box;
 }
 `;
-  
+
   return style;
 }
