@@ -6,13 +6,100 @@ This page provides detailed analysis of traffic volume patterns over time for Cr
 import {loadTrafficData} from "./lib/data-loader.js";
 ```
 
+## Location Selection
+
+```js
+// Available traffic monitoring locations
+const locationOptions = [
+  {name: "2809 Hampshire Ave", file: "2809-Hampshire-Ave_AIO.csv", speedLimit: 30},
+  {name: "2941 Hampshire Ave", file: "2941-Hampshire-Ave_AIO.csv", speedLimit: 30},
+  {name: "3528 Noble Ave", file: "3528-Noble-Ave_AIO.csv", speedLimit: 30},
+  {name: "3618 Adair Ave", file: "3618-Adair-Ave_AIO.csv", speedLimit: 30},
+  {name: "3624 Welcome Ave", file: "3624-Welcome-Ave_AIO.csv", speedLimit: 30},
+  {name: "4017 Jersey Ave", file: "4017-Jersey-Ave_AIO.csv", speedLimit: 30},
+  {name: "4848 Nevada Ave N", file: "4848-Nevada-Ave-N_AIO.csv", speedLimit: 30},
+  {name: "5240 Maryland Ave N", file: "5240-Maryland-Ave-N_AIO.csv", speedLimit: 30},
+  {name: "5336 Kentucky Ave N", file: "5336-Kentucky-Ave-N_AIO.csv", speedLimit: 30},
+  {name: "5716 Elmhurst Ave", file: "5716-Elmhurst-Ave_AIO.csv", speedLimit: 30},
+  {name: "6420 41st Ave", file: "6420-41st-Ave_AIO.csv", speedLimit: 30},
+  {name: "6702 45th Ave N", file: "6702-45th-Ave-N_AIO.csv", speedLimit: 30},
+  {name: "7206 58th Ave", file: "7206-58th-Ave_AIO.csv", speedLimit: 30}
+];
+
+// Display location options
+locationOptions
+```
+
+<style>
+.location-select {
+  margin: 1rem 0;
+}
+.location-select select {
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: var(--theme-background, white);
+  color: var(--theme-foreground, black);
+  min-width: 300px;
+}
+</style>
+
+<div class="location-select">
+  <label for="location-selector">Select Location:</label>
+  <select id="location-selector">
+    <option value="2809 Hampshire Ave">2809 Hampshire Ave</option>
+    <option value="2941 Hampshire Ave">2941 Hampshire Ave</option>
+    <option value="3528 Noble Ave">3528 Noble Ave</option>
+    <option value="3618 Adair Ave">3618 Adair Ave</option>
+    <option value="3624 Welcome Ave">3624 Welcome Ave</option>
+    <option value="4017 Jersey Ave">4017 Jersey Ave</option>
+    <option value="4848 Nevada Ave N" selected>4848 Nevada Ave N</option>
+    <option value="5240 Maryland Ave N">5240 Maryland Ave N</option>
+    <option value="5336 Kentucky Ave N">5336 Kentucky Ave N</option>
+    <option value="5716 Elmhurst Ave">5716 Elmhurst Ave</option>
+    <option value="6420 41st Ave">6420 41st Ave</option>
+    <option value="6702 45th Ave N">6702 45th Ave N</option>
+    <option value="7206 58th Ave">7206 58th Ave</option>
+  </select>
+</div>
+
+```js
+// For now, use the default location since Observable inputs aren't working
+const selectedLocationName = "4848 Nevada Ave N";
+selectedLocationName
+```
+
+```js
+// Get selected location details
+const selectedLocation = locationOptions.find(loc => loc.name === selectedLocationName) || locationOptions[6]; // Default to 4848 Nevada Ave N
+selectedLocation
+```
+
 ## Data Loading
 
 ```js
-// Load traffic data for volume analysis
+// FileAttachment map with literal strings (Observable Framework requirement)
+const fileMap = {
+  "2809 Hampshire Ave": FileAttachment("data/2809-Hampshire-Ave_AIO.csv"),
+  "2941 Hampshire Ave": FileAttachment("data/2941-Hampshire-Ave_AIO.csv"),
+  "3528 Noble Ave": FileAttachment("data/3528-Noble-Ave_AIO.csv"),
+  "3618 Adair Ave": FileAttachment("data/3618-Adair-Ave_AIO.csv"),
+  "3624 Welcome Ave": FileAttachment("data/3624-Welcome-Ave_AIO.csv"),
+  "4017 Jersey Ave": FileAttachment("data/4017-Jersey-Ave_AIO.csv"),
+  "4848 Nevada Ave N": FileAttachment("data/4848-Nevada-Ave-N_AIO.csv"),
+  "5240 Maryland Ave N": FileAttachment("data/5240-Maryland-Ave-N_AIO.csv"),
+  "5336 Kentucky Ave N": FileAttachment("data/5336-Kentucky-Ave-N_AIO.csv"),
+  "5716 Elmhurst Ave": FileAttachment("data/5716-Elmhurst-Ave_AIO.csv"),
+  "6420 41st Ave": FileAttachment("data/6420-41st-Ave_AIO.csv"),
+  "6702 45th Ave N": FileAttachment("data/6702-45th-Ave-N_AIO.csv"),
+  "7206 58th Ave": FileAttachment("data/7206-58th-Ave_AIO.csv")
+};
+
+// Load traffic data for volume analysis based on selected location
 const trafficResult = await loadTrafficData(
-  FileAttachment("data/4848-Nevada-Ave-N_AIO.csv"), 
-  30 // speed limit
+  fileMap[selectedLocation.name],
+  selectedLocation.speedLimit
 );
 
 // Make data available to other cells
@@ -270,3 +357,7 @@ Plot.plot({
   ]
 })
 ```
+
+---
+
+**Analysis Period**: 7 days of traffic data from ${selectedLocation.name}, Crystal, MN
