@@ -95,8 +95,8 @@ class TestCalculate85thPercentileSpeed:
         speed_cols = ["25-29 MPH - Test"]
         result = calculate_85th_percentile_speed(df, speed_cols)
 
-        # Should be the midpoint of the range
-        assert result == 27.0
+        # Should interpolate to 85% within the range: 25 + (0.85 * (29-25)) = 28.4
+        assert result == 28.4
 
     def test_calculate_85th_percentile_no_data(self):
         """Test 85th percentile with no data."""

@@ -69,8 +69,12 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
 
 
 def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
-    """Calculate the 85th percentile speed."""
-    speeds = []
+    """Calculate the 85th percentile speed using proper interpolation within speed ranges."""
+    if not speed_cols:
+        return 0
+    
+    # Build cumulative distribution with proper speed ranges
+    speed_ranges = []
     for col in speed_cols:
         try:
             speed_part = col.split("MPH")[0].strip()
@@ -84,13 +88,43 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
                 lower = float(speed_range[0].strip())
                 upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
 
-            mid_speed = (lower + upper) / 2
             count = df[col].sum()
-            speeds.extend([mid_speed] * int(count))
+            if count > 0:
+                speed_ranges.append((lower, upper, count))
         except (ValueError, IndexError):
             # Skip columns that don't have valid speed format
             continue
-    return np.percentile(speeds, 85) if speeds else 0
+    
+    if not speed_ranges:
+        return 0
+    
+    # Sort by lower bound of speed range
+    speed_ranges.sort()
+    
+    # Calculate total vehicles and 85th percentile target
+    total_vehicles = sum(count for _, _, count in speed_ranges)
+    if total_vehicles == 0:
+        return 0
+    
+    target_85th = total_vehicles * 0.85
+    
+    # Find the speed range containing the 85th percentile
+    cumulative = 0
+    for lower, upper, count in speed_ranges:
+        if cumulative + count >= target_85th:
+            # The 85th percentile falls in this range
+            # Calculate position within the range
+            vehicles_needed = target_85th - cumulative
+            position_in_range = vehicles_needed / count if count > 0 else 0
+            
+            # Linear interpolation within the range
+            percentile_speed = lower + (position_in_range * (upper - lower))
+            return percentile_speed
+        
+        cumulative += count
+    
+    # If we get here, return the upper bound of the highest range
+    return speed_ranges[-1][1] if speed_ranges else 0
 
 
 def calculate_phf(df: pd.DataFrame) -> float:
@@ -155,10 +189,9 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     total_speed_readings = dir1_total + dir2_total
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
-    # 85th percentile speed
-    dir1_85th = calculate_85th_percentile_speed(df, structure["dir1_speed_cols"])
-    dir2_85th = calculate_85th_percentile_speed(df, structure["dir2_speed_cols"])
-    percentile_85th = max(dir1_85th, dir2_85th)
+    # 85th percentile speed - combine both directions for accurate calculation
+    combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
+    percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
 
     # Peak hour analysis
     hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
