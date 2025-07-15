@@ -132,7 +132,8 @@ class TestCalculatePHF:
         df = pd.DataFrame({"Hour": [0, 1, 2, 3], "Total": [100, 100, 100, 100]})
         result = calculate_phf(df)
 
-        assert result == 0.25  # 100 / (100 * 4)
+        # PHF cannot be calculated with hourly data, should return 0
+        assert result == 0.0
 
 
 class TestCountHighSpeeders:

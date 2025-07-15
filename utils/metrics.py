@@ -131,14 +131,16 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
 
 
 def calculate_phf(df: pd.DataFrame) -> float:
-    """Calculate the Peak Hour Factor (PHF)."""
-    hourly_volumes = df.groupby("Hour")["Total"].sum()
-    peak_hour_volume = hourly_volumes.max()
-    if peak_hour_volume == 0:
-        return 0
-    peak_hour_idx = hourly_volumes.idxmax()
-    peak_15min = df[df["Hour"] == peak_hour_idx]["Total"].max() * 4
-    return peak_hour_volume / peak_15min if peak_15min > 0 else 0
+    """
+    Calculate the Peak Hour Factor (PHF).
+    
+    Note: PHF requires 15-minute interval data for proper calculation.
+    Since our data is hourly, we cannot calculate traditional PHF.
+    This function returns 0 to indicate PHF is not applicable.
+    """
+    # PHF = Peak Hour Volume / (Peak 15-minute flow rate * 4)
+    # This requires sub-hourly data which we don't have
+    return 0.0
 
 
 def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: int = 30) -> int:
