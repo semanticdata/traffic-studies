@@ -35,7 +35,6 @@ traffic-studies/
 │   └── config.toml        # Streamlit configuration settings
 ├── data/                  # Directory for CSV data files
 ├── pyproject.toml         # Project dependencies and metadata
-├── CLAUDE.md              # AI assistant guidance file
 └── README.md              # This file
 ```
 
