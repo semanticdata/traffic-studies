@@ -385,7 +385,7 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Calculate compliance for direction 1
         df["Dir1_Compliant"] = 0
         df["Dir1_Non_Compliant"] = 0
-        
+
         for col in dir1_speed_cols:
             if col in df.columns:
                 try:
@@ -397,7 +397,7 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
                     else:
                         # Handle "25-29" format - use lower bound
                         speed = float(speed_part.split("-")[0].strip())
-                    
+
                     # Add vehicle counts to appropriate compliance category
                     if speed <= speed_limit:
                         df["Dir1_Compliant"] += df[col]
@@ -410,7 +410,7 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Calculate compliance for direction 2
         df["Dir2_Compliant"] = 0
         df["Dir2_Non_Compliant"] = 0
-        
+
         for col in dir2_speed_cols:
             if col in df.columns:
                 try:
@@ -422,7 +422,7 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
                     else:
                         # Handle "25-29" format - use lower bound
                         speed = float(speed_part.split("-")[0].strip())
-                    
+
                     # Add vehicle counts to appropriate compliance category
                     if speed <= speed_limit:
                         df["Dir2_Compliant"] += df[col]
@@ -527,7 +527,7 @@ def load_large_traffic_data(
             # Calculate compliance for direction 1
             chunk["Dir1_Compliant"] = 0
             chunk["Dir1_Non_Compliant"] = 0
-            
+
             for col in dir1_speed_cols:
                 if col in chunk.columns:
                     try:
@@ -539,7 +539,7 @@ def load_large_traffic_data(
                         else:
                             # Handle "25-29" format - use lower bound
                             speed = float(speed_part.split("-")[0].strip())
-                        
+
                         # Add vehicle counts to appropriate compliance category
                         if speed <= speed_limit:
                             chunk["Dir1_Compliant"] += chunk[col]
@@ -552,7 +552,7 @@ def load_large_traffic_data(
             # Calculate compliance for direction 2
             chunk["Dir2_Compliant"] = 0
             chunk["Dir2_Non_Compliant"] = 0
-            
+
             for col in dir2_speed_cols:
                 if col in chunk.columns:
                     try:
@@ -564,7 +564,7 @@ def load_large_traffic_data(
                         else:
                             # Handle "25-29" format - use lower bound
                             speed = float(speed_part.split("-")[0].strip())
-                        
+
                         # Add vehicle counts to appropriate compliance category
                         if speed <= speed_limit:
                             chunk["Dir2_Compliant"] += chunk[col]

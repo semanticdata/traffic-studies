@@ -2,6 +2,9 @@
 Tests for utils/visualizations.py module.
 """
 
+import matplotlib
+
+matplotlib.use("Agg")  # Use non-interactive backend for testing
 import matplotlib.pyplot as plt
 import pandas as pd
 import pytest

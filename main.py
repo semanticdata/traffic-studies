@@ -306,7 +306,11 @@ def main():
         page_icon="🚗",
         layout="centered",
         menu_items={
-            "About": "Built for the [City of Crystal](https://www.crystalmn.gov/) by Miguel Pimentel. Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), and exported using [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html).",
+            "About": (
+                "Built for the [City of Crystal](https://www.crystalmn.gov/) by Miguel Pimentel. "
+                "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), "
+                "and exported using [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html)."
+            ),
             "Get help": "mailto:miguel.pimentel@crystalmn.gov",
         },
     )

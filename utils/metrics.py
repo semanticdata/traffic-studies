@@ -15,7 +15,6 @@ Functions:
 
 from typing import Dict, List, Tuple
 
-import numpy as np
 import pandas as pd
 
 
@@ -75,7 +74,7 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
     """Calculate the 85th percentile speed using proper interpolation within speed ranges."""
     if not speed_cols:
         return 0
-    
+
     # Build cumulative distribution with proper speed ranges
     speed_ranges = []
     for col in speed_cols:
@@ -97,20 +96,20 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
         except (ValueError, IndexError):
             # Skip columns that don't have valid speed format
             continue
-    
+
     if not speed_ranges:
         return 0
-    
+
     # Sort by lower bound of speed range
     speed_ranges.sort()
-    
+
     # Calculate total vehicles and 85th percentile target
     total_vehicles = sum(count for _, _, count in speed_ranges)
     if total_vehicles == 0:
         return 0
-    
+
     target_85th = total_vehicles * 0.85
-    
+
     # Find the speed range containing the 85th percentile
     cumulative = 0
     for lower, upper, count in speed_ranges:
@@ -119,13 +118,13 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
             # Calculate position within the range
             vehicles_needed = target_85th - cumulative
             position_in_range = vehicles_needed / count if count > 0 else 0
-            
+
             # Linear interpolation within the range
             percentile_speed = lower + (position_in_range * (upper - lower))
             return percentile_speed
-        
+
         cumulative += count
-    
+
     # If we get here, return the upper bound of the highest range
     return speed_ranges[-1][1] if speed_ranges else 0
 
@@ -133,7 +132,7 @@ def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> 
 def calculate_phf(df: pd.DataFrame) -> float:
     """
     Calculate the Peak Hour Factor (PHF).
-    
+
     Note: PHF requires 15-minute interval data for proper calculation.
     Since our data is hourly, we cannot calculate traditional PHF.
     This function returns 0 to indicate PHF is not applicable.
