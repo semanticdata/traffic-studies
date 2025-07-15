@@ -20,7 +20,7 @@ import pandas as pd
 
 
 def calculate_weighted_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
-    """Calculate the weighted average speed."""
+    """Calculate the weighted average speed using midpoint of speed ranges."""
     total_count = 0
     weighted_sum = 0
     for col in speed_cols:
@@ -28,11 +28,14 @@ def calculate_weighted_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
             # Extract speed from column name, handle formats like "25-29 MPH" and "45+ MPH"
             speed_part = col.split("MPH")[0].strip()
             if "+" in speed_part:
-                # Handle "45+" format - use the number as-is
-                speed = float(speed_part.replace("+", "").strip())
+                # Handle "45+" format - use the number plus 2.5 mph as estimate
+                speed = float(speed_part.replace("+", "").strip()) + 2.5
             else:
-                # Handle "25-29" format - use lower bound
-                speed = float(speed_part.split("-")[0].strip())
+                # Handle "25-29" format - use midpoint of range
+                speed_range = speed_part.split("-")
+                lower = float(speed_range[0].strip())
+                upper = float(speed_range[1].strip()) if len(speed_range) > 1 else lower
+                speed = (lower + upper) / 2
 
             count = df[col].sum()
             weighted_sum += speed * count
@@ -177,10 +180,9 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     dir1_volume = df[structure["dir1_volume_col"]].sum()
     dir2_volume = df[structure["dir2_volume_col"]].sum()
 
-    # Speed calculations
-    dir1_avg_speed = calculate_weighted_speed(df, structure["dir1_speed_cols"])
-    dir2_avg_speed = calculate_weighted_speed(df, structure["dir2_speed_cols"])
-    combined_avg_speed = (dir1_avg_speed + dir2_avg_speed) / 2
+    # Speed calculations - use true weighted average across both directions
+    combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
+    combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
 
     # Compliance calculations
     dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)

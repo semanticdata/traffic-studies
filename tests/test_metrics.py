@@ -41,7 +41,8 @@ class TestCalculateWeightedSpeed:
         speed_cols = ["25-29 MPH - Test"]
         result = calculate_weighted_speed(df, speed_cols)
 
-        assert result == 25.0
+        # Should return midpoint of range: (25 + 29) / 2 = 27.0
+        assert result == 27.0
 
 
 class TestCalculateCompliance:
