@@ -378,32 +378,59 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Store original row count for filtering statistics
         original_row_count = len(df)
 
-        # Vectorized speed compliance calculations (optimized)
+        # Speed compliance calculations using proper speed range logic
         dir1_speed_cols = structure["dir1_speed_cols"]
         dir2_speed_cols = structure["dir2_speed_cols"]
 
-        # Vectorized operations instead of apply() for better performance
-        if dir1_speed_cols:
-            dir1_speed_data = df[dir1_speed_cols].values
-            dir1_compliant_mask = dir1_speed_data <= speed_limit
-            dir1_non_compliant_mask = dir1_speed_data > speed_limit
+        # Calculate compliance for direction 1
+        df["Dir1_Compliant"] = 0
+        df["Dir1_Non_Compliant"] = 0
+        
+        for col in dir1_speed_cols:
+            if col in df.columns:
+                try:
+                    # Extract speed from column name
+                    speed_part = col.split("MPH")[0].strip()
+                    if "+" in speed_part:
+                        # Handle "45+" format - use the number as-is
+                        speed = float(speed_part.replace("+", "").strip())
+                    else:
+                        # Handle "25-29" format - use lower bound
+                        speed = float(speed_part.split("-")[0].strip())
+                    
+                    # Add vehicle counts to appropriate compliance category
+                    if speed <= speed_limit:
+                        df["Dir1_Compliant"] += df[col]
+                    else:
+                        df["Dir1_Non_Compliant"] += df[col]
+                except (ValueError, IndexError):
+                    # Skip columns that don't have valid speed format
+                    continue
 
-            df["Dir1_Compliant"] = dir1_compliant_mask.sum(axis=1)
-            df["Dir1_Non_Compliant"] = dir1_non_compliant_mask.sum(axis=1)
-        else:
-            df["Dir1_Compliant"] = 0
-            df["Dir1_Non_Compliant"] = 0
-
-        if dir2_speed_cols:
-            dir2_speed_data = df[dir2_speed_cols].values
-            dir2_compliant_mask = dir2_speed_data <= speed_limit
-            dir2_non_compliant_mask = dir2_speed_data > speed_limit
-
-            df["Dir2_Compliant"] = dir2_compliant_mask.sum(axis=1)
-            df["Dir2_Non_Compliant"] = dir2_non_compliant_mask.sum(axis=1)
-        else:
-            df["Dir2_Compliant"] = 0
-            df["Dir2_Non_Compliant"] = 0
+        # Calculate compliance for direction 2
+        df["Dir2_Compliant"] = 0
+        df["Dir2_Non_Compliant"] = 0
+        
+        for col in dir2_speed_cols:
+            if col in df.columns:
+                try:
+                    # Extract speed from column name
+                    speed_part = col.split("MPH")[0].strip()
+                    if "+" in speed_part:
+                        # Handle "45+" format - use the number as-is
+                        speed = float(speed_part.replace("+", "").strip())
+                    else:
+                        # Handle "25-29" format - use lower bound
+                        speed = float(speed_part.split("-")[0].strip())
+                    
+                    # Add vehicle counts to appropriate compliance category
+                    if speed <= speed_limit:
+                        df["Dir2_Compliant"] += df[col]
+                    else:
+                        df["Dir2_Non_Compliant"] += df[col]
+                except (ValueError, IndexError):
+                    # Skip columns that don't have valid speed format
+                    continue
 
         # Vectorized total calculation
         df["Total"] = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
@@ -493,25 +520,59 @@ def load_large_traffic_data(
             chunk["Date/Time"] = pd.to_datetime(chunk["Date/Time"], errors="coerce")
             chunk["Hour"] = chunk["Date/Time"].dt.hour
 
-            # Vectorized speed compliance calculations
+            # Speed compliance calculations using proper speed range logic
             dir1_speed_cols = structure["dir1_speed_cols"]
             dir2_speed_cols = structure["dir2_speed_cols"]
 
-            if dir1_speed_cols:
-                dir1_speed_data = chunk[dir1_speed_cols].values
-                chunk["Dir1_Compliant"] = (dir1_speed_data <= speed_limit).sum(axis=1)
-                chunk["Dir1_Non_Compliant"] = (dir1_speed_data > speed_limit).sum(axis=1)
-            else:
-                chunk["Dir1_Compliant"] = 0
-                chunk["Dir1_Non_Compliant"] = 0
+            # Calculate compliance for direction 1
+            chunk["Dir1_Compliant"] = 0
+            chunk["Dir1_Non_Compliant"] = 0
+            
+            for col in dir1_speed_cols:
+                if col in chunk.columns:
+                    try:
+                        # Extract speed from column name
+                        speed_part = col.split("MPH")[0].strip()
+                        if "+" in speed_part:
+                            # Handle "45+" format - use the number as-is
+                            speed = float(speed_part.replace("+", "").strip())
+                        else:
+                            # Handle "25-29" format - use lower bound
+                            speed = float(speed_part.split("-")[0].strip())
+                        
+                        # Add vehicle counts to appropriate compliance category
+                        if speed <= speed_limit:
+                            chunk["Dir1_Compliant"] += chunk[col]
+                        else:
+                            chunk["Dir1_Non_Compliant"] += chunk[col]
+                    except (ValueError, IndexError):
+                        # Skip columns that don't have valid speed format
+                        continue
 
-            if dir2_speed_cols:
-                dir2_speed_data = chunk[dir2_speed_cols].values
-                chunk["Dir2_Compliant"] = (dir2_speed_data <= speed_limit).sum(axis=1)
-                chunk["Dir2_Non_Compliant"] = (dir2_speed_data > speed_limit).sum(axis=1)
-            else:
-                chunk["Dir2_Compliant"] = 0
-                chunk["Dir2_Non_Compliant"] = 0
+            # Calculate compliance for direction 2
+            chunk["Dir2_Compliant"] = 0
+            chunk["Dir2_Non_Compliant"] = 0
+            
+            for col in dir2_speed_cols:
+                if col in chunk.columns:
+                    try:
+                        # Extract speed from column name
+                        speed_part = col.split("MPH")[0].strip()
+                        if "+" in speed_part:
+                            # Handle "45+" format - use the number as-is
+                            speed = float(speed_part.replace("+", "").strip())
+                        else:
+                            # Handle "25-29" format - use lower bound
+                            speed = float(speed_part.split("-")[0].strip())
+                        
+                        # Add vehicle counts to appropriate compliance category
+                        if speed <= speed_limit:
+                            chunk["Dir2_Compliant"] += chunk[col]
+                        else:
+                            chunk["Dir2_Non_Compliant"] += chunk[col]
+                    except (ValueError, IndexError):
+                        # Skip columns that don't have valid speed format
+                        continue
 
             # Calculate total
             chunk["Total"] = chunk[structure["dir1_volume_col"]] + chunk[structure["dir2_volume_col"]]
