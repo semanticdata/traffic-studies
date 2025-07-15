@@ -299,7 +299,7 @@ The test suite includes comprehensive tests for:
 ### Key Enhancements
 
 - **Zero-traffic filtering**: Automatically removes inactive time periods for cleaner analysis
-- **Vectorized operations**: 30-50% performance improvement in speed calculations
+- **Accurate metric calculations**: Fixed speed compliance, 85th percentile, and average speed calculations for precision
 - **Data validation**: Comprehensive quality checks with detailed error reporting
 - **Memory optimization**: Efficient processing for large datasets
 - **Enhanced error handling**: Custom exceptions with contextual error messages
