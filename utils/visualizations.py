@@ -105,6 +105,7 @@ def plot_speed_compliance(
     else:
         # Calculate compliance on-demand for backward compatibility
         from .metrics import calculate_compliance
+
         dir1_compliant, dir1_total = calculate_compliance(filtered_df, structure["dir1_speed_cols"], speed_limit)
         dir2_compliant, dir2_total = calculate_compliance(filtered_df, structure["dir2_speed_cols"], speed_limit)
         dir1_non_compliant = dir1_total - dir1_compliant

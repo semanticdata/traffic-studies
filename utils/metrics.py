@@ -70,8 +70,6 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
     return compliant, total
 
 
-
-
 def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
     """Calculate the 85th percentile speed using proper interpolation within speed ranges."""
     if not speed_cols:
@@ -199,7 +197,7 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
         dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
         total_compliant = dir1_compliant + dir2_compliant
         total_speed_readings = dir1_total + dir2_total
-    
+
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
     # 85th percentile speed - combine both directions for accurate calculation

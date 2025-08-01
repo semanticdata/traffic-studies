@@ -1,9 +1,10 @@
 """
-Data loading utilities for Traffic Studies dashboard.
+Data loading orchestrator for Traffic Studies dashboard.
 
-This module provides functions to load and process traffic data from CSV files
-exported from TrafficViewer Pro software. It handles file structure detection,
-metadata extraction, data preprocessing, validation, and optimization for the Streamlit dashboard.
+This module provides the main interface for loading and processing traffic data
+from CSV files exported from TrafficViewer Pro software. It orchestrates parsing,
+validation, and transformation using specialized modules while maintaining
+backward compatibility with existing code.
 
 Functions:
     validate_traffic_data(df: pd.DataFrame, structure: Dict) -> Dict: Validate traffic data
@@ -23,9 +24,32 @@ Exceptions:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
+
+from utils.parsers.traffic_parser import (
+    FileStructureError as ParserFileStructureError,
+)
+
+# Import from specialized modules
+from utils.parsers.traffic_parser import (
+    detect_file_structure as parser_detect_file_structure,
+)
+from utils.parsers.traffic_parser import (
+    get_location_from_file as parser_get_location_from_file,
+)
+from utils.transformers.traffic_transformer import (
+    add_basic_enrichments,
+    calculate_speed_compliance,
+    filter_zero_traffic,
+)
+from utils.validators.data_validator import (
+    DataValidationError as ValidatorDataValidationError,
+)
+from utils.validators.data_validator import (
+    validate_traffic_data as validator_validate_traffic_data,
+)
 
 
 class TrafficDataError(Exception):
@@ -50,78 +74,11 @@ class FileStructureError(TrafficDataError):
 
 def validate_traffic_data(df: pd.DataFrame, structure: Dict[str, Any]) -> Dict[str, Any]:
     """Comprehensive data validation with detailed reporting."""
-    validation_results = {"is_valid": True, "warnings": [], "errors": [], "stats": {}}
-
-    # Volume validation
-    vol_cols = [structure["dir1_volume_col"], structure["dir2_volume_col"]]
-
-    for col in vol_cols:
-        if col in df.columns:
-            # Check for negative values
-            negative_count = (df[col] < 0).sum()
-            if negative_count > 0:
-                validation_results["errors"].append(f"Found {negative_count} negative values in {col}")
-                validation_results["is_valid"] = False
-
-            # Check for unrealistic maximum values (>1000 vehicles/hour)
-            max_val = df[col].max()
-            if max_val > 1000:
-                validation_results["warnings"].append(
-                    f"Unusually high traffic volume in {col}: {max_val} vehicles/hour"
-                )
-
-            # Store statistics
-            validation_results["stats"][f"{col}_max"] = max_val
-            validation_results["stats"][f"{col}_mean"] = df[col].mean()
-
-    # Cross-check total vs sum of directional volumes
-    if "Total" in df.columns and all(col in df.columns for col in vol_cols):
-        total_diff = abs(df["Total"] - (df[vol_cols[0]] + df[vol_cols[1]])).sum()
-        if total_diff > 0:
-            validation_results["errors"].append(
-                f"Total column doesn't match sum of directional volumes (difference: {total_diff})"
-            )
-            validation_results["is_valid"] = False
-
-    # Speed validation
-    speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
-    for col in speed_cols:
-        if col in df.columns:
-            # Check for negative values
-            negative_count = (df[col] < 0).sum()
-            if negative_count > 0:
-                validation_results["errors"].append(f"Found {negative_count} negative values in speed column {col}")
-                validation_results["is_valid"] = False
-
-    # Temporal validation
-    if "Date/Time" in df.columns:
-        # Check for missing time periods (assuming hourly data)
-        time_diffs = df["Date/Time"].diff().dropna()
-        expected_diff = pd.Timedelta(hours=1)
-        irregular_intervals = (time_diffs != expected_diff).sum()
-        if irregular_intervals > 0:
-            validation_results["warnings"].append(f"Found {irregular_intervals} irregular time intervals")
-
-        # Store temporal statistics
-        validation_results["stats"]["date_range"] = {
-            "start": df["Date/Time"].min(),
-            "end": df["Date/Time"].max(),
-            "total_hours": len(df),
-        }
-
-    # Classification validation
-    class_cols = structure["dir1_class_cols"] + structure["dir2_class_cols"]
-    for col in class_cols:
-        if col in df.columns:
-            # Check for negative values
-            negative_count = (df[col] < 0).sum()
-            if negative_count > 0:
-                validation_results["errors"].append(
-                    f"Found {negative_count} negative values in classification column {col}"
-                )
-                validation_results["is_valid"] = False
-
-    return validation_results
+    try:
+        return validator_validate_traffic_data(df, structure)
+    except ValidatorDataValidationError as e:
+        # Re-raise as local exception type for backward compatibility
+        raise DataValidationError(str(e), e.validation_details)
 
 
 def get_data_directory() -> Path:
@@ -135,263 +92,16 @@ def get_data_directory() -> Path:
 
 def get_location_from_file(file_path: str) -> str:
     """Extract location name from the CSV file metadata."""
-    try:
-        with open(file_path, "r") as f:
-            header_lines = []
-            for _ in range(6):
-                try:
-                    header_lines.append(next(f))
-                except StopIteration:
-                    break
-
-        for line in header_lines:
-            # Handle both "Location," and "Location:" formats
-            if line.startswith("Location,") or "Location:" in line:
-                if "Location," in line:
-                    location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
-                else:
-                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
-
-                if location:
-                    return location
-
-        # Fallback: try to extract from filename
-        stem = Path(file_path).stem
-        if "-" in stem:
-            return stem.split("-")[1].replace("_", " ").strip().strip('"').strip("'").title()
-        else:
-            return "Unknown Location"
-    except Exception:
-        return "Unknown Location"
-
-
-def _extract_metadata_from_headers(header_lines: List[str]) -> Dict[str, Optional[str]]:
-    """Extract metadata information (location, comments, title) from header lines."""
-    location = None
-    comments = None
-    title = None
-
-    for line in header_lines:
-        # Handle CSV format (comma-separated) and other formats
-        if line.startswith("Location,") or "Location:" in line:
-            if "Location," in line:
-                location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
-            else:
-                parts = line.strip().split('","')
-                if len(parts) > 1:
-                    location = parts[1].replace('"', "").strip()
-                else:
-                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
-        elif line.startswith("Comments,") or "Comments:" in line:
-            if "Comments," in line:
-                comments = line.split("Comments,")[1].strip().strip('"').strip(",")
-            else:
-                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
-        elif line.startswith("Title,") or "Title:" in line:
-            if "Title," in line:
-                title = line.split("Title,")[1].strip().strip('"').strip(",")
-            else:
-                title = line.split("Title:")[1].strip().strip('"').strip(",")
-
-    return {"location": location, "comments": comments, "title": title}
-
-
-def _find_column_header_row(header_lines: List[str]) -> Tuple[Optional[str], int]:
-    """Find the line containing 'Date/Time' and return the line itself and its row index."""
-    for i, line in enumerate(header_lines):
-        if "Date/Time" in line:
-            return line, i
-    return None, -1
-
-
-def _detect_traffic_directions(columns: List[str]) -> Tuple[str, str]:
-    """Determine if the directions are 'Northbound'/'Southbound' or 'Eastbound'/'Westbound'."""
-    if "Northbound" in "".join(columns):
-        return "Northbound", "Southbound"
-    else:
-        return "Eastbound", "Westbound"
-
-
-def _map_columns(columns: List[str], dir1: str, dir2: str) -> Dict[str, Any]:
-    """Map column names to their respective groups (volume, speed, classification)."""
-    # Detect speed columns - handle both single and double space formats
-    dir1_speed_cols = [col for col in columns if f"MPH - {dir1}" in col or f"MPH  - {dir1}" in col]
-    dir2_speed_cols = [col for col in columns if f"MPH - {dir2}" in col or f"MPH  - {dir2}" in col]
-
-    # Detect classification columns - try multiple patterns
-    dir1_class_cols = []
-    dir2_class_cols = []
-    for class_num in range(1, 7):  # Classes 1 through 6
-        # Try different possible patterns
-        patterns1 = [
-            f"Class #{class_num} - {dir1}",
-            f"Class {class_num} - {dir1}",
-            f"Class{class_num} - {dir1}",
-            f"Class #{class_num}-{dir1}",
-            f"Class {class_num}-{dir1}",
-        ]
-        patterns2 = [
-            f"Class #{class_num} - {dir2}",
-            f"Class {class_num} - {dir2}",
-            f"Class{class_num} - {dir2}",
-            f"Class #{class_num}-{dir2}",
-            f"Class {class_num}-{dir2}",
-        ]
-
-        # Try to find matching column for direction 1
-        class1_col = None
-        for pattern in patterns1:
-            matching_cols = [col for col in columns if pattern in col]
-            if matching_cols:
-                class1_col = matching_cols[0]
-                break
-
-        # Try to find matching column for direction 2
-        class2_col = None
-        for pattern in patterns2:
-            matching_cols = [col for col in columns if pattern in col]
-            if matching_cols:
-                class2_col = matching_cols[0]
-                break
-
-        if class1_col:
-            dir1_class_cols.append(class1_col)
-        else:
-            print(f"No column found for {dir1} Class {class_num}")
-
-        if class2_col:
-            dir2_class_cols.append(class2_col)
-        else:
-            print(f"No column found for {dir2} Class {class_num}")
-
-    # Detect volume columns - try multiple patterns
-    dir1_volume_col = None
-    dir2_volume_col = None
-
-    volume_patterns1 = [f"Volume - {dir1}", dir1, f"{dir1} Volume"]
-    volume_patterns2 = [f"Volume - {dir2}", dir2, f"{dir2} Volume"]
-
-    for pattern in volume_patterns1:
-        if pattern in columns:
-            dir1_volume_col = pattern
-            break
-
-    for pattern in volume_patterns2:
-        if pattern in columns:
-            dir2_volume_col = pattern
-            break
-
-    return {
-        "dir1_speed_cols": dir1_speed_cols,
-        "dir2_speed_cols": dir2_speed_cols,
-        "dir1_volume_col": dir1_volume_col,
-        "dir2_volume_col": dir2_volume_col,
-        "dir1_class_cols": dir1_class_cols,
-        "dir2_class_cols": dir2_class_cols,
-    }
+    return parser_get_location_from_file(file_path)
 
 
 def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
     """Detect the structure of the CSV file and return appropriate parsing parameters."""
     try:
-        with open(file_path, "r") as f:
-            header_lines = []
-            for _ in range(15):
-                try:
-                    header_lines.append(next(f))
-                except StopIteration:
-                    break
-
-        # Extract metadata information using helper function
-        metadata = _extract_metadata_from_headers(header_lines)
-
-        # Find data columns using helper function
-        column_line, metadata_rows = _find_column_header_row(header_lines)
-
-        if column_line:
-            columns = [col.strip().strip('"') for col in column_line.split(",")]
-
-            # Detect direction names using helper function
-            dir1_name, dir2_name = _detect_traffic_directions(columns)
-
-            # Map columns to their respective groups using helper function
-            column_mapping = _map_columns(columns, dir1_name, dir2_name)
-
-            return {
-                "metadata_rows": metadata_rows,
-                "columns": columns,
-                "location": metadata["location"],
-                "comments": metadata["comments"],
-                "title": metadata["title"],
-                "dir1_name": dir1_name,
-                "dir2_name": dir2_name,
-                **column_mapping,
-            }
-    except Exception as e:
-        import traceback
-
-        print(f"Error detecting file structure: {e}")
-        print(f"Traceback: {traceback.format_exc()}")
-        return None
-
-
-def _calculate_speed_compliance(df: pd.DataFrame, structure: Dict[str, Any], speed_limit: int) -> pd.DataFrame:
-    """Calculate speed compliance for both directions and add compliance columns to DataFrame."""
-    # Get speed columns for both directions
-    dir1_speed_cols = structure["dir1_speed_cols"]
-    dir2_speed_cols = structure["dir2_speed_cols"]
-
-    # Initialize compliance columns for direction 1
-    df["Dir1_Compliant"] = 0
-    df["Dir1_Non_Compliant"] = 0
-
-    for col in dir1_speed_cols:
-        if col in df.columns:
-            try:
-                # Extract speed from column name
-                speed_part = col.split("MPH")[0].strip()
-                if "+" in speed_part:
-                    # Handle "45+" format - use the number as-is
-                    speed = float(speed_part.replace("+", "").strip())
-                else:
-                    # Handle "25-29" format - use lower bound
-                    speed = float(speed_part.split("-")[0].strip())
-
-                # Add vehicle counts to appropriate compliance category
-                if speed <= speed_limit:
-                    df["Dir1_Compliant"] += df[col]
-                else:
-                    df["Dir1_Non_Compliant"] += df[col]
-            except (ValueError, IndexError):
-                # Skip columns that don't have valid speed format
-                continue
-
-    # Initialize compliance columns for direction 2
-    df["Dir2_Compliant"] = 0
-    df["Dir2_Non_Compliant"] = 0
-
-    for col in dir2_speed_cols:
-        if col in df.columns:
-            try:
-                # Extract speed from column name
-                speed_part = col.split("MPH")[0].strip()
-                if "+" in speed_part:
-                    # Handle "45+" format - use the number as-is
-                    speed = float(speed_part.replace("+", "").strip())
-                else:
-                    # Handle "25-29" format - use lower bound
-                    speed = float(speed_part.split("-")[0].strip())
-
-                # Add vehicle counts to appropriate compliance category
-                if speed <= speed_limit:
-                    df["Dir2_Compliant"] += df[col]
-                else:
-                    df["Dir2_Non_Compliant"] += df[col]
-            except (ValueError, IndexError):
-                # Skip columns that don't have valid speed format
-                continue
-
-    return df
+        return parser_detect_file_structure(file_path)
+    except ParserFileStructureError as e:
+        # Re-raise as local exception type for backward compatibility
+        raise FileStructureError(str(e))
 
 
 def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
@@ -427,39 +137,19 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
                 f"Expected columns: Date/Time, Volume columns, Speed ranges"
             )
 
-        # Process datetime with validation
-        df["Date/Time"] = pd.to_datetime(df["Date/Time"], errors="coerce")
-        invalid_dates = df["Date/Time"].isna().sum()
+        # Validate datetime
+        invalid_dates = pd.to_datetime(df["Date/Time"], errors="coerce").isna().sum()
         if invalid_dates > 0:
             raise DataValidationError(f"Found {invalid_dates} invalid date/time values in '{file_path}'")
 
-        df["Hour"] = df["Date/Time"].dt.hour
+        # Add basic enrichments (datetime processing, hour extraction, total calculation)
+        df = add_basic_enrichments(df, structure)
 
-        # Store original row count for filtering statistics
-        original_row_count = len(df)
+        # Calculate speed compliance using transformer
+        df = calculate_speed_compliance(df, structure, speed_limit)
 
-        # Calculate speed compliance using the consolidated helper function
-        df = _calculate_speed_compliance(df, structure, speed_limit)
-
-        # Vectorized total calculation
-        df["Total"] = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
-
-        # Filter out rows where both volume columns are 0 (no traffic activity)
-        df = df[(df[structure["dir1_volume_col"]] > 0) | (df[structure["dir2_volume_col"]] > 0)]
-
-        # Calculate filtering statistics
-        filtered_row_count = len(df)
-        filtering_stats = {
-            "original_rows": original_row_count,
-            "filtered_rows": filtered_row_count,
-            "removed_rows": original_row_count - filtered_row_count,
-            "removal_percentage": (
-                ((original_row_count - filtered_row_count) / original_row_count) * 100 if original_row_count > 0 else 0
-            ),
-            "date_range": {"start": df["Date/Time"].min(), "end": df["Date/Time"].max()} if len(df) > 0 else None,
-            "active_hours": filtered_row_count,
-            "inactive_hours": original_row_count - filtered_row_count,
-        }
+        # Filter zero traffic and get statistics
+        df, filtering_stats = filter_zero_traffic(df, structure)
 
         # Perform data validation
         validation_results = validate_traffic_data(df, structure)
@@ -525,20 +215,14 @@ def load_large_traffic_data(
         for chunk in pd.read_csv(file_path, skiprows=structure["metadata_rows"], chunksize=chunk_size):
             original_row_count += len(chunk)
 
-            # Process datetime
-            chunk["Date/Time"] = pd.to_datetime(chunk["Date/Time"], errors="coerce")
-            chunk["Hour"] = chunk["Date/Time"].dt.hour
+            # Add basic enrichments
+            chunk = add_basic_enrichments(chunk, structure)
 
-            # Calculate speed compliance using the consolidated helper function
-            chunk = _calculate_speed_compliance(chunk, structure, speed_limit)
+            # Calculate speed compliance using transformer
+            chunk = calculate_speed_compliance(chunk, structure, speed_limit)
 
-            # Calculate total
-            chunk["Total"] = chunk[structure["dir1_volume_col"]] + chunk[structure["dir2_volume_col"]]
-
-            # Filter zero rows
-            filtered_chunk = chunk[
-                (chunk[structure["dir1_volume_col"]] > 0) | (chunk[structure["dir2_volume_col"]] > 0)
-            ]
+            # Filter zero rows for this chunk
+            filtered_chunk, _ = filter_zero_traffic(chunk, structure)
 
             if len(filtered_chunk) > 0:
                 processed_chunks.append(filtered_chunk)
@@ -550,7 +234,7 @@ def load_large_traffic_data(
             # Return empty dataframe with proper structure
             df = pd.DataFrame()
 
-        # Calculate filtering statistics
+        # Calculate filtering statistics for the combined result
         filtered_row_count = len(df)
         filtering_stats = {
             "original_rows": original_row_count,
@@ -559,7 +243,11 @@ def load_large_traffic_data(
             "removal_percentage": (
                 ((original_row_count - filtered_row_count) / original_row_count) * 100 if original_row_count > 0 else 0
             ),
-            "date_range": {"start": df["Date/Time"].min(), "end": df["Date/Time"].max()} if len(df) > 0 else None,
+            "date_range": (
+                {"start": df["Date/Time"].min(), "end": df["Date/Time"].max()}
+                if len(df) > 0 and "Date/Time" in df.columns
+                else None
+            ),
             "active_hours": filtered_row_count,
             "inactive_hours": original_row_count - filtered_row_count,
             "memory_usage": get_memory_usage(df),
