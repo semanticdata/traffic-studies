@@ -16,13 +16,14 @@ Functions:
 
 from typing import Dict, Optional
 
+import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
 
-def plot_traffic_volume(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> plt.Figure:
+def plot_traffic_volume(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
     """Create traffic volume visualizations."""
     hourly_volumes = (
         filtered_df.groupby("Hour")
@@ -55,7 +56,7 @@ def plot_traffic_volume(filtered_df: pd.DataFrame, structure: Dict[str, str]) ->
     return fig1
 
 
-def plot_speed_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> plt.Figure:
+def plot_speed_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
     """Create speed distribution visualizations."""
     dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean()
     dir2_speeds = filtered_df[structure["dir2_speed_cols"]].mean()
@@ -90,44 +91,24 @@ def plot_speed_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]
     return fig2
 
 
-def plot_speed_compliance(filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> plt.Figure:
+def plot_speed_compliance(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> matplotlib.figure.Figure:
     """Create speed compliance visualizations."""
-    # Calculate compliance directly from speed columns
-    dir1_compliant = (
-        filtered_df[structure["dir1_speed_cols"]]
-        .apply(
-            lambda row: sum(int(col.split("-")[0].strip()) <= speed_limit for col, count in row.items() if count > 0),
-            axis=1,
-        )
-        .sum()
-    )
-
-    dir1_non_compliant = (
-        filtered_df[structure["dir1_speed_cols"]]
-        .apply(
-            lambda row: sum(int(col.split("-")[0].strip()) > speed_limit for col, count in row.items() if count > 0),
-            axis=1,
-        )
-        .sum()
-    )
-
-    dir2_compliant = (
-        filtered_df[structure["dir2_speed_cols"]]
-        .apply(
-            lambda row: sum(int(col.split("-")[0].strip()) <= speed_limit for col, count in row.items() if count > 0),
-            axis=1,
-        )
-        .sum()
-    )
-
-    dir2_non_compliant = (
-        filtered_df[structure["dir2_speed_cols"]]
-        .apply(
-            lambda row: sum(int(col.split("-")[0].strip()) > speed_limit for col, count in row.items() if count > 0),
-            axis=1,
-        )
-        .sum()
-    )
+    # Use pre-calculated compliance columns if available, otherwise calculate on-demand
+    if "Dir1_Compliant" in filtered_df.columns and "Dir2_Compliant" in filtered_df.columns:
+        # Use pre-calculated compliance columns
+        dir1_compliant = filtered_df["Dir1_Compliant"].sum()
+        dir1_non_compliant = filtered_df["Dir1_Non_Compliant"].sum()
+        dir2_compliant = filtered_df["Dir2_Compliant"].sum()
+        dir2_non_compliant = filtered_df["Dir2_Non_Compliant"].sum()
+    else:
+        # Calculate compliance on-demand for backward compatibility
+        from .metrics import calculate_compliance
+        dir1_compliant, dir1_total = calculate_compliance(filtered_df, structure["dir1_speed_cols"], speed_limit)
+        dir2_compliant, dir2_total = calculate_compliance(filtered_df, structure["dir2_speed_cols"], speed_limit)
+        dir1_non_compliant = dir1_total - dir1_compliant
+        dir2_non_compliant = dir2_total - dir2_compliant
 
     compliance_data = pd.DataFrame(
         {
@@ -165,7 +146,7 @@ def plot_speed_compliance(filtered_df: pd.DataFrame, structure: Dict[str, str], 
     return fig3
 
 
-def plot_temporal_patterns(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> plt.Figure:
+def plot_temporal_patterns(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
     """Create visualizations for temporal traffic patterns."""
     # Add day of week column using Date/Time instead of Date
     filtered_df["DayOfWeek"] = filtered_df["Date/Time"].dt.day_name()
@@ -201,7 +182,7 @@ def plot_temporal_patterns(filtered_df: pd.DataFrame, structure: Dict[str, str])
 
 def plot_speed_violation_severity(
     filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
-) -> Optional[plt.Figure]:
+) -> Optional[matplotlib.figure.Figure]:
     """Create visualization for speed violation severity."""
     # Calculate speed ranges and their frequencies
     speed_ranges = {
@@ -256,7 +237,9 @@ def plot_speed_violation_severity(
         return None
 
 
-def plot_speeding_by_hour(filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> plt.Figure:
+def plot_speeding_by_hour(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> matplotlib.figure.Figure:
     """
     Create a visualization showing when speeding occurs throughout the day.
 
@@ -359,7 +342,9 @@ def plot_speeding_by_hour(filtered_df: pd.DataFrame, structure: Dict[str, str], 
     return fig
 
 
-def plot_vehicle_classification_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> plt.Figure:
+def plot_vehicle_classification_distribution(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> matplotlib.figure.Figure:
     """Create vehicle classification distribution visualizations."""
     class_counts_dir1 = [filtered_df[col].sum() for col in structure["dir1_class_cols"]]
     class_counts_dir2 = [filtered_df[col].sum() for col in structure["dir2_class_cols"]]

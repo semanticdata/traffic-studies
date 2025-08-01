@@ -70,6 +70,8 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
     return compliant, total
 
 
+
+
 def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
     """Calculate the 85th percentile speed using proper interpolation within speed ranges."""
     if not speed_cols:
@@ -164,7 +166,7 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
     return high_speeders
 
 
-def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict:
+def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict[str, float]:
     """
     Calculate all core metrics for the dashboard.
 
@@ -185,11 +187,19 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
     combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
 
-    # Compliance calculations
-    dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)
-    dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
-    total_compliant = dir1_compliant + dir2_compliant
-    total_speed_readings = dir1_total + dir2_total
+    # Compliance calculations - use pre-calculated columns if available, otherwise calculate on-demand
+    if "Dir1_Compliant" in df.columns and "Dir2_Compliant" in df.columns:
+        # Use pre-calculated compliance columns
+        total_compliant = df["Dir1_Compliant"].sum() + df["Dir2_Compliant"].sum()
+        total_non_compliant = df["Dir1_Non_Compliant"].sum() + df["Dir2_Non_Compliant"].sum()
+        total_speed_readings = total_compliant + total_non_compliant
+    else:
+        # Calculate compliance on-demand for backward compatibility
+        dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)
+        dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
+        total_compliant = dir1_compliant + dir2_compliant
+        total_speed_readings = dir1_total + dir2_total
+    
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
     # 85th percentile speed - combine both directions for accurate calculation

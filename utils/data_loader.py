@@ -23,7 +23,7 @@ Exceptions:
 """
 
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -37,7 +37,7 @@ class TrafficDataError(Exception):
 class DataValidationError(TrafficDataError):
     """Raised when data validation fails."""
 
-    def __init__(self, message, validation_details=None):
+    def __init__(self, message: str, validation_details: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(message)
         self.validation_details = validation_details or {}
 
@@ -48,7 +48,7 @@ class FileStructureError(TrafficDataError):
     pass
 
 
-def validate_traffic_data(df: pd.DataFrame, structure: Dict[str, any]) -> Dict[str, any]:
+def validate_traffic_data(df: pd.DataFrame, structure: Dict[str, Any]) -> Dict[str, Any]:
     """Comprehensive data validation with detailed reporting."""
     validation_results = {"is_valid": True, "warnings": [], "errors": [], "stats": {}}
 
@@ -165,7 +165,133 @@ def get_location_from_file(file_path: str) -> str:
         return "Unknown Location"
 
 
-def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
+def _extract_metadata_from_headers(header_lines: List[str]) -> Dict[str, Optional[str]]:
+    """Extract metadata information (location, comments, title) from header lines."""
+    location = None
+    comments = None
+    title = None
+
+    for line in header_lines:
+        # Handle CSV format (comma-separated) and other formats
+        if line.startswith("Location,") or "Location:" in line:
+            if "Location," in line:
+                location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
+            else:
+                parts = line.strip().split('","')
+                if len(parts) > 1:
+                    location = parts[1].replace('"', "").strip()
+                else:
+                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
+        elif line.startswith("Comments,") or "Comments:" in line:
+            if "Comments," in line:
+                comments = line.split("Comments,")[1].strip().strip('"').strip(",")
+            else:
+                comments = line.split("Comments:")[1].strip().strip('"').strip(",")
+        elif line.startswith("Title,") or "Title:" in line:
+            if "Title," in line:
+                title = line.split("Title,")[1].strip().strip('"').strip(",")
+            else:
+                title = line.split("Title:")[1].strip().strip('"').strip(",")
+
+    return {"location": location, "comments": comments, "title": title}
+
+
+def _find_column_header_row(header_lines: List[str]) -> Tuple[Optional[str], int]:
+    """Find the line containing 'Date/Time' and return the line itself and its row index."""
+    for i, line in enumerate(header_lines):
+        if "Date/Time" in line:
+            return line, i
+    return None, -1
+
+
+def _detect_traffic_directions(columns: List[str]) -> Tuple[str, str]:
+    """Determine if the directions are 'Northbound'/'Southbound' or 'Eastbound'/'Westbound'."""
+    if "Northbound" in "".join(columns):
+        return "Northbound", "Southbound"
+    else:
+        return "Eastbound", "Westbound"
+
+
+def _map_columns(columns: List[str], dir1: str, dir2: str) -> Dict[str, Any]:
+    """Map column names to their respective groups (volume, speed, classification)."""
+    # Detect speed columns - handle both single and double space formats
+    dir1_speed_cols = [col for col in columns if f"MPH - {dir1}" in col or f"MPH  - {dir1}" in col]
+    dir2_speed_cols = [col for col in columns if f"MPH - {dir2}" in col or f"MPH  - {dir2}" in col]
+
+    # Detect classification columns - try multiple patterns
+    dir1_class_cols = []
+    dir2_class_cols = []
+    for class_num in range(1, 7):  # Classes 1 through 6
+        # Try different possible patterns
+        patterns1 = [
+            f"Class #{class_num} - {dir1}",
+            f"Class {class_num} - {dir1}",
+            f"Class{class_num} - {dir1}",
+            f"Class #{class_num}-{dir1}",
+            f"Class {class_num}-{dir1}",
+        ]
+        patterns2 = [
+            f"Class #{class_num} - {dir2}",
+            f"Class {class_num} - {dir2}",
+            f"Class{class_num} - {dir2}",
+            f"Class #{class_num}-{dir2}",
+            f"Class {class_num}-{dir2}",
+        ]
+
+        # Try to find matching column for direction 1
+        class1_col = None
+        for pattern in patterns1:
+            matching_cols = [col for col in columns if pattern in col]
+            if matching_cols:
+                class1_col = matching_cols[0]
+                break
+
+        # Try to find matching column for direction 2
+        class2_col = None
+        for pattern in patterns2:
+            matching_cols = [col for col in columns if pattern in col]
+            if matching_cols:
+                class2_col = matching_cols[0]
+                break
+
+        if class1_col:
+            dir1_class_cols.append(class1_col)
+        else:
+            print(f"No column found for {dir1} Class {class_num}")
+
+        if class2_col:
+            dir2_class_cols.append(class2_col)
+        else:
+            print(f"No column found for {dir2} Class {class_num}")
+
+    # Detect volume columns - try multiple patterns
+    dir1_volume_col = None
+    dir2_volume_col = None
+
+    volume_patterns1 = [f"Volume - {dir1}", dir1, f"{dir1} Volume"]
+    volume_patterns2 = [f"Volume - {dir2}", dir2, f"{dir2} Volume"]
+
+    for pattern in volume_patterns1:
+        if pattern in columns:
+            dir1_volume_col = pattern
+            break
+
+    for pattern in volume_patterns2:
+        if pattern in columns:
+            dir2_volume_col = pattern
+            break
+
+    return {
+        "dir1_speed_cols": dir1_speed_cols,
+        "dir2_speed_cols": dir2_speed_cols,
+        "dir1_volume_col": dir1_volume_col,
+        "dir2_volume_col": dir2_volume_col,
+        "dir1_class_cols": dir1_class_cols,
+        "dir2_class_cols": dir2_class_cols,
+    }
+
+
+def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
     """Detect the structure of the CSV file and return appropriate parsing parameters."""
     try:
         with open(file_path, "r") as f:
@@ -176,155 +302,30 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
                 except StopIteration:
                     break
 
-        # Extract metadata information
-        location = None
-        comments = None
-        title = None
+        # Extract metadata information using helper function
+        metadata = _extract_metadata_from_headers(header_lines)
 
-        for line in header_lines:
-            # Handle CSV format (comma-separated) and other formats
-            if line.startswith("Location,") or "Location:" in line:
-                if "Location," in line:
-                    location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
-                else:
-                    parts = line.strip().split('","')
-                    if len(parts) > 1:
-                        location = parts[1].replace('"', "").strip()
-                    else:
-                        location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
-            elif line.startswith("Comments,") or "Comments:" in line:
-                if "Comments," in line:
-                    comments = line.split("Comments,")[1].strip().strip('"').strip(",")
-                else:
-                    comments = line.split("Comments:")[1].strip().strip('"').strip(",")
-            elif line.startswith("Title,") or "Title:" in line:
-                if "Title," in line:
-                    title = line.split("Title,")[1].strip().strip('"').strip(",")
-                else:
-                    title = line.split("Title:")[1].strip().strip('"').strip(",")
-
-        # Find data columns
-        column_line = None
-        for i, line in enumerate(header_lines):
-            if "Date/Time" in line:
-                column_line = line
-                metadata_rows = i
-                break
+        # Find data columns using helper function
+        column_line, metadata_rows = _find_column_header_row(header_lines)
 
         if column_line:
             columns = [col.strip().strip('"') for col in column_line.split(",")]
 
-            # Debug print
-            # print("\nAll columns found:", columns)
+            # Detect direction names using helper function
+            dir1_name, dir2_name = _detect_traffic_directions(columns)
 
-            # Detect direction names
-            if "Northbound" in "".join(columns):
-                dir1_name = "Northbound"
-                dir2_name = "Southbound"
-            else:
-                dir1_name = "Eastbound"
-                dir2_name = "Westbound"
-
-            # Debug print
-            # print(f"\nDirections detected: {dir1_name}, {dir2_name}")
-
-            # Detect speed columns - handle both single and double space formats
-            dir1_speed_cols = [col for col in columns if f"MPH - {dir1_name}" in col or f"MPH  - {dir1_name}" in col]
-            dir2_speed_cols = [col for col in columns if f"MPH - {dir2_name}" in col or f"MPH  - {dir2_name}" in col]
-
-            # print(f"\nSpeed columns found for {dir1_name}:", dir1_speed_cols)
-            # print(f"Speed columns found for {dir2_name}:", dir2_speed_cols)
-
-            # Detect classification columns - try multiple patterns
-            dir1_class_cols = []
-            dir2_class_cols = []
-            for class_num in range(1, 7):  # Classes 1 through 6
-                # Try different possible patterns
-                patterns1 = [
-                    f"Class #{class_num} - {dir1_name}",
-                    f"Class {class_num} - {dir1_name}",
-                    f"Class{class_num} - {dir1_name}",
-                    f"Class #{class_num}-{dir1_name}",
-                    f"Class {class_num}-{dir1_name}",
-                ]
-                patterns2 = [
-                    f"Class #{class_num} - {dir2_name}",
-                    f"Class {class_num} - {dir2_name}",
-                    f"Class{class_num} - {dir2_name}",
-                    f"Class #{class_num}-{dir2_name}",
-                    f"Class {class_num}-{dir2_name}",
-                ]
-
-                # Try to find matching column for direction 1
-                class1_col = None
-                for pattern in patterns1:
-                    # print(f"Trying pattern for dir1: '{pattern}'")
-                    matching_cols = [col for col in columns if pattern in col]
-                    if matching_cols:
-                        class1_col = matching_cols[0]
-                        break
-
-                # Try to find matching column for direction 2
-                class2_col = None
-                for pattern in patterns2:
-                    # print(f"Trying pattern for dir2: '{pattern}'")
-                    matching_cols = [col for col in columns if pattern in col]
-                    if matching_cols:
-                        class2_col = matching_cols[0]
-                        break
-
-                if class1_col:
-                    # print(f"Found {dir1_name} Class {class_num}: {class1_col}")
-                    dir1_class_cols.append(class1_col)
-                else:
-                    print(f"No column found for {dir1_name} Class {class_num}")
-
-                if class2_col:
-                    # print(f"Found {dir2_name} Class {class_num}: {class2_col}")
-                    dir2_class_cols.append(class2_col)
-                else:
-                    print(f"No column found for {dir2_name} Class {class_num}")
-
-            # Debug print final results
-            # print(f"\nFinal classification columns found:")
-            # print(f"{dir1_name}:", dir1_class_cols)
-            # print(f"{dir2_name}:", dir2_class_cols)
-
-            # Detect volume columns - try multiple patterns
-            dir1_volume_col = None
-            dir2_volume_col = None
-
-            volume_patterns1 = [f"Volume - {dir1_name}", dir1_name, f"{dir1_name} Volume"]
-            volume_patterns2 = [f"Volume - {dir2_name}", dir2_name, f"{dir2_name} Volume"]
-
-            for pattern in volume_patterns1:
-                if pattern in columns:
-                    dir1_volume_col = pattern
-                    break
-
-            for pattern in volume_patterns2:
-                if pattern in columns:
-                    dir2_volume_col = pattern
-                    break
-
-            # print(f"\nVolume columns found:")
-            # print(f"  {dir1_name}: {dir1_volume_col}")
-            # print(f"  {dir2_name}: {dir2_volume_col}")
+            # Map columns to their respective groups using helper function
+            column_mapping = _map_columns(columns, dir1_name, dir2_name)
 
             return {
                 "metadata_rows": metadata_rows,
                 "columns": columns,
-                "location": location,
-                "comments": comments,
-                "title": title,
+                "location": metadata["location"],
+                "comments": metadata["comments"],
+                "title": metadata["title"],
                 "dir1_name": dir1_name,
                 "dir2_name": dir2_name,
-                "dir1_speed_cols": dir1_speed_cols,
-                "dir2_speed_cols": dir2_speed_cols,
-                "dir1_volume_col": dir1_volume_col,
-                "dir2_volume_col": dir2_volume_col,
-                "dir1_class_cols": dir1_class_cols,
-                "dir2_class_cols": dir2_class_cols,
+                **column_mapping,
             }
     except Exception as e:
         import traceback
@@ -334,7 +335,66 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, any]]:
         return None
 
 
-def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
+def _calculate_speed_compliance(df: pd.DataFrame, structure: Dict[str, Any], speed_limit: int) -> pd.DataFrame:
+    """Calculate speed compliance for both directions and add compliance columns to DataFrame."""
+    # Get speed columns for both directions
+    dir1_speed_cols = structure["dir1_speed_cols"]
+    dir2_speed_cols = structure["dir2_speed_cols"]
+
+    # Initialize compliance columns for direction 1
+    df["Dir1_Compliant"] = 0
+    df["Dir1_Non_Compliant"] = 0
+
+    for col in dir1_speed_cols:
+        if col in df.columns:
+            try:
+                # Extract speed from column name
+                speed_part = col.split("MPH")[0].strip()
+                if "+" in speed_part:
+                    # Handle "45+" format - use the number as-is
+                    speed = float(speed_part.replace("+", "").strip())
+                else:
+                    # Handle "25-29" format - use lower bound
+                    speed = float(speed_part.split("-")[0].strip())
+
+                # Add vehicle counts to appropriate compliance category
+                if speed <= speed_limit:
+                    df["Dir1_Compliant"] += df[col]
+                else:
+                    df["Dir1_Non_Compliant"] += df[col]
+            except (ValueError, IndexError):
+                # Skip columns that don't have valid speed format
+                continue
+
+    # Initialize compliance columns for direction 2
+    df["Dir2_Compliant"] = 0
+    df["Dir2_Non_Compliant"] = 0
+
+    for col in dir2_speed_cols:
+        if col in df.columns:
+            try:
+                # Extract speed from column name
+                speed_part = col.split("MPH")[0].strip()
+                if "+" in speed_part:
+                    # Handle "45+" format - use the number as-is
+                    speed = float(speed_part.replace("+", "").strip())
+                else:
+                    # Handle "25-29" format - use lower bound
+                    speed = float(speed_part.split("-")[0].strip())
+
+                # Add vehicle counts to appropriate compliance category
+                if speed <= speed_limit:
+                    df["Dir2_Compliant"] += df[col]
+                else:
+                    df["Dir2_Non_Compliant"] += df[col]
+            except (ValueError, IndexError):
+                # Skip columns that don't have valid speed format
+                continue
+
+    return df
+
+
+def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
     """Load and process traffic data from CSV file with enhanced validation and optimization."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -378,59 +438,8 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Store original row count for filtering statistics
         original_row_count = len(df)
 
-        # Speed compliance calculations using proper speed range logic
-        dir1_speed_cols = structure["dir1_speed_cols"]
-        dir2_speed_cols = structure["dir2_speed_cols"]
-
-        # Calculate compliance for direction 1
-        df["Dir1_Compliant"] = 0
-        df["Dir1_Non_Compliant"] = 0
-
-        for col in dir1_speed_cols:
-            if col in df.columns:
-                try:
-                    # Extract speed from column name
-                    speed_part = col.split("MPH")[0].strip()
-                    if "+" in speed_part:
-                        # Handle "45+" format - use the number as-is
-                        speed = float(speed_part.replace("+", "").strip())
-                    else:
-                        # Handle "25-29" format - use lower bound
-                        speed = float(speed_part.split("-")[0].strip())
-
-                    # Add vehicle counts to appropriate compliance category
-                    if speed <= speed_limit:
-                        df["Dir1_Compliant"] += df[col]
-                    else:
-                        df["Dir1_Non_Compliant"] += df[col]
-                except (ValueError, IndexError):
-                    # Skip columns that don't have valid speed format
-                    continue
-
-        # Calculate compliance for direction 2
-        df["Dir2_Compliant"] = 0
-        df["Dir2_Non_Compliant"] = 0
-
-        for col in dir2_speed_cols:
-            if col in df.columns:
-                try:
-                    # Extract speed from column name
-                    speed_part = col.split("MPH")[0].strip()
-                    if "+" in speed_part:
-                        # Handle "45+" format - use the number as-is
-                        speed = float(speed_part.replace("+", "").strip())
-                    else:
-                        # Handle "25-29" format - use lower bound
-                        speed = float(speed_part.split("-")[0].strip())
-
-                    # Add vehicle counts to appropriate compliance category
-                    if speed <= speed_limit:
-                        df["Dir2_Compliant"] += df[col]
-                    else:
-                        df["Dir2_Non_Compliant"] += df[col]
-                except (ValueError, IndexError):
-                    # Skip columns that don't have valid speed format
-                    continue
+        # Calculate speed compliance using the consolidated helper function
+        df = _calculate_speed_compliance(df, structure, speed_limit)
 
         # Vectorized total calculation
         df["Total"] = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
@@ -496,7 +505,7 @@ def get_memory_usage(df: pd.DataFrame) -> Dict[str, str]:
 
 def load_large_traffic_data(
     file_path: str, speed_limit: int = 30, chunk_size: int = 50000
-) -> Tuple[pd.DataFrame, str, Dict[str, any]]:
+) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
     """Memory-efficient loading for large traffic datasets using chunked processing."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -520,59 +529,8 @@ def load_large_traffic_data(
             chunk["Date/Time"] = pd.to_datetime(chunk["Date/Time"], errors="coerce")
             chunk["Hour"] = chunk["Date/Time"].dt.hour
 
-            # Speed compliance calculations using proper speed range logic
-            dir1_speed_cols = structure["dir1_speed_cols"]
-            dir2_speed_cols = structure["dir2_speed_cols"]
-
-            # Calculate compliance for direction 1
-            chunk["Dir1_Compliant"] = 0
-            chunk["Dir1_Non_Compliant"] = 0
-
-            for col in dir1_speed_cols:
-                if col in chunk.columns:
-                    try:
-                        # Extract speed from column name
-                        speed_part = col.split("MPH")[0].strip()
-                        if "+" in speed_part:
-                            # Handle "45+" format - use the number as-is
-                            speed = float(speed_part.replace("+", "").strip())
-                        else:
-                            # Handle "25-29" format - use lower bound
-                            speed = float(speed_part.split("-")[0].strip())
-
-                        # Add vehicle counts to appropriate compliance category
-                        if speed <= speed_limit:
-                            chunk["Dir1_Compliant"] += chunk[col]
-                        else:
-                            chunk["Dir1_Non_Compliant"] += chunk[col]
-                    except (ValueError, IndexError):
-                        # Skip columns that don't have valid speed format
-                        continue
-
-            # Calculate compliance for direction 2
-            chunk["Dir2_Compliant"] = 0
-            chunk["Dir2_Non_Compliant"] = 0
-
-            for col in dir2_speed_cols:
-                if col in chunk.columns:
-                    try:
-                        # Extract speed from column name
-                        speed_part = col.split("MPH")[0].strip()
-                        if "+" in speed_part:
-                            # Handle "45+" format - use the number as-is
-                            speed = float(speed_part.replace("+", "").strip())
-                        else:
-                            # Handle "25-29" format - use lower bound
-                            speed = float(speed_part.split("-")[0].strip())
-
-                        # Add vehicle counts to appropriate compliance category
-                        if speed <= speed_limit:
-                            chunk["Dir2_Compliant"] += chunk[col]
-                        else:
-                            chunk["Dir2_Non_Compliant"] += chunk[col]
-                    except (ValueError, IndexError):
-                        # Skip columns that don't have valid speed format
-                        continue
+            # Calculate speed compliance using the consolidated helper function
+            chunk = _calculate_speed_compliance(chunk, structure, speed_limit)
 
             # Calculate total
             chunk["Total"] = chunk[structure["dir1_volume_col"]] + chunk[structure["dir2_volume_col"]]

@@ -22,6 +22,8 @@ Author: Miguel Pimentel
 License: MIT
 """
 
+from typing import Dict, Tuple
+
 import pandas as pd
 import streamlit as st
 
@@ -49,7 +51,7 @@ def clean_location_name(location_name: str) -> str:
     return location_name.strip().strip('"').strip("'").strip(",").strip()
 
 
-def setup_sidebar_filters():
+def setup_sidebar_filters() -> Tuple[str, Dict[str, str]]:
     """Set up sidebar filters and return selected values."""
     st.sidebar.title("Filters")
     locations = get_available_locations()
@@ -68,7 +70,7 @@ def setup_sidebar_filters():
     return selected_location, locations
 
 
-def load_and_filter_data(selected_location: str, locations: dict):
+def load_and_filter_data(selected_location: str, locations: Dict[str, str]) -> Tuple[pd.DataFrame, Dict[str, str]]:
     """Load and filter the traffic data."""
     try:
         df, location_name, structure = load_data(locations[selected_location])
@@ -109,7 +111,7 @@ def load_and_filter_data(selected_location: str, locations: dict):
     return filtered_df, structure
 
 
-def display_core_metrics(filtered_df: pd.DataFrame, structure: dict, selected_location: str):
+def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], selected_location: str) -> None:
     """Display the 6 core metrics in a clean layout."""
     st.subheader(f"Core Metrics - {selected_location}")
     metrics = get_core_metrics(filtered_df, structure)
@@ -144,7 +146,7 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: dict, selected_lo
     st.divider()
 
 
-def display_visualizations(filtered_df: pd.DataFrame, structure: dict):
+def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> None:
     """Display all visualizations in organized sections."""
 
     # Traffic Volume Section
@@ -258,7 +260,7 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: dict):
     st.divider()
 
 
-def display_vehicle_classification(filtered_df: pd.DataFrame, structure: dict):
+def display_vehicle_classification(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> None:
     """Display vehicle classification with chart and legend."""
     st.subheader("🚛 Vehicle Classification")
 
@@ -290,7 +292,7 @@ def display_vehicle_classification(filtered_df: pd.DataFrame, structure: dict):
     """)
 
 
-def display_optional_data(filtered_df: pd.DataFrame):
+def display_optional_data(filtered_df: pd.DataFrame) -> None:
     """Display optional raw data section."""
     show_raw_data = st.checkbox("Show Raw Data")
     if show_raw_data:
@@ -298,7 +300,7 @@ def display_optional_data(filtered_df: pd.DataFrame):
         st.dataframe(filtered_df, use_container_width=True)
 
 
-def main():
+def main() -> None:
     """Main application function."""
     # Page configuration
     st.set_page_config(
