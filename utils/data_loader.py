@@ -37,6 +37,9 @@ from utils.parsers.traffic_parser import (
     detect_file_structure as parser_detect_file_structure,
 )
 from utils.parsers.traffic_parser import (
+    extract_posted_speed,
+)
+from utils.parsers.traffic_parser import (
     get_location_from_file as parser_get_location_from_file,
 )
 from utils.transformers.traffic_transformer import (
@@ -145,8 +148,15 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Add basic enrichments (datetime processing, hour extraction, total calculation)
         df = add_basic_enrichments(df, structure)
 
-        # Calculate speed compliance using transformer
-        df = calculate_speed_compliance(df, structure, speed_limit)
+        # Extract posted speed from reference SPD files BEFORE calculating compliance
+        posted_speed = speed_limit  # Use parameter as fallback
+        if structure.get("reference_files", {}).get("total_spd_file"):
+            extracted_speed = extract_posted_speed(structure["reference_files"]["total_spd_file"])
+            if extracted_speed:
+                posted_speed = extracted_speed
+
+        # Calculate speed compliance using the correct posted speed
+        df = calculate_speed_compliance(df, structure, posted_speed)
 
         # Filter zero traffic and get statistics
         df, filtering_stats = filter_zero_traffic(df, structure)
@@ -166,7 +176,12 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
             raise DataValidationError(f"Data validation failed for '{file_path}': {error_details}", validation_results)
 
         # Enhanced structure with metadata
-        enhanced_structure = {**structure, "filtering_stats": filtering_stats, "data_quality": validation_results}
+        enhanced_structure = {
+            **structure,
+            "filtering_stats": filtering_stats,
+            "data_quality": validation_results,
+            "posted_speed": posted_speed,
+        }
 
         return df, location_name, enhanced_structure
 
@@ -281,8 +296,15 @@ def get_available_locations() -> Dict[str, str]:
         return {}
 
     locations = {}
-    for file in data_dir.glob("*.csv"):
+
+    # Look for -ALL.csv files in the data directory
+    for file in data_dir.glob("*-ALL.csv"):
         location_name = get_location_from_file(str(file))
+        # If location name extraction fails, derive from filename
+        if location_name == "Unknown Location":
+            # Extract from filename: "2809_Hampshire_Ave_N-ALL.csv" -> "2809 Hampshire Ave N"
+            stem = file.stem.replace("-ALL", "").replace("_", " ")
+            location_name = stem.strip()
         locations[location_name] = str(file)
 
     return locations

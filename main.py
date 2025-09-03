@@ -112,37 +112,48 @@ def load_and_filter_data(selected_location: str, locations: Dict[str, str]) -> T
 
 
 def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], selected_location: str) -> None:
-    """Display the 6 core metrics in a clean layout."""
+    """Display the 8 core metrics in a clean layout."""
     st.subheader(f"Core Metrics - {selected_location}")
     metrics = get_core_metrics(filtered_df, structure)
 
-    # First row - Primary metrics
-    col1, col2, col3 = st.columns(3)
+    # First row - Volume and patterns
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric("📊 Total Vehicles", f"{metrics['total_vehicles']:,}")
 
     with col2:
-        st.metric("🏎️ Average Speed", f"{metrics['combined_avg_speed']:.1f} mph")
+        st.metric("📅 Average Daily Traffic", f"{metrics['adt']:,.0f}")
 
     with col3:
-        st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%")
-
-    # Second row - Analysis metrics
-    col4, col5, col6 = st.columns(3)
+        peak_hour_display = (
+            f"{metrics['peak_hour']:02d}:00" if isinstance(metrics["peak_hour"], int) else metrics["peak_hour"]
+        )
+        st.metric("⏰ Peak Hour", peak_hour_display, f"{metrics['peak_vehicles']:,} vehicles")
 
     with col4:
-        st.metric("🎯 85th Percentile Speed", f"{metrics['percentile_85th']:.1f} mph")
-
-    with col5:
-        st.metric("⏰ Peak Hour", f"{metrics['peak_hour']:02d}:00", f"{metrics['peak_vehicles']:,} vehicles")
-
-    with col6:
         st.metric("🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%")
 
-    date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")
-    date_max = filtered_df["Date/Time"].max().strftime("%B %d, %Y")
-    st.info(f"📅 **Analysis Period:** {date_min} to {date_max}")
+    # Second row - Speed analysis
+    col5, col6, col7, col8 = st.columns(4)
+
+    with col5:
+        st.metric("📝 Posted Speed", f"{metrics['posted_speed']} mph")
+
+    with col6:
+        st.metric("🏎️ Average Speed", f"{metrics['combined_avg_speed']:.1f} mph")
+
+    with col7:
+        st.metric("🎯 85th Percentile Speed", f"{metrics['percentile_85th']:.1f} mph")
+
+    with col8:
+        st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%")
+
+    if not filtered_df.empty:
+        date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")
+        date_max = filtered_df["Date/Time"].max().strftime("%B %d, %Y")
+        st.info(f"📅 **Analysis Period:** {date_min} to {date_max}")
+
     st.divider()
 
 

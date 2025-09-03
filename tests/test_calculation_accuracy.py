@@ -23,7 +23,7 @@ class TestCalculationAccuracy:
     def test_load_real_data_and_verify_structure(self):
         """Test that we can load real data and verify the structure is correct."""
         # Load real data file
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Verify basic structure
         assert isinstance(df, pd.DataFrame)
@@ -47,7 +47,7 @@ class TestCalculationAccuracy:
 
     def test_total_volume_calculation_accuracy(self):
         """Test that total volume calculations are accurate."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Verify that Total column equals sum of directional volumes
         expected_total = df[structure["dir1_volume_col"]] + df[structure["dir2_volume_col"]]
@@ -63,7 +63,7 @@ class TestCalculationAccuracy:
 
     def test_weighted_speed_calculation_with_known_data(self):
         """Test weighted speed calculation with known data points."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Test with first few rows of real data
         test_data = df.head(20)  # Use first 20 rows
@@ -93,7 +93,7 @@ class TestCalculationAccuracy:
 
     def test_compliance_calculation_with_known_values(self):
         """Test compliance calculation with known speed limit scenarios."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Test compliance with different speed limits
         for speed_limit in [25, 30, 35]:
@@ -117,7 +117,7 @@ class TestCalculationAccuracy:
 
     def test_85th_percentile_speed_calculation(self):
         """Test 85th percentile speed calculation with real data."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Calculate 85th percentile speeds
         nb_85th = calculate_85th_percentile_speed(df, structure["dir1_speed_cols"])
@@ -144,7 +144,7 @@ class TestCalculationAccuracy:
 
     def test_core_metrics_with_real_data(self):
         """Test complete core metrics calculation with real data."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Calculate core metrics
         metrics = get_core_metrics(df, structure, speed_limit=30)
@@ -202,9 +202,9 @@ class TestCalculationAccuracy:
     def test_calculation_consistency_across_files(self):
         """Test that calculations are consistent across different data files."""
         test_files = [
-            "data/2809-Hampshire-Ave_AIO.csv",
-            "data/2941-Hampshire-Ave_AIO.csv",
-            "data/3528-Noble-Ave_AIO.csv",
+            "data/2809_Hampshire_Ave_N-ALL.csv",
+            "data/2941_Hampshire_Ave_N-ALL.csv",
+            "data/3528_Noble_Ave_N-ALL.csv",
         ]
 
         results = []
@@ -228,7 +228,7 @@ class TestCalculationAccuracy:
 
     def test_edge_case_handling(self):
         """Test handling of edge cases in calculations."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Test with zero traffic periods
         zero_traffic = df[df["Total"] == 0]
@@ -249,7 +249,7 @@ class TestCalculationAccuracy:
 
     def test_manual_calculation_verification(self):
         """Test with manually calculated expected values from a small data subset."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Get a specific row with known values for manual verification
         # From the CSV data, we know row at 11/04/2024 15:00 has:
@@ -271,7 +271,7 @@ class TestCalculationAccuracy:
 
     def test_data_quality_validation(self):
         """Test that data quality validation catches potential issues."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         # Verify no negative values in volume columns
         assert (df[structure["dir1_volume_col"]] >= 0).all()

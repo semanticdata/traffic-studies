@@ -10,6 +10,7 @@ Functions:
     calculate_85th_percentile_speed(df, speed_cols) -> float: Calculate 85th percentile speed
     calculate_phf(df) -> float: Calculate Peak Hour Factor
     count_high_speeders(df, speed_cols, speed_limit) -> int: Count high-speed violators
+    calculate_adt(df) -> float: Calculate Average Daily Traffic
     get_core_metrics(df, structure, speed_limit) -> Dict: Calculate all core metrics
 """
 
@@ -61,8 +62,30 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
                 speed = float(speed_part.split("-")[0].strip())
 
             count = df[col].sum()
-            if speed <= speed_limit:
-                compliant += count
+            # For compliance with new speed bins: ranges that include the speed limit are compliant
+            # e.g., "26-30 MPH" includes 30 MPH, so it should be compliant for 30 MPH speed limit
+            if "+" in speed_part:
+                # For "45+" format, if the lower bound exceeds speed limit, it's non-compliant
+                if speed > speed_limit:
+                    pass  # non-compliant
+                else:
+                    compliant += count
+            else:
+                # For "26-30" format, extract upper bound and check if speed limit falls within range
+                speed_range_parts = speed_part.split("-")
+                if len(speed_range_parts) == 2:
+                    lower_bound = float(speed_range_parts[0].strip())
+                    upper_bound = float(speed_range_parts[1].strip())
+                    # If speed limit falls within or below the range, it's compliant
+                    if speed_limit >= lower_bound and speed_limit <= upper_bound:
+                        compliant += count
+                    elif upper_bound < speed_limit:
+                        compliant += count
+                    # else: upper_bound > speed_limit, so non-compliant
+                else:
+                    # Single number, use original logic
+                    if speed <= speed_limit:
+                        compliant += count
             total += count
         except (ValueError, IndexError):
             # Skip columns that don't have valid speed format
@@ -164,35 +187,67 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
     return high_speeders
 
 
-def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict[str, float]:
+def calculate_adt(df: pd.DataFrame) -> float:
+    """
+    Calculate the Average Daily Traffic (ADT).
+
+    Args:
+        df: DataFrame containing traffic data with a "Date/Time" and "Total" column.
+
+    Returns:
+        The calculated ADT value, or 0 if data is insufficient.
+    """
+    if df.empty:
+        return 0
+
+    total_vehicles = df["Total"].sum()
+
+    # Ensure the date calculation is robust
+    date_series = pd.to_datetime(df["Date/Time"]).dt.date
+    if date_series.empty:
+        return 0
+
+    num_days = (date_series.max() - date_series.min()).days + 1
+
+    # If num_days is 0, it means the data is for a single day. Avoid division by zero.
+    return total_vehicles / num_days if num_days > 0 else total_vehicles
+
+
+def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = None) -> Dict[str, float]:
     """
     Calculate all core metrics for the dashboard.
 
     Args:
         df: Filtered DataFrame containing traffic data
         structure: Dictionary containing data structure information
-        speed_limit: Speed limit in MPH
+        speed_limit: Speed limit in MPH (uses posted_speed from structure if None)
 
     Returns:
         Dictionary containing all calculated metrics
     """
+    # Use posted speed from structure if speed_limit not provided
+    if speed_limit is None:
+        speed_limit = structure.get("posted_speed", 30)
     # Basic counts
     total_vehicles = df["Total"].sum()
     dir1_volume = df[structure["dir1_volume_col"]].sum()
     dir2_volume = df[structure["dir2_volume_col"]].sum()
 
-    # Speed calculations - use true weighted average across both directions
+    # ADT Calculation
+    adt = calculate_adt(df)
+
+    # Speed calculations - use weighted average across both directions
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
     combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
 
-    # Compliance calculations - use pre-calculated columns if available, otherwise calculate on-demand
+    # Compliance calculations - use speed range data from the main CSV
     if "Dir1_Compliant" in df.columns and "Dir2_Compliant" in df.columns:
-        # Use pre-calculated compliance columns
+        # Use pre-calculated compliance columns if available
         total_compliant = df["Dir1_Compliant"].sum() + df["Dir2_Compliant"].sum()
         total_non_compliant = df["Dir1_Non_Compliant"].sum() + df["Dir2_Non_Compliant"].sum()
         total_speed_readings = total_compliant + total_non_compliant
     else:
-        # Calculate compliance on-demand for backward compatibility
+        # Calculate compliance from speed range columns
         dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)
         dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
         total_compliant = dir1_compliant + dir2_compliant
@@ -200,15 +255,23 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
 
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
-    # 85th percentile speed - combine both directions for accurate calculation
+    # 85th percentile speed - calculate from speed range data
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
     percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
 
     # Peak hour analysis
-    hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
-    peak_hour_idx = hourly_volumes.idxmax()
-    peak_hour = peak_hour_idx[1]
-    peak_vehicles = hourly_volumes.max()
+    if not df.empty:
+        hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
+        if not hourly_volumes.empty:
+            peak_hour_idx = hourly_volumes.idxmax()
+            peak_hour = peak_hour_idx[1]
+            peak_vehicles = hourly_volumes.max()
+        else:
+            peak_hour = "N/A"
+            peak_vehicles = 0
+    else:
+        peak_hour = "N/A"
+        peak_vehicles = 0
 
     # Dominant direction
     dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
@@ -218,6 +281,8 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
 
     return {
         "total_vehicles": total_vehicles,
+        "adt": adt,
+        "posted_speed": speed_limit,
         "combined_avg_speed": combined_avg_speed,
         "compliance_rate": compliance_rate,
         "percentile_85th": percentile_85th,
