@@ -314,7 +314,7 @@ class TestEnhancedLoadData:
     def test_load_data_with_filtering_stats(self):
         """Test that filtering statistics are included in enhanced structure."""
         # Using actual data file
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         assert "filtering_stats" in structure
         stats = structure["filtering_stats"]
@@ -328,7 +328,7 @@ class TestEnhancedLoadData:
 
     def test_load_data_with_validation_results(self):
         """Test that data quality validation results are included."""
-        df, location, structure = load_data("data/2809-Hampshire-Ave_AIO.csv")
+        df, location, structure = load_data("data/2809_Hampshire_Ave_N-ALL.csv")
 
         assert "data_quality" in structure
         quality = structure["data_quality"]
@@ -352,14 +352,14 @@ class TestGetAvailableLocations:
 
     def test_get_available_locations_with_csv_files(self, tmp_path, sample_csv_content):
         """Test get_available_locations with CSV files."""
-        # Create test CSV files
-        csv1 = tmp_path / "location1.csv"
+        # Create test CSV files with -ALL.csv suffix (required by get_available_locations)
+        csv1 = tmp_path / "location1-ALL.csv"
         csv1.write_text(sample_csv_content)
 
         csv2_content = sample_csv_content.replace(
             "Hampshire Ave between Noble Ave and Adair Ave", "Main Street between 1st and 2nd"
         )
-        csv2 = tmp_path / "location2.csv"
+        csv2 = tmp_path / "location2-ALL.csv"
         csv2.write_text(csv2_content)
 
         with patch("utils.data_loader.get_data_directory", return_value=tmp_path):
@@ -382,8 +382,8 @@ class TestGetAvailableLocations:
 
     def test_get_available_locations_ignores_non_csv(self, tmp_path):
         """Test that get_available_locations ignores non-CSV files."""
-        # Create a CSV file with proper header
-        csv_file = tmp_path / "valid.csv"
+        # Create a CSV file with proper header and -ALL.csv suffix
+        csv_file = tmp_path / "valid-ALL.csv"
         csv_file.write_text("Location,Test Location\nComments,Test\nDate/Time,Volume\n1/1/2024,100\n")
 
         # Create non-CSV files
@@ -401,18 +401,18 @@ class TestGetAvailableLocations:
 
     def test_get_available_locations_handles_invalid_csv(self, tmp_path):
         """Test that get_available_locations handles invalid CSV files gracefully."""
-        # Create valid CSV with proper header
-        valid_csv = tmp_path / "valid.csv"
+        # Create valid CSV with proper header and -ALL.csv suffix
+        valid_csv = tmp_path / "valid-ALL.csv"
         valid_csv.write_text("Location,Valid Location\nComments,Test\nDate/Time,Volume\n1/1/2024,100\n")
 
-        # Create invalid CSV
-        invalid_csv = tmp_path / "invalid.csv"
+        # Create invalid CSV with -ALL.csv suffix
+        invalid_csv = tmp_path / "invalid-ALL.csv"
         invalid_csv.write_text("Invalid content without location")
 
         with patch("utils.data_loader.get_data_directory", return_value=tmp_path):
             result = get_available_locations()
 
-            # Should include valid file and unknown location for invalid file
+            # Should include valid file and derive location name from invalid file
             assert len(result) == 2
             assert "Valid Location" in result
-            assert "Unknown Location" in result
+            assert "All" in result  # Derived from filename: "invalid-ALL.csv" -> "ALL" -> "All"
