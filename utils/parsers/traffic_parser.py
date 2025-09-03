@@ -215,7 +215,7 @@ def detect_reference_files(file_path: str) -> Dict[str, Optional[str]]:
         file_path_obj = Path(file_path)
         data_dir = file_path_obj.parent
         file_stem = file_path_obj.stem
-        
+
         # Extract base name from -ALL.csv file: "2809_Hampshire_Ave_N-ALL" -> "2809_Hampshire_Ave_N"
         if "-ALL" in file_stem:
             base_name = file_stem.replace("-ALL", "")
@@ -249,7 +249,7 @@ def detect_reference_files(file_path: str) -> Dict[str, Optional[str]]:
 def extract_posted_speed(total_spd_file: str) -> Optional[int]:
     """
     Extract the posted speed limit from Total-SPD.csv file.
-    
+
     Returns the posted speed as an integer, or None if not found.
     """
     try:
@@ -262,16 +262,27 @@ def extract_posted_speed(total_spd_file: str) -> Optional[int]:
         # Look for the "Posted Speed:" line in the header
         for line in lines:
             if "Posted Speed:" in line:
-                # Extract the value after "Posted Speed:"
-                # Handle formats like '"Posted Speed:","35"'
-                parts = line.split("Posted Speed:")
-                if len(parts) > 1:
-                    speed_part = parts[1].strip().strip(',').strip('"').strip()
-                    try:
-                        return int(float(speed_part))
-                    except ValueError:
-                        continue
-        
+                # Handle CSV format: '"Posted Speed:","30"'
+                # Split by comma and take the second part
+                if "," in line:
+                    parts = line.split(",")
+                    if len(parts) >= 2:
+                        # Get the second part and clean it
+                        speed_part = parts[1].strip().strip('"').strip()
+                        try:
+                            return int(float(speed_part))
+                        except ValueError:
+                            continue
+                else:
+                    # Handle non-CSV format: 'Posted Speed: 30'
+                    parts = line.split("Posted Speed:")
+                    if len(parts) > 1:
+                        speed_part = parts[1].strip().strip(",").strip('"').strip()
+                        try:
+                            return int(float(speed_part))
+                        except ValueError:
+                            continue
+
         return None
 
     except Exception as e:
@@ -317,8 +328,9 @@ def load_reference_speed_data(total_spd_file: str) -> Optional[pd.DataFrame]:
 
         # Create a temporary string to read the fixed CSV
         from io import StringIO
-        fixed_csv_content = ''.join(fixed_lines)
-        
+
+        fixed_csv_content = "".join(fixed_lines)
+
         # Load the CSV from the fixed content
         df = pd.read_csv(StringIO(fixed_csv_content))
 
@@ -346,13 +358,13 @@ def load_reference_speed_data(total_spd_file: str) -> Optional[pd.DataFrame]:
 
         # Remove rows where available speed data is 0 or NaN
         valid_rows = pd.Series(True, index=df.index)
-        
+
         if has_mean_speed:
             valid_rows &= df["Mean Speed"].notna() & (df["Mean Speed"] > 0)
-        
+
         if has_85th_percentile:
             valid_rows &= df["85th Percentile"].notna() & (df["85th Percentile"] > 0)
-        
+
         df = df[valid_rows].copy()
 
         columns_loaded = []

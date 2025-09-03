@@ -37,11 +37,10 @@ from utils.parsers.traffic_parser import (
     detect_file_structure as parser_detect_file_structure,
 )
 from utils.parsers.traffic_parser import (
-    get_location_from_file as parser_get_location_from_file,
+    extract_posted_speed,
 )
 from utils.parsers.traffic_parser import (
-    extract_posted_speed,
-    load_reference_speed_data,
+    get_location_from_file as parser_get_location_from_file,
 )
 from utils.transformers.traffic_transformer import (
     add_basic_enrichments,
@@ -149,18 +148,18 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Add basic enrichments (datetime processing, hour extraction, total calculation)
         df = add_basic_enrichments(df, structure)
 
-        # Calculate speed compliance using transformer
-        df = calculate_speed_compliance(df, structure, speed_limit)
-
-        # Filter zero traffic and get statistics
-        df, filtering_stats = filter_zero_traffic(df, structure)
-
-        # Extract posted speed from reference SPD files if available
-        posted_speed = 30  # Default fallback
+        # Extract posted speed from reference SPD files BEFORE calculating compliance
+        posted_speed = speed_limit  # Use parameter as fallback
         if structure.get("reference_files", {}).get("total_spd_file"):
             extracted_speed = extract_posted_speed(structure["reference_files"]["total_spd_file"])
             if extracted_speed:
                 posted_speed = extracted_speed
+
+        # Calculate speed compliance using the correct posted speed
+        df = calculate_speed_compliance(df, structure, posted_speed)
+
+        # Filter zero traffic and get statistics
+        df, filtering_stats = filter_zero_traffic(df, structure)
 
         # Perform data validation
         validation_results = validate_traffic_data(df, structure)
@@ -297,7 +296,7 @@ def get_available_locations() -> Dict[str, str]:
         return {}
 
     locations = {}
-    
+
     # Look for -ALL.csv files in the data directory
     for file in data_dir.glob("*-ALL.csv"):
         location_name = get_location_from_file(str(file))

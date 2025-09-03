@@ -121,12 +121,15 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
 
     with col1:
         st.metric("📊 Total Vehicles", f"{metrics['total_vehicles']:,}")
-    
+
     with col2:
         st.metric("📅 Average Daily Traffic", f"{metrics['adt']:,.0f}")
 
     with col3:
-        st.metric("⏰ Peak Hour", f"{metrics['peak_hour']:02d}:00" if isinstance(metrics['peak_hour'], int) else metrics['peak_hour'], f"{metrics['peak_vehicles']:,} vehicles")
+        peak_hour_display = (
+            f"{metrics['peak_hour']:02d}:00" if isinstance(metrics["peak_hour"], int) else metrics["peak_hour"]
+        )
+        st.metric("⏰ Peak Hour", peak_hour_display, f"{metrics['peak_vehicles']:,} vehicles")
 
     with col4:
         st.metric("🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%")
@@ -145,7 +148,6 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
 
     with col8:
         st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%")
-
 
     if not filtered_df.empty:
         date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")

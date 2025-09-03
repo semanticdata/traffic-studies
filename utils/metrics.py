@@ -201,30 +201,33 @@ def calculate_adt(df: pd.DataFrame) -> float:
         return 0
 
     total_vehicles = df["Total"].sum()
-    
+
     # Ensure the date calculation is robust
     date_series = pd.to_datetime(df["Date/Time"]).dt.date
     if date_series.empty:
         return 0
-        
+
     num_days = (date_series.max() - date_series.min()).days + 1
 
     # If num_days is 0, it means the data is for a single day. Avoid division by zero.
     return total_vehicles / num_days if num_days > 0 else total_vehicles
 
 
-def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict[str, float]:
+def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = None) -> Dict[str, float]:
     """
     Calculate all core metrics for the dashboard.
 
     Args:
         df: Filtered DataFrame containing traffic data
         structure: Dictionary containing data structure information
-        speed_limit: Speed limit in MPH
+        speed_limit: Speed limit in MPH (uses posted_speed from structure if None)
 
     Returns:
         Dictionary containing all calculated metrics
     """
+    # Use posted speed from structure if speed_limit not provided
+    if speed_limit is None:
+        speed_limit = structure.get("posted_speed", 30)
     # Basic counts
     total_vehicles = df["Total"].sum()
     dir1_volume = df[structure["dir1_volume_col"]].sum()
@@ -269,7 +272,6 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     else:
         peak_hour = "N/A"
         peak_vehicles = 0
-
 
     # Dominant direction
     dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]

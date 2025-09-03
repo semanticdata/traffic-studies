@@ -28,15 +28,32 @@ def calculate_speed_compliance(df: pd.DataFrame, structure: Dict[str, Any], spee
                 if "+" in speed_part:
                     # Handle "45+" format - use the number as-is
                     speed = float(speed_part.replace("+", "").strip())
+                    # For compliance with "+" format: if lower bound exceeds speed limit, it's non-compliant
+                    if speed <= speed_limit:
+                        df["Dir1_Compliant"] += df[col]
+                    else:
+                        df["Dir1_Non_Compliant"] += df[col]
                 else:
-                    # Handle "25-29" format - use lower bound
-                    speed = float(speed_part.split("-")[0].strip())
-
-                # Add vehicle counts to appropriate compliance category
-                if speed <= speed_limit:
-                    df["Dir1_Compliant"] += df[col]
-                else:
-                    df["Dir1_Non_Compliant"] += df[col]
+                    # Handle "25-29" format - use sophisticated range logic
+                    speed_range_parts = speed_part.split("-")
+                    if len(speed_range_parts) == 2:
+                        lower_bound = float(speed_range_parts[0].strip())
+                        upper_bound = float(speed_range_parts[1].strip())
+                        # If speed limit falls within or above the range, it's compliant
+                        if speed_limit >= lower_bound and speed_limit <= upper_bound:
+                            df["Dir1_Compliant"] += df[col]
+                        elif upper_bound < speed_limit:
+                            df["Dir1_Compliant"] += df[col]
+                        else:
+                            # upper_bound > speed_limit, so non-compliant
+                            df["Dir1_Non_Compliant"] += df[col]
+                    else:
+                        # Single number, use original logic
+                        speed = float(speed_part.strip())
+                        if speed <= speed_limit:
+                            df["Dir1_Compliant"] += df[col]
+                        else:
+                            df["Dir1_Non_Compliant"] += df[col]
             except (ValueError, IndexError):
                 # Skip columns that don't have valid speed format
                 continue
@@ -53,15 +70,32 @@ def calculate_speed_compliance(df: pd.DataFrame, structure: Dict[str, Any], spee
                 if "+" in speed_part:
                     # Handle "45+" format - use the number as-is
                     speed = float(speed_part.replace("+", "").strip())
+                    # For compliance with "+" format: if lower bound exceeds speed limit, it's non-compliant
+                    if speed <= speed_limit:
+                        df["Dir2_Compliant"] += df[col]
+                    else:
+                        df["Dir2_Non_Compliant"] += df[col]
                 else:
-                    # Handle "25-29" format - use lower bound
-                    speed = float(speed_part.split("-")[0].strip())
-
-                # Add vehicle counts to appropriate compliance category
-                if speed <= speed_limit:
-                    df["Dir2_Compliant"] += df[col]
-                else:
-                    df["Dir2_Non_Compliant"] += df[col]
+                    # Handle "25-29" format - use sophisticated range logic
+                    speed_range_parts = speed_part.split("-")
+                    if len(speed_range_parts) == 2:
+                        lower_bound = float(speed_range_parts[0].strip())
+                        upper_bound = float(speed_range_parts[1].strip())
+                        # If speed limit falls within or above the range, it's compliant
+                        if speed_limit >= lower_bound and speed_limit <= upper_bound:
+                            df["Dir2_Compliant"] += df[col]
+                        elif upper_bound < speed_limit:
+                            df["Dir2_Compliant"] += df[col]
+                        else:
+                            # upper_bound > speed_limit, so non-compliant
+                            df["Dir2_Non_Compliant"] += df[col]
+                    else:
+                        # Single number, use original logic
+                        speed = float(speed_part.strip())
+                        if speed <= speed_limit:
+                            df["Dir2_Compliant"] += df[col]
+                        else:
+                            df["Dir2_Non_Compliant"] += df[col]
             except (ValueError, IndexError):
                 # Skip columns that don't have valid speed format
                 continue
