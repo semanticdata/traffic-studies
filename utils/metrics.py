@@ -10,6 +10,7 @@ Functions:
     calculate_85th_percentile_speed(df, speed_cols) -> float: Calculate 85th percentile speed
     calculate_phf(df) -> float: Calculate Peak Hour Factor
     count_high_speeders(df, speed_cols, speed_limit) -> int: Count high-speed violators
+    calculate_adt(df) -> float: Calculate Average Daily Traffic
     get_core_metrics(df, structure, speed_limit) -> Dict: Calculate all core metrics
 """
 
@@ -186,6 +187,32 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
     return high_speeders
 
 
+def calculate_adt(df: pd.DataFrame) -> float:
+    """
+    Calculate the Average Daily Traffic (ADT).
+
+    Args:
+        df: DataFrame containing traffic data with a "Date/Time" and "Total" column.
+
+    Returns:
+        The calculated ADT value, or 0 if data is insufficient.
+    """
+    if df.empty:
+        return 0
+
+    total_vehicles = df["Total"].sum()
+    
+    # Ensure the date calculation is robust
+    date_series = pd.to_datetime(df["Date/Time"]).dt.date
+    if date_series.empty:
+        return 0
+        
+    num_days = (date_series.max() - date_series.min()).days + 1
+
+    # If num_days is 0, it means the data is for a single day. Avoid division by zero.
+    return total_vehicles / num_days if num_days > 0 else total_vehicles
+
+
 def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30) -> Dict[str, float]:
     """
     Calculate all core metrics for the dashboard.
@@ -202,6 +229,9 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     total_vehicles = df["Total"].sum()
     dir1_volume = df[structure["dir1_volume_col"]].sum()
     dir2_volume = df[structure["dir2_volume_col"]].sum()
+
+    # ADT Calculation
+    adt = calculate_adt(df)
 
     # Speed calculations - use weighted average across both directions
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
@@ -227,10 +257,19 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
 
     # Peak hour analysis
-    hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
-    peak_hour_idx = hourly_volumes.idxmax()
-    peak_hour = peak_hour_idx[1]
-    peak_vehicles = hourly_volumes.max()
+    if not df.empty:
+        hourly_volumes = df.groupby([df["Date/Time"].dt.date, df["Date/Time"].dt.hour])["Total"].sum()
+        if not hourly_volumes.empty:
+            peak_hour_idx = hourly_volumes.idxmax()
+            peak_hour = peak_hour_idx[1]
+            peak_vehicles = hourly_volumes.max()
+        else:
+            peak_hour = "N/A"
+            peak_vehicles = 0
+    else:
+        peak_hour = "N/A"
+        peak_vehicles = 0
+
 
     # Dominant direction
     dominant_direction = structure["dir1_name"] if dir1_volume > dir2_volume else structure["dir2_name"]
@@ -240,6 +279,8 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
 
     return {
         "total_vehicles": total_vehicles,
+        "adt": adt,
+        "posted_speed": speed_limit,
         "combined_avg_speed": combined_avg_speed,
         "compliance_rate": compliance_rate,
         "percentile_85th": percentile_85th,
