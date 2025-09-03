@@ -143,6 +143,8 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
     date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")
     date_max = filtered_df["Date/Time"].max().strftime("%B %d, %Y")
     st.info(f"📅 **Analysis Period:** {date_min} to {date_max}")
+
+
     st.divider()
 
 

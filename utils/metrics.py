@@ -61,8 +61,30 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
                 speed = float(speed_part.split("-")[0].strip())
 
             count = df[col].sum()
-            if speed <= speed_limit:
-                compliant += count
+            # For compliance with new speed bins: ranges that include the speed limit are compliant
+            # e.g., "26-30 MPH" includes 30 MPH, so it should be compliant for 30 MPH speed limit
+            if "+" in speed_part:
+                # For "45+" format, if the lower bound exceeds speed limit, it's non-compliant
+                if speed > speed_limit:
+                    pass  # non-compliant
+                else:
+                    compliant += count
+            else:
+                # For "26-30" format, extract upper bound and check if speed limit falls within range
+                speed_range_parts = speed_part.split("-")
+                if len(speed_range_parts) == 2:
+                    lower_bound = float(speed_range_parts[0].strip())
+                    upper_bound = float(speed_range_parts[1].strip())
+                    # If speed limit falls within or below the range, it's compliant
+                    if speed_limit >= lower_bound and speed_limit <= upper_bound:
+                        compliant += count
+                    elif upper_bound < speed_limit:
+                        compliant += count
+                    # else: upper_bound > speed_limit, so non-compliant
+                else:
+                    # Single number, use original logic
+                    if speed <= speed_limit:
+                        compliant += count
             total += count
         except (ValueError, IndexError):
             # Skip columns that don't have valid speed format
@@ -181,18 +203,18 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     dir1_volume = df[structure["dir1_volume_col"]].sum()
     dir2_volume = df[structure["dir2_volume_col"]].sum()
 
-    # Speed calculations - use true weighted average across both directions
+    # Speed calculations - use weighted average across both directions
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
     combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
 
-    # Compliance calculations - use pre-calculated columns if available, otherwise calculate on-demand
+    # Compliance calculations - use speed range data from the main CSV
     if "Dir1_Compliant" in df.columns and "Dir2_Compliant" in df.columns:
-        # Use pre-calculated compliance columns
+        # Use pre-calculated compliance columns if available
         total_compliant = df["Dir1_Compliant"].sum() + df["Dir2_Compliant"].sum()
         total_non_compliant = df["Dir1_Non_Compliant"].sum() + df["Dir2_Non_Compliant"].sum()
         total_speed_readings = total_compliant + total_non_compliant
     else:
-        # Calculate compliance on-demand for backward compatibility
+        # Calculate compliance from speed range columns
         dir1_compliant, dir1_total = calculate_compliance(df, structure["dir1_speed_cols"], speed_limit)
         dir2_compliant, dir2_total = calculate_compliance(df, structure["dir2_speed_cols"], speed_limit)
         total_compliant = dir1_compliant + dir2_compliant
@@ -200,7 +222,7 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
 
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
-    # 85th percentile speed - combine both directions for accurate calculation
+    # 85th percentile speed - calculate from speed range data
     combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
     percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
 

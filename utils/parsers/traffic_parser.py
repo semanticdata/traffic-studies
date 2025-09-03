@@ -5,8 +5,11 @@ This module handles the detection and parsing of TrafficViewer Pro CSV files,
 including metadata extraction, column mapping, and structure analysis.
 """
 
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+import pandas as pd
 
 
 class FileStructureError(Exception):
@@ -167,6 +170,9 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
             # Map columns to their respective groups using helper function
             column_mapping = map_columns(columns, dir1_name, dir2_name)
 
+            # Detect reference files in subdirectories
+            reference_files = detect_reference_files(file_path)
+
             return {
                 "metadata_rows": metadata_rows,
                 "columns": columns,
@@ -175,6 +181,7 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
                 "title": metadata["title"],
                 "dir1_name": dir1_name,
                 "dir2_name": dir2_name,
+                "reference_files": reference_files,
                 **column_mapping,
             }
     except Exception as e:
@@ -182,6 +189,183 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
 
         print(f"Error detecting file structure: {e}")
         print(f"Traceback: {traceback.format_exc()}")
+        return None
+
+
+def detect_reference_files(file_path: str) -> Dict[str, Optional[str]]:
+    """
+    Detect reference CSV files in the same directory as the main file.
+
+    Returns a dictionary with paths to reference files:
+    - total_spd_file: Path to Total-SPD.csv (source of truth for 85th percentile)
+    - northbound_spd_file: Path to Northbound-SPD.csv
+    - southbound_spd_file: Path to Southbound-SPD.csv
+    - eastbound_spd_file: Path to Eastbound-SPD.csv
+    - westbound_spd_file: Path to Westbound-SPD.csv
+    """
+    reference_files = {
+        "total_spd_file": None,
+        "northbound_spd_file": None,
+        "southbound_spd_file": None,
+        "eastbound_spd_file": None,
+        "westbound_spd_file": None,
+    }
+
+    try:
+        file_path_obj = Path(file_path)
+        data_dir = file_path_obj.parent
+        file_stem = file_path_obj.stem
+        
+        # Extract base name from -ALL.csv file: "2809_Hampshire_Ave_N-ALL" -> "2809_Hampshire_Ave_N"
+        if "-ALL" in file_stem:
+            base_name = file_stem.replace("-ALL", "")
+        else:
+            base_name = file_stem
+
+        # Look for reference files with the same base name in the same directory
+        for file in data_dir.glob("*.csv"):
+            file_name = file.name
+            file_upper = file_name.upper()
+
+            # Check if this file belongs to the same location
+            if file.stem.startswith(base_name):
+                if "TOTAL" in file_upper and "SPD" in file_upper:
+                    reference_files["total_spd_file"] = str(file)
+                elif "NORTHBOUND" in file_upper and "SPD" in file_upper:
+                    reference_files["northbound_spd_file"] = str(file)
+                elif "SOUTHBOUND" in file_upper and "SPD" in file_upper:
+                    reference_files["southbound_spd_file"] = str(file)
+                elif "EASTBOUND" in file_upper and "SPD" in file_upper:
+                    reference_files["eastbound_spd_file"] = str(file)
+                elif "WESTBOUND" in file_upper and "SPD" in file_upper:
+                    reference_files["westbound_spd_file"] = str(file)
+
+    except Exception as e:
+        print(f"Warning: Could not detect reference files for {file_path}: {e}")
+
+    return reference_files
+
+
+def extract_posted_speed(total_spd_file: str) -> Optional[int]:
+    """
+    Extract the posted speed limit from Total-SPD.csv file.
+    
+    Returns the posted speed as an integer, or None if not found.
+    """
+    try:
+        if not total_spd_file or not os.path.exists(total_spd_file):
+            return None
+
+        with open(total_spd_file, "r") as f:
+            lines = f.readlines()
+
+        # Look for the "Posted Speed:" line in the header
+        for line in lines:
+            if "Posted Speed:" in line:
+                # Extract the value after "Posted Speed:"
+                # Handle formats like '"Posted Speed:","35"'
+                parts = line.split("Posted Speed:")
+                if len(parts) > 1:
+                    speed_part = parts[1].strip().strip(',').strip('"').strip()
+                    try:
+                        return int(float(speed_part))
+                    except ValueError:
+                        continue
+        
+        return None
+
+    except Exception as e:
+        print(f"Warning: Could not extract posted speed from {total_spd_file}: {e}")
+        return None
+
+
+def load_reference_speed_data(total_spd_file: str) -> Optional[pd.DataFrame]:
+    """
+    Load speed reference data from Total-SPD.csv reference file.
+
+    Returns DataFrame with columns: Date/Time, Mean Speed, 85th Percentile (and other speed data)
+    This is the authoritative source of truth from TrafficViewer Pro software.
+    """
+    try:
+        if not total_spd_file or not os.path.exists(total_spd_file):
+            return None
+
+        # Read the CSV file and find the header row
+        with open(total_spd_file, "r") as f:
+            lines = f.readlines()
+
+        # Find the line with column headers
+        header_row_idx = None
+        for i, line in enumerate(lines):
+            if "Date/Time" in line and ("85th Percentile" in line or "Mean Speed" in line):
+                header_row_idx = i
+                break
+
+        if header_row_idx is None:
+            print(f"Warning: Could not find header row in reference file: {total_spd_file}")
+            return None
+
+        # Handle malformed CSV by manually fixing the header line before parsing
+        fixed_lines = []
+        for i, line in enumerate(lines):
+            if i == header_row_idx:
+                # Fix the malformed header by adding the missing comma
+                fixed_line = line.replace('"Total""Mean Speed"', '"Total","Mean Speed"')
+                fixed_lines.append(fixed_line)
+            elif i > header_row_idx:
+                fixed_lines.append(line)
+
+        # Create a temporary string to read the fixed CSV
+        from io import StringIO
+        fixed_csv_content = ''.join(fixed_lines)
+        
+        # Load the CSV from the fixed content
+        df = pd.read_csv(StringIO(fixed_csv_content))
+
+        # Clean column names
+        df.columns = df.columns.str.strip()
+
+        # Parse the Date/Time column - handle the format "07/15/2025 14:00 - 14:59"
+        if "Date/Time" in df.columns:
+            # Ensure we're working with strings, then extract just the date and start time part
+            df["Date/Time"] = df["Date/Time"].astype(str)
+            df["Date/Time"] = df["Date/Time"].str.split(" - ").str[0]
+            df["Date/Time"] = pd.to_datetime(df["Date/Time"], format="%m/%d/%Y %H:%M", errors="coerce")
+
+        # Check for available speed columns
+        has_mean_speed = "Mean Speed" in df.columns
+        has_85th_percentile = "85th Percentile" in df.columns
+
+        if not has_mean_speed and not has_85th_percentile:
+            print(f"Warning: No speed reference columns found in {total_spd_file}")
+            return None
+
+        # Filter out rows with no data (Total = 0)
+        if "Total" in df.columns:
+            df = df[df["Total"] > 0].copy()
+
+        # Remove rows where available speed data is 0 or NaN
+        valid_rows = pd.Series(True, index=df.index)
+        
+        if has_mean_speed:
+            valid_rows &= df["Mean Speed"].notna() & (df["Mean Speed"] > 0)
+        
+        if has_85th_percentile:
+            valid_rows &= df["85th Percentile"].notna() & (df["85th Percentile"] > 0)
+        
+        df = df[valid_rows].copy()
+
+        columns_loaded = []
+        if has_mean_speed:
+            columns_loaded.append("Mean Speed")
+        if has_85th_percentile:
+            columns_loaded.append("85th Percentile")
+
+        print(f"Loaded {len(df)} rows of reference speed data ({', '.join(columns_loaded)}) from {total_spd_file}")
+        return df
+
+    except Exception as e:
+        print(f"Error loading reference speed data from {total_spd_file}: {e}")
         return None
 
 
@@ -202,7 +386,13 @@ def get_location_from_file(file_path: str) -> str:
                 if "Location," in line:
                     location = line.split("Location,")[1].strip().strip('"').strip("'").strip(",").strip()
                 else:
-                    location = line.split("Location:")[1].strip().strip('"').strip("'").strip(",").strip()
+                    # Handle CSV format: "Location:","value"
+                    after_split = line.split("Location:")[1].strip()
+                    # Remove the leading comma and quotes: '","value"' -> 'value'
+                    if after_split.startswith('","'):
+                        location = after_split[3:-1]  # Remove '","' from start and '"' from end
+                    else:
+                        location = after_split.strip().strip('"').strip("'").strip(",").strip()
 
                 if location:
                     return location
