@@ -37,6 +37,13 @@ from utils.visualizations import (
     plot_temporal_patterns,
     plot_traffic_volume,
     plot_vehicle_classification_distribution,
+    plot_traffic_volume_plotly,
+    plot_speed_distribution_plotly,
+    plot_speed_compliance_plotly,
+    plot_temporal_patterns_plotly,
+    plot_speed_violation_severity_plotly,
+    plot_speeding_by_hour_plotly,
+    plot_vehicle_classification_distribution_plotly,
 )
 
 
@@ -51,7 +58,7 @@ def clean_location_name(location_name: str) -> str:
     return location_name.strip().strip('"').strip("'").strip(",").strip()
 
 
-def setup_sidebar_filters() -> Tuple[str, Dict[str, str]]:
+def setup_sidebar_filters() -> Tuple[str, Dict[str, str], str]:
     """Set up sidebar filters and return selected values."""
     st.sidebar.title("Filters")
     locations = get_available_locations()
@@ -67,7 +74,9 @@ def setup_sidebar_filters() -> Tuple[str, Dict[str, str]]:
         format_func=clean_location_name,
     )
 
-    return selected_location, locations
+    viz_library = st.sidebar.radio("Choose visualization library", ["Matplotlib", "Plotly"], index=1)
+
+    return selected_location, locations, viz_library
 
 
 def load_and_filter_data(selected_location: str, locations: Dict[str, str]) -> Tuple[pd.DataFrame, Dict[str, str]]:
@@ -157,7 +166,7 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
     st.divider()
 
 
-def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> None:
+def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str], viz_library: str) -> None:
     """Display all visualizations in organized sections."""
 
     # Traffic Volume Section
@@ -165,8 +174,12 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
 
     # Hourly Traffic Volume
     st.markdown("##### Hourly Traffic Volume")
-    fig1 = plot_traffic_volume(filtered_df, structure)
-    st.pyplot(fig1)
+    if viz_library == "Matplotlib":
+        fig1 = plot_traffic_volume(filtered_df, structure)
+        st.pyplot(fig1)
+    else:
+        fig1 = plot_traffic_volume_plotly(filtered_df, structure)
+        st.plotly_chart(fig1, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -181,8 +194,12 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
 
     # Daily Traffic Patterns
     st.markdown("##### Daily Traffic Patterns")
-    temporal_fig = plot_temporal_patterns(filtered_df, structure)
-    st.pyplot(temporal_fig)
+    if viz_library == "Matplotlib":
+        temporal_fig = plot_temporal_patterns(filtered_df, structure)
+        st.pyplot(temporal_fig)
+    else:
+        temporal_fig = plot_temporal_patterns_plotly(filtered_df, structure)
+        st.plotly_chart(temporal_fig, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -201,27 +218,37 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
     st.subheader("🚗 Speed Analysis")
 
     # Speed Violation Severity
-    severity_fig = plot_speed_violation_severity(filtered_df, structure)
-    if severity_fig:
-        st.markdown("##### Speed Violation Severity")
-        st.pyplot(severity_fig)
+    if viz_library == "Matplotlib":
+        severity_fig = plot_speed_violation_severity(filtered_df, structure)
+        if severity_fig:
+            st.markdown("##### Speed Violation Severity")
+            st.pyplot(severity_fig)
+    else:
+        severity_fig = plot_speed_violation_severity_plotly(filtered_df, structure)
+        if severity_fig:
+            st.markdown("##### Speed Violation Severity")
+            st.plotly_chart(severity_fig, use_container_width=True)
 
-        with st.expander("See explanation"):
-            st.markdown("""
-            **How to read this chart:**
-            - This chart categorizes speeding violations by severity level
-            - **0-5 mph over**: Minor speeding, typically considered acceptable tolerance
-            - **5-10 mph over**: Moderate speeding, may warrant attention
-            - **10-15 mph over**: Significant speeding, safety concern
-            - **15+ mph over**: Severe speeding, major safety risk
-            - Colors progress from light to dark indicating increasing severity
-            - Use this to prioritize enforcement efforts and identify dangerous speeding patterns
-            """)
+    with st.expander("See explanation"):
+        st.markdown("""
+        **How to read this chart:**
+        - This chart categorizes speeding violations by severity level
+        - **0-5 mph over**: Minor speeding, typically considered acceptable tolerance
+        - **5-10 mph over**: Moderate speeding, may warrant attention
+        - **10-15 mph over**: Significant speeding, safety concern
+        - **15+ mph over**: Severe speeding, major safety risk
+        - Colors progress from light to dark indicating increasing severity
+        - Use this to prioritize enforcement efforts and identify dangerous speeding patterns
+        """)
 
     # Speed Distribution
     st.markdown("##### Speed Distribution by Direction")
-    fig2 = plot_speed_distribution(filtered_df, structure)
-    st.pyplot(fig2)
+    if viz_library == "Matplotlib":
+        fig2 = plot_speed_distribution(filtered_df, structure)
+        st.pyplot(fig2)
+    else:
+        fig2 = plot_speed_distribution_plotly(filtered_df, structure)
+        st.plotly_chart(fig2, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -237,8 +264,12 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
 
     # Speed Compliance
     st.markdown("##### Speed Compliance Analysis")
-    fig3 = plot_speed_compliance(filtered_df, structure)
-    st.pyplot(fig3)
+    if viz_library == "Matplotlib":
+        fig3 = plot_speed_compliance(filtered_df, structure)
+        st.pyplot(fig3)
+    else:
+        fig3 = plot_speed_compliance_plotly(filtered_df, structure)
+        st.plotly_chart(fig3, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -253,8 +284,12 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
 
     # Speeding by Hour
     st.markdown("##### Speeding Patterns by Hour")
-    speeding_fig = plot_speeding_by_hour(filtered_df, structure)
-    st.pyplot(speeding_fig)
+    if viz_library == "Matplotlib":
+        speeding_fig = plot_speeding_by_hour(filtered_df, structure)
+        st.pyplot(speeding_fig)
+    else:
+        speeding_fig = plot_speeding_by_hour_plotly(filtered_df, structure)
+        st.plotly_chart(speeding_fig, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -271,13 +306,17 @@ def display_visualizations(filtered_df: pd.DataFrame, structure: Dict[str, str])
     st.divider()
 
 
-def display_vehicle_classification(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> None:
+def display_vehicle_classification(filtered_df: pd.DataFrame, structure: Dict[str, str], viz_library: str) -> None:
     """Display vehicle classification with chart and legend."""
     st.subheader("🚛 Vehicle Classification")
 
     # Display the chart
-    classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
-    st.pyplot(classification_fig)
+    if viz_library == "Matplotlib":
+        classification_fig = plot_vehicle_classification_distribution(filtered_df, structure)
+        st.pyplot(classification_fig)
+    else:
+        classification_fig = plot_vehicle_classification_distribution_plotly(filtered_df, structure)
+        st.plotly_chart(classification_fig, use_container_width=True)
 
     with st.expander("See explanation"):
         st.markdown("""
@@ -343,7 +382,7 @@ def main() -> None:
     # st.divider()
 
     # Setup sidebar and load data
-    selected_location, locations = setup_sidebar_filters()
+    selected_location, locations, viz_library = setup_sidebar_filters()
     filtered_df, structure = load_and_filter_data(selected_location, locations)
 
     # Clean the location name for display
@@ -351,8 +390,8 @@ def main() -> None:
 
     # Display dashboard sections
     display_core_metrics(filtered_df, structure, clean_location)
-    display_visualizations(filtered_df, structure)
-    display_vehicle_classification(filtered_df, structure)
+    display_visualizations(filtered_df, structure, viz_library)
+    display_vehicle_classification(filtered_df, structure, viz_library)
     display_optional_data(filtered_df)
 
 

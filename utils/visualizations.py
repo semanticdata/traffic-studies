@@ -21,6 +21,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+
 
 
 def plot_traffic_volume(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
@@ -56,6 +60,38 @@ def plot_traffic_volume(filtered_df: pd.DataFrame, structure: Dict[str, str]) ->
     return fig1
 
 
+def plot_traffic_volume_plotly(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> go.Figure:
+    """Create traffic volume visualizations using Plotly."""
+    hourly_volumes = (
+        filtered_df.groupby("Hour")
+        .agg({structure["dir1_volume_col"]: "mean", structure["dir2_volume_col"]: "mean"})
+        .reset_index()
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=hourly_volumes["Hour"],
+        y=hourly_volumes[structure["dir1_volume_col"]],
+        name=structure["dir1_name"],
+        marker_color='skyblue'
+    ))
+    fig.add_trace(go.Bar(
+        x=hourly_volumes["Hour"],
+        y=hourly_volumes[structure["dir2_volume_col"]],
+        name=structure["dir2_name"],
+        marker_color='lightgreen'
+    ))
+
+    fig.update_layout(
+        barmode='stack',
+        title_text="Hourly Traffic Volume Distribution",
+        xaxis_title="Hour of Day",
+        yaxis_title="Average Vehicles per Hour",
+        xaxis=dict(tickmode='linear', dtick=1)
+    )
+    return fig
+
+
 def plot_speed_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
     """Create speed distribution visualizations."""
     dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean()
@@ -89,6 +125,33 @@ def plot_speed_distribution(filtered_df: pd.DataFrame, structure: Dict[str, str]
 
     plt.tight_layout()
     return fig2
+
+
+def plot_speed_distribution_plotly(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> go.Figure:
+    """Create speed distribution visualizations using Plotly."""
+    dir1_speeds = filtered_df[structure["dir1_speed_cols"]].mean()
+    dir2_speeds = filtered_df[structure["dir2_speed_cols"]].mean()
+
+    fig = make_subplots(rows=2, cols=1, subplot_titles=(f"{structure['dir1_name']} Speed Distribution", f"{structure['dir2_name']} Speed Distribution"))
+
+    fig.add_trace(go.Bar(
+        x=[col.split("-")[0].strip() for col in structure["dir1_speed_cols"]],
+        y=dir1_speeds,
+        name=structure['dir1_name'],
+        marker_color='skyblue'
+    ), row=1, col=1)
+
+    fig.add_trace(go.Bar(
+        x=[col.split("-")[0].strip() for col in structure["dir2_speed_cols"]],
+        y=dir2_speeds,
+        name=structure['dir2_name'],
+        marker_color='lightgreen'
+    ), row=2, col=1)
+
+    fig.update_layout(height=800, showlegend=False)
+    fig.update_xaxes(title_text="Speed Range (MPH)")
+    fig.update_yaxes(title_text="Average Vehicle Count")
+    return fig
 
 
 def plot_speed_compliance(
@@ -147,6 +210,53 @@ def plot_speed_compliance(
     return fig3
 
 
+def plot_speed_compliance_plotly(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> go.Figure:
+    """Create speed compliance visualizations using Plotly."""
+    if "Dir1_Compliant" in filtered_df.columns and "Dir2_Compliant" in filtered_df.columns:
+        dir1_compliant = filtered_df["Dir1_Compliant"].sum()
+        dir1_non_compliant = filtered_df["Dir1_Non_Compliant"].sum()
+        dir2_compliant = filtered_df["Dir2_Compliant"].sum()
+        dir2_non_compliant = filtered_df["Dir2_Non_Compliant"].sum()
+    else:
+        from .metrics import calculate_compliance
+
+        dir1_compliant, dir1_total = calculate_compliance(filtered_df, structure["dir1_speed_cols"], speed_limit)
+        dir2_compliant, dir2_total = calculate_compliance(filtered_df, structure["dir2_speed_cols"], speed_limit)
+        dir1_non_compliant = dir1_total - dir1_compliant
+        dir2_non_compliant = dir2_total - dir2_compliant
+
+    compliance_data = pd.DataFrame(
+        {
+            "Direction": [
+                structure["dir1_name"],
+                structure["dir1_name"],
+                structure["dir2_name"],
+                structure["dir2_name"],
+            ],
+            "Compliance": ["Compliant", "Non-Compliant", "Compliant", "Non-Compliant"],
+            "Count": [
+                dir1_compliant,
+                dir1_non_compliant,
+                dir2_compliant,
+                dir2_non_compliant,
+            ],
+        }
+    )
+
+    fig = px.bar(
+        compliance_data,
+        x="Direction",
+        y="Count",
+        color="Compliance",
+        barmode="group",
+        color_discrete_map={"Compliant": "lightgreen", "Non-Compliant": "salmon"},
+        title="Speed Compliance Analysis by Direction"
+    )
+    return fig
+
+
 def plot_temporal_patterns(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> matplotlib.figure.Figure:
     """Create visualizations for temporal traffic patterns."""
     # Add day of week column using Date/Time instead of Date
@@ -178,6 +288,51 @@ def plot_temporal_patterns(filtered_df: pd.DataFrame, structure: Dict[str, str])
     ax.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
+    return fig
+
+
+def plot_temporal_patterns_plotly(filtered_df: pd.DataFrame, structure: Dict[str, str]) -> go.Figure:
+    """Create visualizations for temporal traffic patterns using Plotly."""
+    df = filtered_df.copy()
+    df["DayOfWeek"] = df["Date/Time"].dt.day_name()
+
+    daily_volumes = (
+        df.groupby("DayOfWeek")
+        .agg({structure["dir1_volume_col"]: "sum", structure["dir2_volume_col"]: "sum"})
+        .reindex(
+            [
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+            ]
+        )
+        .reset_index()
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=daily_volumes["DayOfWeek"],
+        y=daily_volumes[structure["dir1_volume_col"]],
+        name=structure["dir1_name"],
+        marker_color='skyblue'
+    ))
+    fig.add_trace(go.Bar(
+        x=daily_volumes["DayOfWeek"],
+        y=daily_volumes[structure["dir2_volume_col"]],
+        name=structure["dir2_name"],
+        marker_color='lightgreen'
+    ))
+
+    fig.update_layout(
+        barmode='group',
+        title_text="Daily Traffic Volume Patterns",
+        xaxis_title="Day of Week",
+        yaxis_title="Total Vehicle Count"
+    )
     return fig
 
 
@@ -236,6 +391,54 @@ def plot_speed_violation_severity(
         return fig
     else:
         return None
+
+
+def plot_speed_violation_severity_plotly(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> Optional[go.Figure]:
+    """Create visualization for speed violation severity using Plotly."""
+    speed_ranges = {
+        "0-5 mph over": (0, 5),
+        "5-10 mph over": (5, 10),
+        "10-15 mph over": (10, 15),
+        "15+ mph over": (15, float("inf")),
+    }
+
+    violation_data = []
+    for direction, speed_cols in [
+        (structure["dir1_name"], structure["dir1_speed_cols"]),
+        (structure["dir2_name"], structure["dir2_speed_cols"]),
+    ]:
+        for col in speed_cols:
+            speed = int(col.split("-")[0].strip())
+            if speed > speed_limit:
+                over_limit = speed - speed_limit
+                for range_name, (min_over, max_over) in speed_ranges.items():
+                    if min_over <= over_limit < max_over:
+                        violation_data.append(
+                            {
+                                "Direction": direction,
+                                "Violation Range": range_name,
+                                "Count": filtered_df[col].sum(),
+                            }
+                        )
+
+    if not violation_data:
+        return None
+
+    violation_df = pd.DataFrame(violation_data)
+    
+    fig = px.bar(
+        violation_df,
+        x="Direction",
+        y="Count",
+        color="Violation Range",
+        barmode="group",
+        category_orders={"Violation Range": ["0-5 mph over", "5-10 mph over", "10-15 mph over", "15+ mph over"]},
+        color_discrete_sequence=px.colors.sequential.YlOrRd,
+        title="Speed Violation Severity Analysis"
+    )
+    return fig
 
 
 def plot_speeding_by_hour(
@@ -343,6 +546,53 @@ def plot_speeding_by_hour(
     return fig
 
 
+def plot_speeding_by_hour_plotly(
+    filtered_df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = 30
+) -> go.Figure:
+    """
+    Create a visualization showing when speeding occurs throughout the day using Plotly.
+    """
+    df = filtered_df.copy()
+    hours = range(24)
+
+    def get_speeding_data(speed_cols):
+        speeding = pd.Series(0, index=hours, dtype=float)
+        total = pd.Series(0, index=hours, dtype=float)
+        for col in speed_cols:
+            try:
+                speed = int(col.split("-")[0].strip().split()[0])
+                is_speeding = speed > speed_limit
+                for hour in hours:
+                    hour_data = df[df["Hour"] == hour][col].sum()
+                    total[hour] += hour_data
+                    if is_speeding:
+                        speeding[hour] += hour_data
+            except (ValueError, IndexError):
+                continue
+        percent = (speeding / total.replace(0, np.nan)) * 100
+        return total, percent
+
+    dir1_total, dir1_percent = get_speeding_data(structure["dir1_speed_cols"])
+    dir2_total, dir2_percent = get_speeding_data(structure["dir2_speed_cols"])
+
+    fig = make_subplots(rows=2, cols=1, subplot_titles=(f"{structure['dir1_name']} - Speeding by Hour of Day", f"{structure['dir2_name']} - Speeding by Hour of Day"), specs=[[{"secondary_y": True}], [{"secondary_y": True}]])
+
+    # Direction 1
+    fig.add_trace(go.Bar(x=list(hours), y=dir1_total, name="Total Vehicles", marker_color='lightgray'), secondary_y=False, row=1, col=1)
+    fig.add_trace(go.Scatter(x=list(hours), y=dir1_percent, name="% Speeding", mode='lines+markers', line=dict(color='red')), secondary_y=True, row=1, col=1)
+
+    # Direction 2
+    fig.add_trace(go.Bar(x=list(hours), y=dir2_total, name="Total Vehicles", marker_color='lightgray', showlegend=False), secondary_y=False, row=2, col=1)
+    fig.add_trace(go.Scatter(x=list(hours), y=dir2_percent, name="% Speeding", mode='lines+markers', line=dict(color='red'), showlegend=False), secondary_y=True, row=2, col=1)
+
+    fig.update_layout(height=800)
+    fig.update_xaxes(title_text="Hour of Day", dtick=1)
+    fig.update_yaxes(title_text="Number of Vehicles", secondary_y=False)
+    fig.update_yaxes(title_text="% of Vehicles Speeding", secondary_y=True, color="red")
+
+    return fig
+
+
 def plot_vehicle_classification_distribution(
     filtered_df: pd.DataFrame, structure: Dict[str, str]
 ) -> matplotlib.figure.Figure:
@@ -374,4 +624,49 @@ def plot_vehicle_classification_distribution(
     ax.grid(True, alpha=0.3)
     plt.xticks(rotation=45)
     plt.tight_layout()
+    return fig
+
+
+def plot_vehicle_classification_distribution_plotly(
+    filtered_df: pd.DataFrame, structure: Dict[str, str]
+) -> go.Figure:
+    """Create vehicle classification distribution visualizations using Plotly."""
+    class_counts_dir1 = [filtered_df[col].sum() for col in structure["dir1_class_cols"]]
+    class_counts_dir2 = [filtered_df[col].sum() for col in structure["dir2_class_cols"]]
+
+    class_data = pd.DataFrame(
+        {
+            "Vehicle Type": [
+                "Class 1 - Motorcycles",
+                "Class 2 - Passenger Cars",
+                "Class 3 - Pickups, Vans",
+                "Class 4 - Buses",
+                "Class 5 - 2 Axles, 6 Tires",
+                "Class 6 - 3 Axles",
+            ],
+            structure["dir1_name"]: class_counts_dir1,
+            structure["dir2_name"]: class_counts_dir2,
+        }
+    )
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=class_data["Vehicle Type"],
+        y=class_data[structure["dir1_name"]],
+        name=structure["dir1_name"],
+        marker_color='skyblue'
+    ))
+    fig.add_trace(go.Bar(
+        x=class_data["Vehicle Type"],
+        y=class_data[structure["dir2_name"]],
+        name=structure["dir2_name"],
+        marker_color='lightgreen'
+    ))
+
+    fig.update_layout(
+        barmode='group',
+        title_text="Vehicle Classification Distribution",
+        xaxis_title="Vehicle Type",
+        yaxis_title="Count"
+    )
     return fig
