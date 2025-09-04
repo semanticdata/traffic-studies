@@ -5,7 +5,7 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 ## 🌟 Features
 
 - **Interactive Dashboard**: Real-time filtering by location, date range, and time periods
-- **Core Metrics**: 6 essential key performance indicators including speed compliance, peak hour analysis, and traffic volume
+- **Core Metrics**: Essential key performance indicators including speed compliance, peak hour analysis, and traffic volume
 - **Chart Explanations**: Interactive "See explanation" expanders under each visualization with detailed reading guides
 - **Print-Friendly Design**: Clean location display, organized sections, and professional layout optimized for reporting
 - **Vehicle Classification**: Detailed analysis of 6 vehicle classes from motorcycles to heavy trucks
@@ -18,7 +18,7 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 
 ## 🏗️ Project Structure
 
-```text
+```plaintext
 traffic-studies/
 ├── main.py                # Main Streamlit dashboard
 ├── utils/
@@ -49,14 +49,14 @@ traffic-studies/
 
 1. **Clone the repository**
 
-   ```shell
+   ```bash
    git clone https://github.com/semanticdata/traffic-studies.git
    cd traffic-studies
    ```
 
 2. **Create and activate a virtual environment**
 
-   ```shell
+   ```bash
    uv venv
    .venv/Scripts/activate  # On Windows
    source .venv/bin/activate  # On Unix or MacOS
@@ -64,7 +64,7 @@ traffic-studies/
 
 3. **Install dependencies**
 
-   ```shell
+   ```bash
    uv sync
    ```
 
@@ -74,7 +74,7 @@ traffic-studies/
 
 5. **Run the dashboard**
 
-   ```shell
+   ```bash
    uv run streamlit run main.py
    ```
 
@@ -86,7 +86,7 @@ The dashboard will open in your web browser at `http://localhost:8501`
 
 Usage statistics collection is already disabled via `.streamlit/config.toml`. To modify settings:
 
-```shell
+```bash
 # Edit .streamlit/config.toml
 [browser]
 gatherUsageStats = false
@@ -94,7 +94,7 @@ gatherUsageStats = false
 
 ## 📊 Core Metrics Dashboard
 
-### 6 Essential Key Performance Indicators
+### Essential Key Performance Indicators
 
 - **Total Vehicle Count**: Aggregate count of all vehicles detected
 - **Average Speed**: Combined directional speed analysis
@@ -153,8 +153,6 @@ The dashboard analyzes six FHWA vehicle classes:
 ## 🚀 Enhanced Data Processing
 
 ### Advanced Data Loading Features
-
-The application includes sophisticated data processing capabilities that ensure high-quality analysis:
 
 #### **Zero-Traffic Filtering**
 

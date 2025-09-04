@@ -8,7 +8,7 @@ and vehicle classifications.
 
 Features:
 - Interactive filtering by location, date range, and time periods
-- 6 core key performance indicators and metrics
+- Core key performance indicators and metrics
 - Vehicle classification analysis (6 FHWA classes)
 - Speed compliance monitoring and violation tracking
 - Temporal traffic pattern analysis
