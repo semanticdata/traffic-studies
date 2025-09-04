@@ -129,34 +129,36 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric("📊 Total Vehicles", f"{metrics['total_vehicles']:,}")
+        st.metric("📊 Total Vehicles", f"{metrics['total_vehicles']:,}", border=True, height="stretch")
 
     with col2:
-        st.metric("📅 Average Daily Traffic", f"{metrics['adt']:,.0f}")
+        st.metric("📅 Average Daily Traffic", f"{metrics['adt']:,.0f}", border=True, height="stretch")
 
     with col3:
         peak_hour_display = (
             f"{metrics['peak_hour']:02d}:00" if isinstance(metrics["peak_hour"], int) else metrics["peak_hour"]
         )
-        st.metric("⏰ Peak Hour", peak_hour_display, f"{metrics['peak_vehicles']:,} vehicles")
+        st.metric("⏰ Peak Hour", peak_hour_display, f"{metrics['peak_vehicles']:,} vehicles", border=True)
 
     with col4:
-        st.metric("🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%")
+        st.metric(
+            "🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%", border=True
+        )
 
     # Second row - Speed analysis
     col5, col6, col7, col8 = st.columns(4)
 
     with col5:
-        st.metric("📝 Posted Speed", f"{metrics['posted_speed']} mph")
+        st.metric("📝 Posted Speed", f"{metrics['posted_speed']} mph", border=True)
 
     with col6:
-        st.metric("🏎️ Average Speed", f"{metrics['combined_avg_speed']:.1f} mph")
+        st.metric("🏎️ Average Speed", f"{metrics['combined_avg_speed']:.1f} mph", border=True)
 
     with col7:
-        st.metric("🎯 85th Percentile Speed", f"{metrics['percentile_85th']:.1f} mph")
+        st.metric("🎯 85th Percentile Speed", f"{metrics['percentile_85th']:.1f} mph", border=True)
 
     with col8:
-        st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%")
+        st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%", border=True)
 
     if not filtered_df.empty:
         date_min = filtered_df["Date/Time"].min().strftime("%B %d, %Y")
@@ -360,9 +362,11 @@ def main() -> None:
         menu_items={
             "About": (
                 "Built for the [City of Crystal](https://www.crystalmn.gov/) by Miguel Pimentel. "
-                "Data sourced from a pair of [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html), "
-                "and exported using [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html)."
+                "Data sourced from [PicoCount 2500](https://vehiclecounts.com/picocount-2500.html) traffic counters, "
+                "and exported using [TrafficViewer Pro](https://vehiclecounts.com/trafficviewerpro.html). "
+                "Find the source code on [GitHub](https://github.com/semanticdata/traffic-studies)."
             ),
+            "Report a bug": "https://github.com/semanticdata/traffic-studies/issues",
             "Get help": "mailto:miguel.pimentel@crystalmn.gov",
         },
     )
