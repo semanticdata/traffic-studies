@@ -344,12 +344,48 @@ def display_vehicle_classification(filtered_df: pd.DataFrame, structure: Dict[st
     """)
 
 
-def display_optional_data(filtered_df: pd.DataFrame) -> None:
-    """Display optional raw data section."""
-    show_raw_data = st.checkbox("Show Raw Data")
-    if show_raw_data:
-        st.subheader("Raw Data")
-        st.dataframe(filtered_df, use_container_width=True)
+def display_pdf_report(clean_location: str) -> None:
+    """Display PDF source data report section."""
+    import os
+
+    st.subheader("📄 PDF Source Data Report")
+
+    pdf_dir = os.path.join("data", "reports")
+    pdf_filename = f"{clean_location}.pdf"
+    pdf_path = os.path.join(pdf_dir, pdf_filename)
+    alt_pdf_filename = f"{clean_location.replace('_', ' ')}.pdf"
+    alt_pdf_path = os.path.join(pdf_dir, alt_pdf_filename)
+
+    # Check for PDF file existence
+    if os.path.exists(pdf_path):
+        current_pdf_path = pdf_path
+    elif os.path.exists(alt_pdf_path):
+        current_pdf_path = alt_pdf_path
+    else:
+        current_pdf_path = None
+
+    if current_pdf_path:
+        show_pdf = st.checkbox("Display PDF Report", help="View the original traffic counter report for this location")
+
+        if show_pdf:
+            st.info("📋 This report contains the raw data and additional analysis from the traffic counter.")
+
+            # Display PDF
+            st.pdf(current_pdf_path, height=600)
+
+            # Add download button
+            with open(current_pdf_path, "rb") as pdf_file:
+                pdf_data = pdf_file.read()
+                st.download_button(
+                    label="📥 Download PDF Report",
+                    data=pdf_data,
+                    file_name=f"{clean_location}_Traffic_Report.pdf",
+                    mime="application/pdf",
+                    help="Download the complete traffic analysis report",
+                    use_container_width=True,
+                )
+    else:
+        st.warning(f"📄 No PDF report available for {clean_location}.")
 
 
 def main() -> None:
@@ -382,8 +418,6 @@ def main() -> None:
         "This dashboard analyzes traffic patterns, speed compliance, and vehicle classifications "
         "to support data-driven traffic management decisions."
     )
-    # st.markdown("<div class='spacer'></div>", unsafe_allow_html=True)
-    # st.divider()
 
     # Setup sidebar and load data
     selected_location, locations, viz_library = setup_sidebar_filters()
@@ -396,7 +430,9 @@ def main() -> None:
     display_core_metrics(filtered_df, structure, clean_location)
     display_visualizations(filtered_df, structure, viz_library)
     display_vehicle_classification(filtered_df, structure, viz_library)
-    display_optional_data(filtered_df)
+
+    # Display PDF report section
+    display_pdf_report(clean_location)
 
 
 if __name__ == "__main__":
