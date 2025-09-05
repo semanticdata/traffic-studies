@@ -7,11 +7,9 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 - **Interactive Dashboard**: Real-time filtering by location, date range, and time periods
 - **Core Metrics**: Essential key performance indicators including speed compliance, peak hour analysis, and traffic volume
 - **Chart Explanations**: Interactive "See explanation" expanders under each visualization with detailed reading guides
-- **Print-Friendly Design**: Clean location display, organized sections, and professional layout optimized for reporting
 - **Vehicle Classification**: Detailed analysis of 6 vehicle classes from motorcycles to heavy trucks
 - **Speed Analysis**: Compliance monitoring, violation severity tracking, and 85th percentile calculations
 - **Temporal Patterns**: Hourly, daily, and weekly traffic pattern visualization
-- **Professional Visualizations**: Matplotlib charts with consistent styling, clear presentation, and organized grouping
 - **Enhanced Data Processing**: Advanced validation, vectorized operations, and zero-traffic filtering
 - **Performance Optimization**: Memory-efficient processing for large datasets with chunked loading
 - **Data Quality Monitoring**: Comprehensive validation with detailed error reporting and statistics
@@ -20,22 +18,26 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 
 ```plaintext
 traffic-studies/
-├── main.py                # Main Streamlit dashboard
+├── main.py                           # Main Streamlit dashboard
 ├── utils/
-│   ├── data_loader.py     # Enhanced data loading with validation and optimization
-│   ├── metrics.py         # Traffic metrics and KPI calculations
-│   ├── visualizations.py  # Chart generation and plotting functions
-│   └── styles.css         # Custom CSS styling for the dashboard
-├── tests/                 # Test suite
-│   ├── conftest.py        # Test fixtures and sample data
-│   ├── test_metrics.py    # Tests for metrics calculations
-│   ├── test_data_loader.py # Tests for data loading
-│   └── test_visualizations.py # Tests for chart generation
+│   ├── data_loader.py                # Enhanced data loading with validation and optimization
+│   ├── metrics.py                    # Traffic metrics and KPI calculations
+│   ├── visualizations.py             # Chart generation and plotting functions
+│   └── styles.css                    # Custom CSS styling for the dashboard
+├── tests/                            # Test suite
+│   ├── conftest.py                   # Test fixtures and sample data
+│   ├── test_metrics.py               # Tests for metrics calculations
+│   ├── test_calculation_accuracy.py  # Tests for data calculation accuracy
+│   ├── test_data_loader.py           # Tests for data loading
+│   ├── test_metrics.py               # Tests for metrics calculations
+│   ├── test_posted_speed.py          # Tests for posted speed calculations
+│   └── test_visualizations.py        # Tests for chart generation
 ├── .streamlit/
-│   └── config.toml        # Streamlit configuration settings
-├── data/                  # Directory for CSV data files
-├── pyproject.toml         # Project dependencies and metadata
-└── README.md              # This file
+│   └── config.toml                   # Streamlit configuration settings
+├── data/                             # Directory for CSV data files
+│   └── reports/                      # Directory for PDF reports
+├── pyproject.toml                    # Project dependencies and metadata
+└── README.md                         # This file
 ```
 
 ## 🚀 Getting Started
@@ -54,43 +56,23 @@ traffic-studies/
    cd traffic-studies
    ```
 
-2. **Create and activate a virtual environment**
-
-   ```bash
-   uv venv
-   .venv/Scripts/activate  # On Windows
-   source .venv/bin/activate  # On Unix or MacOS
-   ```
-
-3. **Install dependencies**
+2. **Install dependencies**
 
    ```bash
    uv sync
    ```
 
-4. **Add your data files**
+3. **Add your data files**
 
    Place your CSV files from TrafficViewer Pro in the `data/` directory
 
-5. **Run the dashboard**
+4. **Run the dashboard**
 
    ```bash
    uv run streamlit run main.py
    ```
 
 The dashboard will open in your web browser at `http://localhost:8501`
-
-### Configuration
-
-#### Optional: Disable usage statistics
-
-Usage statistics collection is already disabled via `.streamlit/config.toml`. To modify settings:
-
-```bash
-# Edit .streamlit/config.toml
-[browser]
-gatherUsageStats = false
-```
 
 ## 📊 Core Metrics Dashboard
 
@@ -131,13 +113,6 @@ Each visualization includes an expandable "See explanation" section that provide
 - **Key patterns to look for**: Important indicators and what they mean
 - **Practical applications**: How to use the data for traffic management decisions
 - **Color coding explanations**: What different colors and elements represent
-
-#### 🖨️ Print-Friendly Design
-
-- **Clean location display**: Professional formatting with location name and analysis period prominently shown
-- **Organized sections**: Logical grouping with clear headers and dividers
-- **Professional layout**: Optimized for generating reports and presentations
-- **Consistent styling**: Uniform appearance across all visualizations
 
 ### Vehicle Classifications
 
@@ -217,18 +192,30 @@ print(f"Dataset using {memory_info['total_memory']} of memory")
 
 The application expects CSV files exported from TrafficViewer Pro with the following structure:
 
+### Supported File Types
+
+- **ALL.csv**: Complete traffic data with volume, speed, and classification
+- **VOL.csv**: Volume-only data files
+- **Total-SPD.csv**: Speed analysis files with pre-calculated metrics (Mean Speed, 85th Percentile)
+- **Directional SPD files**: Northbound/Southbound or Eastbound/Westbound speed data
+
+### File Structure
+
 - **Metadata rows**: Location, comments, and title information
 - **Date/Time column**: Timestamp for each data point (validated for consistency)
 - **Volume columns**: Directional traffic counts (automatically filtered for zero-traffic periods)
 - **Speed range columns**: Speed distribution data (e.g., "35-39 MPH - Northbound")
 - **Classification columns**: Vehicle class counts by direction (validated for data integrity)
 
-**Data Processing Notes:**
+### Data Processing Notes
 
-- Files are automatically validated for structure compatibility and data quality
-- Zero-traffic time periods are filtered out to improve analysis accuracy
-- Memory usage is optimized for large datasets through chunked processing
-- Comprehensive error handling provides detailed feedback for data issues
+- **Header correction**: Automatically fixes malformed TrafficViewer Pro headers (`"Total""Mean Speed"` → `"Total","Mean Speed"`)
+- **Reference file detection**: Automatically locates related SPD files for enhanced metrics
+- **Pre-calculated metrics**: Uses validated speed calculations from Total-SPD.csv when available
+- **Files are automatically validated** for structure compatibility and data quality
+- **Zero-traffic time periods** are filtered out to improve analysis accuracy
+- **Memory usage is optimized** for large datasets through chunked processing
+- **Comprehensive error handling** provides detailed feedback for data issues
 
 ## 🎯 Use Cases
 
@@ -275,6 +262,9 @@ The test suite includes comprehensive tests for:
 
 - **Metrics calculations**: All 6 core KPIs and helper functions with real data validation
 - **Calculation accuracy**: Tests using actual traffic data files with known expected results
+- **Speed metric validation**: Tests for 85th percentile and mean speed calculations using pre-calculated values
+- **CSV parsing fixes**: Validation of malformed header correction and reference file detection
+- **ADT calculation**: Tests for partial day exclusion and complete day averaging
 - **Enhanced data loading**: CSV parsing, structure detection, validation framework, and error handling
 - **Data validation**: Traffic data quality checks, negative value detection, and temporal validation
 - **Memory efficiency**: Memory usage monitoring and chunked processing
@@ -291,6 +281,7 @@ The test suite includes comprehensive tests for:
 - **Streamlit**: Web application framework
 - **Pandas**: Data manipulation and analysis with enhanced validation
 - **Matplotlib**: Static plotting and visualization
+- **Plotly**: Interactive plotting and visualization
 - **Seaborn**: Statistical data visualization
 - **NumPy**: Numerical computing and vectorized operations for performance optimization
 
@@ -298,6 +289,9 @@ The test suite includes comprehensive tests for:
 
 - **Zero-traffic filtering**: Automatically removes inactive time periods for cleaner analysis
 - **Accurate metric calculations**: Fixed speed compliance, 85th percentile, and average speed calculations for precision
+- **Pre-calculated speed metrics**: Uses TrafficViewer Pro's validated speed calculations from Total-SPD.csv files
+- **CSV header parsing fixes**: Handles malformed TrafficViewer Pro exports with corrected header parsing
+- **ADT calculation improvements**: Excludes partial days (<20 hours) for more accurate Average Daily Traffic
 - **Data validation**: Comprehensive quality checks with detailed error reporting
 - **Memory optimization**: Efficient processing for large datasets
 - **Enhanced error handling**: Custom exceptions with contextual error messages
