@@ -189,7 +189,10 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
 
 def calculate_adt(df: pd.DataFrame) -> float:
     """
-    Calculate the Average Daily Traffic (ADT).
+    Calculate the Average Daily Traffic (ADT) excluding partial days.
+    
+    Partial days (with less than 20 hours of data) are excluded to provide
+    more accurate representation of typical daily traffic patterns.
 
     Args:
         df: DataFrame containing traffic data with a "Date/Time" and "Total" column.
@@ -200,17 +203,25 @@ def calculate_adt(df: pd.DataFrame) -> float:
     if df.empty:
         return 0
 
-    total_vehicles = df["Total"].sum()
-
-    # Ensure the date calculation is robust
-    date_series = pd.to_datetime(df["Date/Time"]).dt.date
-    if date_series.empty:
+    # Group by date and calculate daily totals and hour counts
+    df_copy = df.copy()
+    df_copy["Date"] = pd.to_datetime(df_copy["Date/Time"]).dt.date
+    
+    daily_totals = df_copy.groupby("Date")["Total"].sum()
+    daily_hour_counts = df_copy.groupby("Date").size()
+    
+    if daily_totals.empty:
         return 0
-
-    num_days = (date_series.max() - date_series.min()).days + 1
-
-    # If num_days is 0, it means the data is for a single day. Avoid division by zero.
-    return total_vehicles / num_days if num_days > 0 else total_vehicles
+    
+    # Filter to only include complete days (≥20 hours of data)
+    # This excludes partial days that would skew the average
+    complete_days = daily_totals[daily_hour_counts >= 20]
+    
+    if complete_days.empty:
+        # Fall back to all days if no complete days found
+        return daily_totals.mean()
+    
+    return complete_days.mean()
 
 
 def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = None) -> Dict[str, float]:
