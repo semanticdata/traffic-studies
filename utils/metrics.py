@@ -14,6 +14,7 @@ Functions:
     get_core_metrics(df, structure, speed_limit) -> Dict: Calculate all core metrics
 """
 
+import os
 from typing import Dict, List, Tuple
 
 import pandas as pd
@@ -93,8 +94,80 @@ def calculate_compliance(df: pd.DataFrame, speed_cols: List[str], speed_limit: i
     return compliant, total
 
 
+def load_mean_speed_from_speed_csv(structure: Dict[str, str]) -> float:
+    """
+    Load the mean speed from the pre-calculated values in Total-SPD.csv file.
+
+    Uses the existing load_reference_speed_data function to properly handle
+    malformed CSV headers (Total""Mean Speed -> Total, Mean Speed).
+
+    Args:
+        structure: Data structure containing reference file paths
+
+    Returns:
+        The average mean speed from the speed CSV, or 0 if unavailable
+    """
+    try:
+        from utils.parsers.traffic_parser import load_reference_speed_data
+
+        speed_file = structure.get("reference_files", {}).get("total_spd_file")
+        if not speed_file or not os.path.exists(speed_file):
+            return 0
+
+        # Load the speed CSV file with proper header parsing
+        speed_df = load_reference_speed_data(speed_file)
+
+        if speed_df is not None and "Mean Speed" in speed_df.columns:
+            valid_speeds = speed_df[speed_df["Mean Speed"] > 0]["Mean Speed"]
+            if len(valid_speeds) > 0:
+                return valid_speeds.mean()
+
+        return 0
+    except Exception:
+        return 0
+
+
+def load_85th_percentile_from_speed_csv(structure: Dict[str, str]) -> float:
+    """
+    Load the 85th percentile speed from the pre-calculated values in Total-SPD.csv file.
+
+    Uses the existing load_reference_speed_data function to properly handle
+    malformed CSV headers (Total""Mean Speed -> Total, Mean Speed).
+
+    Args:
+        structure: Data structure containing reference file paths
+
+    Returns:
+        The 85th percentile speed from the speed CSV, or 0 if unavailable
+    """
+    try:
+        from utils.parsers.traffic_parser import load_reference_speed_data
+
+        speed_file = structure.get("reference_files", {}).get("total_spd_file")
+        if not speed_file or not os.path.exists(speed_file):
+            return 0
+
+        # Load the speed CSV file with proper header parsing
+        speed_df = load_reference_speed_data(speed_file)
+
+        if speed_df is not None and "85th Percentile" in speed_df.columns:
+            valid_percentiles = speed_df[speed_df["85th Percentile"] > 0]["85th Percentile"]
+            if len(valid_percentiles) > 0:
+                # Return the average of hourly 85th percentile values
+                return valid_percentiles.mean()
+
+        return 0
+    except Exception:
+        return 0
+
+
 def calculate_85th_percentile_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
-    """Calculate the 85th percentile speed using proper interpolation within speed ranges."""
+    """
+    Calculate the 85th percentile speed using proper interpolation within speed ranges.
+
+    Note: This fallback method is used when pre-calculated values are not available.
+    It may be inaccurate due to potential data corruption in speed range columns.
+    """
     if not speed_cols:
         return 0
 
@@ -190,7 +263,7 @@ def count_high_speeders(df: pd.DataFrame, speed_cols: List[str], speed_limit: in
 def calculate_adt(df: pd.DataFrame) -> float:
     """
     Calculate the Average Daily Traffic (ADT) excluding partial days.
-    
+
     Partial days (with less than 20 hours of data) are excluded to provide
     more accurate representation of typical daily traffic patterns.
 
@@ -206,21 +279,21 @@ def calculate_adt(df: pd.DataFrame) -> float:
     # Group by date and calculate daily totals and hour counts
     df_copy = df.copy()
     df_copy["Date"] = pd.to_datetime(df_copy["Date/Time"]).dt.date
-    
+
     daily_totals = df_copy.groupby("Date")["Total"].sum()
     daily_hour_counts = df_copy.groupby("Date").size()
-    
+
     if daily_totals.empty:
         return 0
-    
+
     # Filter to only include complete days (≥20 hours of data)
     # This excludes partial days that would skew the average
     complete_days = daily_totals[daily_hour_counts >= 20]
-    
+
     if complete_days.empty:
         # Fall back to all days if no complete days found
         return daily_totals.mean()
-    
+
     return complete_days.mean()
 
 
@@ -247,9 +320,12 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
     # ADT Calculation
     adt = calculate_adt(df)
 
-    # Speed calculations - use weighted average across both directions
-    combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
-    combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
+    # Speed calculations - prefer pre-calculated mean speed from speed CSV
+    combined_avg_speed = load_mean_speed_from_speed_csv(structure)
+    if combined_avg_speed == 0:
+        # Fallback to calculation from speed range data (may be inaccurate due to corruption)
+        combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
+        combined_avg_speed = calculate_weighted_speed(df, combined_speed_cols)
 
     # Compliance calculations - use speed range data from the main CSV
     if "Dir1_Compliant" in df.columns and "Dir2_Compliant" in df.columns:
@@ -266,9 +342,12 @@ def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: i
 
     compliance_rate = (total_compliant / total_speed_readings * 100) if total_speed_readings > 0 else 0
 
-    # 85th percentile speed - calculate from speed range data
-    combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
-    percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
+    # 85th percentile speed - prefer pre-calculated values from speed CSV
+    percentile_85th = load_85th_percentile_from_speed_csv(structure)
+    if percentile_85th == 0:
+        # Fallback to calculation from speed range data (may be inaccurate)
+        combined_speed_cols = structure["dir1_speed_cols"] + structure["dir2_speed_cols"]
+        percentile_85th = calculate_85th_percentile_speed(df, combined_speed_cols)
 
     # Peak hour analysis
     if not df.empty:

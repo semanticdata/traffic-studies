@@ -216,9 +216,14 @@ def detect_reference_files(file_path: str) -> Dict[str, Optional[str]]:
         data_dir = file_path_obj.parent
         file_stem = file_path_obj.stem
 
-        # Extract base name from -ALL.csv file: "2809_Hampshire_Ave_N-ALL" -> "2809_Hampshire_Ave_N"
+        # Extract base name from various file types: "2809_Hampshire_Ave_N-ALL" -> "2809_Hampshire_Ave_N"
         if "-ALL" in file_stem:
             base_name = file_stem.replace("-ALL", "")
+        elif "-VOL" in file_stem:
+            base_name = file_stem.replace("-VOL", "")
+        elif "-" in file_stem:
+            # For other file types, remove the last part after the last dash
+            base_name = "-".join(file_stem.split("-")[:-1])
         else:
             base_name = file_stem
 
