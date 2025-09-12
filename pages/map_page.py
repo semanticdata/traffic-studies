@@ -112,6 +112,26 @@ def main():
     locations_df = load_location_data()
     matched_locations = match_traffic_study_locations(locations_df, available_locations)
 
+    # Create location options including ALL available locations (before map display for click handling)
+    location_options = {}
+
+    # First add locations with coordinates (from matched_locations)
+    if not matched_locations.empty:
+        for _, row in matched_locations.iterrows():
+            display_name = f"{row['address']}"
+            if row["notes"] and row["notes"] != "nan":
+                display_name += f" ({row['notes']})"
+            location_options[display_name] = row["study_location"]
+
+    # Then add locations without coordinates (from available_locations but not in matched_locations)
+    matched_study_names = set(matched_locations["study_location"].tolist()) if not matched_locations.empty else set()
+    for study_name in available_locations.keys():
+        if study_name not in matched_study_names:
+            # Clean name for display
+            clean_name = study_name.replace("_", " ").replace("-ALL", "").strip()
+            display_name = f"{clean_name} (No map coordinates)"
+            location_options[display_name] = study_name
+
     # Display map if we have locations with coordinates
     if not matched_locations.empty:
         # Create PyDeck layer for interactive map with hover tooltips
@@ -147,9 +167,41 @@ def main():
             deck, use_container_width=True, height=600, on_select="rerun", selection_mode="single-object"
         )
 
-        # Optional: Handle selection events for additional interactivity
+        # Handle map click events - automatically select clicked location
         if event.selection:
-            st.info("You can click on a location to select it for quick analysis!")
+            try:
+                # Extract clicked object data from the PyDeck event structure
+                if (
+                    "objects" in event.selection
+                    and "traffic-locations" in event.selection["objects"]
+                    and len(event.selection["objects"]["traffic-locations"]) > 0
+                ):
+                    clicked_data = event.selection["objects"]["traffic-locations"][0]
+                    clicked_study_location = clicked_data.get("study_location")
+
+                    # Only process if this is a new selection (not already in session state)
+                    current_selection = st.session_state.get("selected_location")
+                    if clicked_study_location and clicked_study_location != current_selection:
+                        # Store the clicked location in session state
+                        st.session_state["selected_location"] = clicked_study_location
+
+                        # Find the display name for the clicked location
+                        clicked_display_name = None
+                        for display_name, study_location in location_options.items():
+                            if study_location == clicked_study_location:
+                                clicked_display_name = display_name
+                                break
+
+                        if clicked_display_name:
+                            st.success(f"📍 Selected: **{clicked_display_name}**")
+                        else:
+                            st.info(f"Selected: {clicked_study_location}")
+
+                        st.rerun()  # Rerun only once for new selections
+
+            except Exception as e:
+                st.error(f"Error processing click: {e}")
+                st.info("Please try clicking directly on a location dot")
 
         # Add legend
         col1, col2 = st.columns(2)
@@ -175,30 +227,24 @@ def main():
     # Location Selection Section (always show this)
     st.subheader("📍 Select Location for Analysis")
 
-    # Create location options including ALL available locations
-    location_options = {}
-
-    # First add locations with coordinates (from matched_locations)
+    # Show helpful message about map interaction
     if not matched_locations.empty:
-        for _, row in matched_locations.iterrows():
-            display_name = f"{row['address']}"
-            if row["notes"] and row["notes"] != "nan":
-                display_name += f" ({row['notes']})"
-            location_options[display_name] = row["study_location"]
+        st.info("💡 **Tip:** Click on any location dot on the map above to automatically select it for analysis!")
 
-    # Then add locations without coordinates (from available_locations but not in matched_locations)
-    matched_study_names = set(matched_locations["study_location"].tolist()) if not matched_locations.empty else set()
-    for study_name in available_locations.keys():
-        if study_name not in matched_study_names:
-            # Clean name for display
-            clean_name = study_name.replace("_", " ").replace("-ALL", "").strip()
-            display_name = f"{clean_name} (No map coordinates)"
-            location_options[display_name] = study_name
+    # Determine default selection based on session state or clicked location
+    default_index = None
+    selected_from_session = st.session_state.get("selected_location")
+    if selected_from_session:
+        # Find the display name for the session state location
+        for i, (display_name, study_location) in enumerate(location_options.items()):
+            if study_location == selected_from_session:
+                default_index = i
+                break
 
     selected_display = st.selectbox(
         "Choose a location to analyze:",
         options=list(location_options.keys()),
-        index=None,
+        index=default_index,
         placeholder="Select a traffic study location...",
     )
 
