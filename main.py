@@ -10,6 +10,7 @@ License: MIT
 
 import streamlit as st
 
+
 def main() -> None:
     """Main application function with page navigation."""
     # Page configuration
@@ -30,22 +31,13 @@ def main() -> None:
     )
 
     # Define pages
-    map_page = st.Page(
-        "pages/map_page.py", 
-        title="Location Map", 
-        icon="🗺️",
-        default=True
-    )
-    
-    analysis_page = st.Page(
-        "pages/location_analysis.py", 
-        title="Traffic Analysis", 
-        icon="📊"
-    )
+    map_page = st.Page("pages/map_page.py", title="Location Map", icon="🗺️", default=True)
+
+    analysis_page = st.Page("pages/location_analysis.py", title="Traffic Analysis", icon="📊")
 
     # Create navigation
-    pg = st.navigation([map_page, analysis_page],position="top")
-    
+    pg = st.navigation([map_page, analysis_page], position="top")
+
     # Run the selected page
     pg.run()
 

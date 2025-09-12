@@ -5,8 +5,8 @@ Detailed traffic analysis for selected location including metrics,
 visualizations, and vehicle classification data.
 """
 
-from typing import Dict, Tuple
 import os
+from typing import Dict, Tuple
 
 import pandas as pd
 import streamlit as st
@@ -15,18 +15,18 @@ from utils.data_loader import get_available_locations, load_data
 from utils.metrics import get_core_metrics
 from utils.visualizations import (
     plot_speed_compliance,
-    plot_speed_distribution,
-    plot_speed_violation_severity,
-    plot_speeding_by_hour,
-    plot_temporal_patterns,
-    plot_traffic_volume,
-    plot_vehicle_classification_distribution,
-    plot_traffic_volume_plotly,
-    plot_speed_distribution_plotly,
     plot_speed_compliance_plotly,
-    plot_temporal_patterns_plotly,
+    plot_speed_distribution,
+    plot_speed_distribution_plotly,
+    plot_speed_violation_severity,
     plot_speed_violation_severity_plotly,
+    plot_speeding_by_hour,
     plot_speeding_by_hour_plotly,
+    plot_temporal_patterns,
+    plot_temporal_patterns_plotly,
+    plot_traffic_volume,
+    plot_traffic_volume_plotly,
+    plot_vehicle_classification_distribution,
     plot_vehicle_classification_distribution_plotly,
 )
 
@@ -378,10 +378,10 @@ def display_pdf_report(clean_location: str) -> None:
 
 def main() -> None:
     """Main application function for location analysis."""
-    
+
     # Check if a location was selected from the map
-    preselected_location = st.session_state.get('selected_location', None)
-    
+    preselected_location = st.session_state.get("selected_location", None)
+
     # Apply custom CSS
     css_file_path = "styles.css"
     if os.path.exists(css_file_path):
@@ -389,7 +389,7 @@ def main() -> None:
 
     # Header
     st.title("📊 Traffic Analysis")
-    
+
     if preselected_location:
         st.success(f"📍 Analyzing location: **{clean_location_name(preselected_location)}**")
         st.markdown("Use the sidebar filters to adjust your analysis parameters.")
