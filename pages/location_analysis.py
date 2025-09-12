@@ -42,7 +42,9 @@ def clean_location_name(location_name: str) -> str:
     return location_name.strip().strip('"').strip("'").strip(",").strip()
 
 
-def setup_sidebar_filters(preselected_location: str = None) -> Tuple[str, Dict[str, str], str]:
+def setup_sidebar_filters(
+    preselected_location: str = None,
+) -> Tuple[str, Dict[str, str], str]:
     """Set up sidebar filters and return selected values."""
     st.sidebar.title("Filters")
     locations = get_available_locations()
@@ -119,20 +121,38 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.metric("📊 Total Vehicles", f"{metrics['total_vehicles']:,}", border=True, height="stretch")
+        st.metric(
+            "📊 Total Vehicles",
+            f"{metrics['total_vehicles']:,}",
+            border=True,
+            height="stretch",
+        )
 
     with col2:
-        st.metric("📅 Average Daily Traffic", f"{metrics['adt']:,.0f}", border=True, height="stretch")
+        st.metric(
+            "📅 Average Daily Traffic",
+            f"{metrics['adt']:,.0f}",
+            border=True,
+            height="stretch",
+        )
 
     with col3:
         peak_hour_display = (
             f"{metrics['peak_hour']:02d}:00" if isinstance(metrics["peak_hour"], int) else metrics["peak_hour"]
         )
-        st.metric("⏰ Peak Hour", peak_hour_display, f"{metrics['peak_vehicles']:,} vehicles", border=True)
+        st.metric(
+            "⏰ Peak Hour",
+            peak_hour_display,
+            f"{metrics['peak_vehicles']:,} vehicles",
+            border=True,
+        )
 
     with col4:
         st.metric(
-            "🔄 Dominant Direction", metrics["dominant_direction"], f"{metrics['dominant_pct']:.1f}%", border=True
+            "🔄 Dominant Direction",
+            metrics["dominant_direction"],
+            f"{metrics['dominant_pct']:.1f}%",
+            border=True,
         )
 
     # Second row - Speed analysis
@@ -145,7 +165,11 @@ def display_core_metrics(filtered_df: pd.DataFrame, structure: Dict[str, str], s
         st.metric("🏎️ Average Speed", f"{metrics['combined_avg_speed']:.1f} mph", border=True)
 
     with col7:
-        st.metric("🎯 85th Percentile Speed", f"{metrics['percentile_85th']:.1f} mph", border=True)
+        st.metric(
+            "🎯 85th Percentile Speed",
+            f"{metrics['percentile_85th']:.1f} mph",
+            border=True,
+        )
 
     with col8:
         st.metric("🚦 Speed Compliance", f"{metrics['compliance_rate']:.1f}%", border=True)
@@ -353,7 +377,10 @@ def display_pdf_report(clean_location: str) -> None:
         current_pdf_path = None
 
     if current_pdf_path:
-        show_pdf = st.checkbox("Display PDF Report", help="View the original traffic counter report for this location")
+        show_pdf = st.checkbox(
+            "Display PDF Report",
+            help="View the original traffic counter report for this location",
+        )
 
         if show_pdf:
             st.info("📋 This report contains the raw data and additional analysis from the traffic counter.")

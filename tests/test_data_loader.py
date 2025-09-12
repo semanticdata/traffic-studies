@@ -285,7 +285,11 @@ class TestMemoryUsage:
         from utils.data_loader import get_memory_usage
 
         df = pd.DataFrame(
-            {"col1": [1, 2, 3, 4, 5], "col2": ["a", "b", "c", "d", "e"], "col3": [1.1, 2.2, 3.3, 4.4, 5.5]}
+            {
+                "col1": [1, 2, 3, 4, 5],
+                "col2": ["a", "b", "c", "d", "e"],
+                "col3": [1.1, 2.2, 3.3, 4.4, 5.5],
+            }
         )
 
         result = get_memory_usage(df)
@@ -357,7 +361,8 @@ class TestGetAvailableLocations:
         csv1.write_text(sample_csv_content)
 
         csv2_content = sample_csv_content.replace(
-            "Hampshire Ave between Noble Ave and Adair Ave", "Main Street between 1st and 2nd"
+            "Hampshire Ave between Noble Ave and Adair Ave",
+            "Main Street between 1st and 2nd",
         )
         csv2 = tmp_path / "location2-ALL.csv"
         csv2.write_text(csv2_content)

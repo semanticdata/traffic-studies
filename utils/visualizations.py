@@ -138,7 +138,10 @@ def plot_speed_distribution_plotly(filtered_df: pd.DataFrame, structure: Dict[st
     fig = make_subplots(
         rows=2,
         cols=1,
-        subplot_titles=(f"{structure['dir1_name']} Speed Distribution", f"{structure['dir2_name']} Speed Distribution"),
+        subplot_titles=(
+            f"{structure['dir1_name']} Speed Distribution",
+            f"{structure['dir2_name']} Speed Distribution",
+        ),
     )
 
     fig.add_trace(
@@ -453,7 +456,14 @@ def plot_speed_violation_severity_plotly(
         y="Count",
         color="Violation Range",
         barmode="group",
-        category_orders={"Violation Range": ["0-5 mph over", "5-10 mph over", "10-15 mph over", "15+ mph over"]},
+        category_orders={
+            "Violation Range": [
+                "0-5 mph over",
+                "5-10 mph over",
+                "10-15 mph over",
+                "15+ mph over",
+            ]
+        },
         color_discrete_sequence=px.colors.sequential.YlOrRd,
         title="Speed Violation Severity Analysis",
     )
@@ -612,7 +622,13 @@ def plot_speeding_by_hour_plotly(
         col=1,
     )
     fig.add_trace(
-        go.Scatter(x=list(hours), y=dir1_percent, name="% Speeding", mode="lines+markers", line=dict(color="red")),
+        go.Scatter(
+            x=list(hours),
+            y=dir1_percent,
+            name="% Speeding",
+            mode="lines+markers",
+            line=dict(color="red"),
+        ),
         secondary_y=True,
         row=1,
         col=1,
@@ -620,7 +636,13 @@ def plot_speeding_by_hour_plotly(
 
     # Direction 2
     fig.add_trace(
-        go.Bar(x=list(hours), y=dir2_total, name="Total Vehicles", marker_color="lightgray", showlegend=False),
+        go.Bar(
+            x=list(hours),
+            y=dir2_total,
+            name="Total Vehicles",
+            marker_color="lightgray",
+            showlegend=False,
+        ),
         secondary_y=False,
         row=2,
         col=1,

@@ -132,7 +132,11 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
             )
 
         # Validate required columns exist
-        required_columns = ["Date/Time", structure["dir1_volume_col"], structure["dir2_volume_col"]]
+        required_columns = [
+            "Date/Time",
+            structure["dir1_volume_col"],
+            structure["dir2_volume_col"],
+        ]
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise DataValidationError(
@@ -173,7 +177,10 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         # Raise errors if validation failed
         if not validation_results["is_valid"]:
             error_details = "; ".join(validation_results["errors"])
-            raise DataValidationError(f"Data validation failed for '{file_path}': {error_details}", validation_results)
+            raise DataValidationError(
+                f"Data validation failed for '{file_path}': {error_details}",
+                validation_results,
+            )
 
         # Enhanced structure with metadata
         enhanced_structure = {

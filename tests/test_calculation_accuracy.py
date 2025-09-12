@@ -183,7 +183,10 @@ class TestCalculationAccuracy:
         assert isinstance(metrics["peak_vehicles"], (int, float, np.integer))
         assert metrics["peak_vehicles"] >= 0
 
-        assert metrics["dominant_direction"] in [structure["dir1_name"], structure["dir2_name"]]
+        assert metrics["dominant_direction"] in [
+            structure["dir1_name"],
+            structure["dir2_name"],
+        ]
 
         assert isinstance(metrics["dominant_pct"], (int, float, np.floating))
         assert 0 <= metrics["dominant_pct"] <= 100

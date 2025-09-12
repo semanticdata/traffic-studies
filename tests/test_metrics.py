@@ -20,7 +20,11 @@ class TestCalculateWeightedSpeed:
 
     def test_calculate_weighted_speed_basic(self, sample_traffic_data):
         """Test basic weighted speed calculation."""
-        speed_cols = ["20-24 MPH - Northbound", "25-29 MPH - Northbound", "30-34 MPH - Northbound"]
+        speed_cols = [
+            "20-24 MPH - Northbound",
+            "25-29 MPH - Northbound",
+            "30-34 MPH - Northbound",
+        ]
         result = calculate_weighted_speed(sample_traffic_data, speed_cols)
 
         assert isinstance(result, float)
@@ -50,7 +54,11 @@ class TestCalculateCompliance:
 
     def test_calculate_compliance_basic(self, sample_traffic_data):
         """Test basic compliance calculation."""
-        speed_cols = ["20-24 MPH - Northbound", "25-29 MPH - Northbound", "35-39 MPH - Northbound"]
+        speed_cols = [
+            "20-24 MPH - Northbound",
+            "25-29 MPH - Northbound",
+            "35-39 MPH - Northbound",
+        ]
         compliant, total = calculate_compliance(sample_traffic_data, speed_cols, speed_limit=30)
 
         assert isinstance(compliant, (int, np.integer))
@@ -83,7 +91,11 @@ class TestCalculate85thPercentileSpeed:
 
     def test_calculate_85th_percentile_basic(self, sample_traffic_data):
         """Test basic 85th percentile speed calculation."""
-        speed_cols = ["20-24 MPH - Northbound", "25-29 MPH - Northbound", "30-34 MPH - Northbound"]
+        speed_cols = [
+            "20-24 MPH - Northbound",
+            "25-29 MPH - Northbound",
+            "30-34 MPH - Northbound",
+        ]
         result = calculate_85th_percentile_speed(sample_traffic_data, speed_cols)
 
         assert isinstance(result, (float, np.floating))
@@ -141,7 +153,11 @@ class TestCountHighSpeeders:
 
     def test_count_high_speeders_basic(self, sample_traffic_data):
         """Test basic high speeders counting."""
-        speed_cols = ["35-39 MPH - Northbound", "40-44 MPH - Northbound", "45-50 MPH - Northbound"]
+        speed_cols = [
+            "35-39 MPH - Northbound",
+            "40-44 MPH - Northbound",
+            "45-50 MPH - Northbound",
+        ]
         result = count_high_speeders(sample_traffic_data, speed_cols, speed_limit=30)
 
         assert isinstance(result, (int, np.integer))

@@ -55,7 +55,11 @@ class TestPlotTrafficVolume:
     def test_plot_traffic_volume_empty_data(self, sample_structure):
         """Test plot_traffic_volume with empty data."""
         df = pd.DataFrame(
-            {"Hour": [], sample_structure["dir1_volume_col"]: [], sample_structure["dir2_volume_col"]: []}
+            {
+                "Hour": [],
+                sample_structure["dir1_volume_col"]: [],
+                sample_structure["dir2_volume_col"]: [],
+            }
         )
 
         fig = plot_traffic_volume(df, sample_structure)
@@ -208,8 +212,14 @@ class TestPlotSpeedViolationSeverity:
 
         # Update structure to only include non-violating speeds
         structure = sample_structure.copy()
-        structure["dir1_speed_cols"] = ["20-24 MPH - Northbound", "25-29 MPH - Northbound"]
-        structure["dir2_speed_cols"] = ["20-24 MPH - Southbound", "25-29 MPH - Southbound"]
+        structure["dir1_speed_cols"] = [
+            "20-24 MPH - Northbound",
+            "25-29 MPH - Northbound",
+        ]
+        structure["dir2_speed_cols"] = [
+            "20-24 MPH - Southbound",
+            "25-29 MPH - Southbound",
+        ]
 
         fig = plot_speed_violation_severity(df, structure, speed_limit=30)
 

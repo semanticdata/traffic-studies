@@ -164,7 +164,11 @@ def main():
 
         # Display the interactive map with event handling
         event = st.pydeck_chart(
-            deck, use_container_width=True, height=600, on_select="rerun", selection_mode="single-object"
+            deck,
+            use_container_width=True,
+            height=600,
+            on_select="rerun",
+            selection_mode="single-object",
         )
 
         # Handle map click events - automatically select clicked location
@@ -236,14 +240,16 @@ def main():
     selected_from_session = st.session_state.get("selected_location")
     if selected_from_session:
         # Find the display name for the session state location
-        for i, (display_name, study_location) in enumerate(location_options.items()):
+        for display_name, study_location in location_options.items():
             if study_location == selected_from_session:
-                default_index = i
+                # Find index in sorted list
+                sorted_options = sorted(list(location_options.keys()))
+                default_index = sorted_options.index(display_name)
                 break
 
     selected_display = st.selectbox(
         "Choose a location to analyze:",
-        options=list(location_options.keys()),
+        options=sorted(list(location_options.keys())),
         index=default_index,
         placeholder="Select a traffic study location...",
     )
@@ -281,7 +287,9 @@ def main():
 
             with metric_col1:
                 st.metric(
-                    "📅 Average Daily Traffic", f"{metrics['adt']:,.0f}", help="Total vehicles per day on average"
+                    "📅 Average Daily Traffic",
+                    f"{metrics['adt']:,.0f}",
+                    help="Total vehicles per day on average",
                 )
 
             with metric_col2:
