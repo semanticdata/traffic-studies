@@ -7,6 +7,7 @@ Users can view and select locations to navigate to detailed analysis.
 
 import pandas as pd
 import streamlit as st
+import pydeck as pdk
 
 from utils.data_loader import get_available_locations
 
@@ -25,11 +26,15 @@ def load_location_data() -> pd.DataFrame:
 
 
 def match_traffic_study_locations(locations_df: pd.DataFrame, available_locations: dict) -> pd.DataFrame:
-    """Match location data with available traffic studies."""
+    """Match location data with available traffic studies and include traffic metrics."""
     if locations_df.empty:
         return pd.DataFrame()
     
     matched_locations = []
+    
+    # Import here to avoid circular imports
+    from utils.data_loader import load_data
+    from utils.metrics import get_core_metrics
     
     for _, row in locations_df.iterrows():
         address = str(row['Address']).strip()
@@ -42,14 +47,34 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                     # Determine color based on notes (school zones get different color)
                     notes = str(row.get('Notes', '')).strip()
                     is_school = 'SCHOOL' in notes.upper()
-                    color = '#FF6B6B' if is_school else '#4ECDC4'  # Red for schools, teal for regular
+                    
+                    # PyDeck color format: [R, G, B] values 0-255
+                    color = [255, 107, 107] if is_school else [78, 205, 196]  # Red for schools, teal for regular
                     
                     # Size based on site ID (higher IDs = larger dots for visibility)
                     site_id = str(row.get('Site', '0'))
                     try:
-                        size = min(60, max(30, int(site_id) // 1000)) if site_id.isdigit() else 40
+                        radius = min(60, max(30, int(site_id) // 1000)) if site_id.isdigit() else 40
                     except:
-                        size = 40
+                        radius = 40
+                    
+                    # Load traffic metrics for tooltip
+                    try:
+                        df, _, structure = load_data(available_locations[study_name])
+                        metrics = get_core_metrics(df, structure)
+                        adt = f"{metrics['adt']:,.0f}"
+                        percentile_85th = f"{metrics['percentile_85th']:.1f} mph"
+                        compliance_rate = f"{metrics['compliance_rate']:.1f}%"
+                        posted_speed = f"{metrics['posted_speed']} mph"
+                    except Exception:
+                        # Fallback values if metrics can't be loaded
+                        adt = "N/A"
+                        percentile_85th = "N/A"
+                        compliance_rate = "N/A"
+                        posted_speed = "N/A"
+                    
+                    # Clean notes for display
+                    display_notes = notes if notes and notes != 'nan' else ''
                     
                     matched_locations.append({
                         'lat': row['Latitude'],
@@ -57,10 +82,15 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                         'address': address,
                         'study_location': study_name,
                         'site_id': site_id,
-                        'notes': notes,
+                        'notes': display_notes,
                         'color': color,
-                        'size': size,
-                        'type': 'School Zone' if is_school else 'Regular Traffic Study'
+                        'radius': radius,
+                        'type': 'School Zone' if is_school else 'Regular Traffic Study',
+                        'adt': adt,
+                        'percentile_85th': percentile_85th,
+                        'compliance_rate': compliance_rate,
+                        'posted_speed': posted_speed,
+                        'location_name': clean_study
                     })
                     break
     
@@ -82,14 +112,52 @@ def main():
     
     # Display map if we have locations with coordinates
     if not matched_locations.empty:
-        # Display the map with color coding and variable sizes
-        st.map(
-            matched_locations[['lat', 'lon', 'color', 'size']], 
-            color='color',    # Use color column for dot colors
-            size='size',      # Use size column for dot sizes  
-            zoom=13,          # Adjustable zoom level
-            height=600,       # Adjustable map height
+        # Create PyDeck layer for interactive map with hover tooltips
+        scatterplot_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=matched_locations,
+            id="traffic-locations",
+            get_position=['lon', 'lat'],
+            get_color='color',
+            get_radius='radius',
+            pickable=True,
+            auto_highlight=True
         )
+        
+        # Calculate center point for Crystal, Minnesota area
+        center_lat = matched_locations['lat'].mean()
+        center_lon = matched_locations['lon'].mean()
+        
+        # Create the view state
+        view_state = pdk.ViewState(
+            latitude=center_lat,
+            longitude=center_lon,
+            zoom=13,
+            pitch=0,
+            controller=True
+        )
+        
+        # Create the deck with tooltip configuration
+        deck = pdk.Deck(
+            layers=[scatterplot_layer],
+            initial_view_state=view_state,
+            tooltip={
+                "text": "{address}\nType: {type}\nADT: {adt}\n85th Percentile: {percentile_85th}\nCompliance: {compliance_rate}\nPosted Speed: {posted_speed}"
+            }
+        )
+        
+        # Display the interactive map with event handling
+        event = st.pydeck_chart(
+            deck, 
+            use_container_width=True, 
+            height=600,
+            on_select="rerun",
+            selection_mode="single-object"
+        )
+        
+        # Optional: Handle selection events for additional interactivity
+        if event.selection:
+            st.info("You can click on a location to select it for quick analysis!")
         
         # Add legend
         col1, col2 = st.columns(2)
