@@ -4,6 +4,8 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 
 ## 🌟 Features
 
+- **Interactive Map**: PyDeck-powered location map with clickable traffic study locations and real-time metrics tooltips
+- **Multi-Page Navigation**: Streamlined interface with dedicated map and analysis pages
 - **Interactive Dashboard**: Real-time filtering by location, date range, and time periods
 - **Core Metrics**: Essential key performance indicators including speed compliance, peak hour analysis, and traffic volume
 - **Chart Explanations**: Interactive "See explanation" expanders under each visualization with detailed reading guides
@@ -11,33 +13,42 @@ A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with St
 - **Speed Analysis**: Compliance monitoring, violation severity tracking, and 85th percentile calculations
 - **Temporal Patterns**: Hourly, daily, and weekly traffic pattern visualization
 - **Enhanced Data Processing**: Advanced validation, vectorized operations, and zero-traffic filtering
-- **Performance Optimization**: Memory-efficient processing for large datasets with chunked loading
+- **Performance Optimization**: Memory-efficient processing with intelligent caching and loading spinners
 - **Data Quality Monitoring**: Comprehensive validation with detailed error reporting and statistics
 
 ## 🏗️ Project Structure
 
 ```plaintext
 traffic-studies/
-├── main.py                           # Main Streamlit dashboard
-├── utils/
-│   ├── data_loader.py                # Enhanced data loading with validation and optimization
-│   ├── metrics.py                    # Traffic metrics and KPI calculations
-│   ├── visualizations.py             # Chart generation and plotting functions
-│   └── styles.css                    # Custom CSS styling for the dashboard
-├── tests/                            # Test suite
+├── main.py                           # Main Streamlit application with navigation
+├── pages/                            # Multi-page application structure
+│   ├── map_page.py                   # Interactive location map with PyDeck
+│   └── location_analysis.py          # Detailed traffic analysis dashboard
+├── utils/                            # Core processing utilities
+│   ├── data_loader.py                # Enhanced data loading with caching and validation
+│   ├── metrics.py                    # Traffic metrics and KPI calculations with caching
+│   ├── visualizations.py             # Chart generation (matplotlib & plotly)
+│   ├── parsers/                      # Specialized parsing modules
+│   │   └── traffic_parser.py         # CSV structure detection and parsing
+│   ├── transformers/                 # Data transformation modules
+│   │   └── traffic_transformer.py   # Data cleaning and enrichment
+│   └── validators/                   # Data validation modules
+│       └── data_validator.py        # Traffic data quality validation
+├── tests/                            # Comprehensive test suite
 │   ├── conftest.py                   # Test fixtures and sample data
-│   ├── test_metrics.py               # Tests for metrics calculations
-│   ├── test_calculation_accuracy.py  # Tests for data calculation accuracy
-│   ├── test_data_loader.py           # Tests for data loading
-│   ├── test_metrics.py               # Tests for metrics calculations
-│   ├── test_posted_speed.py          # Tests for posted speed calculations
-│   └── test_visualizations.py        # Tests for chart generation
+│   ├── test_calculation_accuracy.py  # Real-world calculation validation
+│   ├── test_data_loader.py           # Data loading and caching tests
+│   ├── test_metrics.py               # Metrics calculation tests
+│   ├── test_posted_speed.py          # Posted speed extraction tests
+│   └── test_visualizations.py        # Chart generation tests
 ├── .streamlit/
 │   └── config.toml                   # Streamlit configuration settings
 ├── data/                             # Directory for CSV data files
+│   ├── Locations.csv                 # Location coordinates for map display
 │   └── reports/                      # Directory for PDF reports
+├── styles.css                        # Custom dashboard styling
 ├── pyproject.toml                    # Project dependencies and metadata
-└── README.md                         # This file
+└── README.md                         # Project Information
 ```
 
 ## 🚀 Getting Started
@@ -72,7 +83,11 @@ traffic-studies/
    uv run streamlit run main.py
    ```
 
-The dashboard will open in your web browser at `http://localhost:8501`
+The dashboard will open in your web browser at `http://localhost:8501`. You'll start on the **Location Map** page where you can:
+
+- View all traffic study locations on an interactive map
+- Click locations to see instant traffic metrics in tooltips
+- Select locations and navigate to detailed analysis
 
 ## 📊 Core Metrics Dashboard
 
@@ -278,7 +293,8 @@ The test suite includes comprehensive tests for:
 
 ### Dependencies
 
-- **Streamlit**: Web application framework
+- **Streamlit**: Multi-page web application framework with navigation
+- **PyDeck**: Interactive map visualization for location selection
 - **Pandas**: Data manipulation and analysis with enhanced validation
 - **Matplotlib**: Static plotting and visualization
 - **Plotly**: Interactive plotting and visualization

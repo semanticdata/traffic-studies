@@ -1004,6 +1004,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "plotly" },
+    { name = "pydeck" },
     { name = "seaborn" },
     { name = "streamlit", extra = ["pdf"] },
 ]
@@ -1021,6 +1022,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.3.3" },
     { name = "pandas", specifier = ">=2.3.2" },
     { name = "plotly", specifier = ">=6.3.0" },
+    { name = "pydeck", specifier = ">=0.9.0" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "streamlit", extras = ["pdf"], specifier = ">=1.49.1" },
 ]

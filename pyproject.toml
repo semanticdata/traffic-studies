@@ -3,27 +3,46 @@ name = "traffic-studies"
 version = "0.1.0"
 description = "A comprehensive traffic analysis dashboard for Crystal, Minnesota, built with Streamlit."
 readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Miguel Pimentel", email = "miguel.pimentel@crystalmn.gov" },
+]
+keywords = ["traffic", "analysis", "streamlit", "dashboard", "transportation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+]
 requires-python = ">=3.13"
 dependencies = [
     "matplotlib>=3.10.6",
     "numpy>=2.3.3",
     "pandas>=2.3.2",
     "plotly>=6.3.0",
+    "pydeck>=0.9.0",
     "seaborn>=0.13.2",
     "streamlit[pdf]>=1.49.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/semanticdata/traffic-studies"
+Repository = "https://github.com/semanticdata/traffic-studies"
+Issues = "https://github.com/semanticdata/traffic-studies/issues"
+Documentation = "https://github.com/semanticdata/traffic-studies#readme"
+
 [dependency-groups]
-dev = [
-    "ruff>=0.13.0",
-    "pytest>=8.4.2",
-    "pytest-cov>=7.0.0"
-]
+dev = ["ruff>=0.13.0", "pytest>=8.4.2", "pytest-cov>=7.0.0"]
 
 [tool.ruff]
 line-length = 120
 indent-width = 4
-target-version = "py312"
+target-version = "py313"
 lint.select = ["E", "F", "I"]
 lint.ignore = []
 lint.fixable = ["ALL"]
