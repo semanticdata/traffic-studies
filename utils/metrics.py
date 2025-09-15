@@ -18,6 +18,7 @@ import os
 from typing import Dict, List, Tuple
 
 import pandas as pd
+import streamlit as st
 
 
 def calculate_weighted_speed(df: pd.DataFrame, speed_cols: List[str]) -> float:
@@ -297,6 +298,7 @@ def calculate_adt(df: pd.DataFrame) -> float:
     return complete_days.mean()
 
 
+@st.cache_data
 def get_core_metrics(df: pd.DataFrame, structure: Dict[str, str], speed_limit: int = None) -> Dict[str, float]:
     """
     Calculate all core metrics for the dashboard.

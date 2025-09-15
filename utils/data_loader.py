@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 import pandas as pd
+import streamlit as st
 
 from utils.parsers.traffic_parser import (
     FileStructureError as ParserFileStructureError,
@@ -107,6 +108,7 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
         raise FileStructureError(str(e))
 
 
+@st.cache_data
 def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
     """Load and process traffic data from CSV file with enhanced validation and optimization."""
     structure = detect_file_structure(file_path)
@@ -296,6 +298,7 @@ def load_large_traffic_data(
         raise TrafficDataError(f"Error loading large dataset from '{file_path}': {e}")
 
 
+@st.cache_data
 def get_available_locations() -> Dict[str, str]:
     """Get list of available data files and their locations."""
     data_dir = get_data_directory()

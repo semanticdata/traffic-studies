@@ -55,7 +55,7 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                     site_id = str(row.get("Site", "0"))
                     try:
                         radius = min(60, max(30, int(site_id) // 1000)) if site_id.isdigit() else 40
-                    except:
+                    except (ValueError, TypeError, ZeroDivisionError):
                         radius = 40
 
                     # Load traffic metrics for tooltip
@@ -107,10 +107,11 @@ def main():
         "Select a location to view detailed analysis and reports."
     )
 
-    # Load location data
-    available_locations = get_available_locations()
-    locations_df = load_location_data()
-    matched_locations = match_traffic_study_locations(locations_df, available_locations)
+    # Load location data with spinner
+    with st.spinner("Loading traffic study locations..."):
+        available_locations = get_available_locations()
+        locations_df = load_location_data()
+        matched_locations = match_traffic_study_locations(locations_df, available_locations)
 
     # Create location options including ALL available locations (before map display for click handling)
     location_options = {}
@@ -158,7 +159,11 @@ def main():
             layers=[scatterplot_layer],
             initial_view_state=view_state,
             tooltip={
-                "text": "{address}\nType: {type}\nADT: {adt}\n85th Percentile: {percentile_85th}\nCompliance: {compliance_rate}\nPosted Speed: {posted_speed}"
+                "text": (
+                    "{address}\nType: {type}\nADT: {adt}\n"
+                    "85th Percentile: {percentile_85th}\nCompliance: {compliance_rate}\n"
+                    "Posted Speed: {posted_speed}"
+                )
             },
         )
 
@@ -199,7 +204,7 @@ def main():
                         if clicked_display_name:
                             st.success(f"📍 Selected: **{clicked_display_name}**")
                         else:
-                            st.info(f"Selected: {clicked_study_location}")
+                            st.success(f"📍 Selected: **{clicked_study_location}**")
 
                         st.rerun()  # Rerun only once for new selections
 
@@ -231,9 +236,7 @@ def main():
     # Location Selection Section (always show this)
     st.subheader("📍 Select Location for Analysis")
 
-    # Show helpful message about map interaction
-    if not matched_locations.empty:
-        st.info("💡 **Tip:** Click on any location dot on the map above to automatically select it for analysis!")
+    # Show helpful message about map interaction (removed redundant tip)
 
     # Determine default selection based on session state or clicked location
     default_index = None
@@ -320,7 +323,8 @@ def main():
 
     if locations_without_coords > 0:
         st.info(
-            f"📊 Total locations: {total_locations} ({locations_with_coords} with map coordinates, {locations_without_coords} without coordinates)"
+            f"📊 Total locations: {total_locations} "
+            f"({locations_with_coords} with map coordinates, {locations_without_coords} without coordinates)"
         )
     else:
         st.info(f"📊 All {total_locations} traffic study locations have coordinate data")
