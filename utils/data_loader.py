@@ -108,8 +108,7 @@ def detect_file_structure(file_path: str) -> Optional[Dict[str, Any]]:
         raise FileStructureError(str(e))
 
 
-@st.cache_data
-def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
+def _load_data_impl(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
     """Load and process traffic data from CSV file with enhanced validation and optimization."""
     structure = detect_file_structure(file_path)
     if not structure:
@@ -206,6 +205,25 @@ def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str,
         raise TrafficDataError(f"Unexpected error loading data from '{file_path}': {e}")
 
 
+@st.cache_data
+def _load_data_cached(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
+    """Cached version of load_data."""
+    return _load_data_impl(file_path, speed_limit)
+
+
+def load_data(file_path: str, speed_limit: int = 30) -> Tuple[pd.DataFrame, str, Dict[str, Any]]:
+    """Load and process traffic data from CSV file with enhanced validation and optimization."""
+    # Check if we're in a test environment by looking for pytest in sys.modules
+    import sys
+
+    if "pytest" in sys.modules:
+        # Don't use caching during tests to avoid cache interference
+        return _load_data_impl(file_path, speed_limit)
+    else:
+        # Use caching in normal runtime
+        return _load_data_cached(file_path, speed_limit)
+
+
 def get_memory_usage(df: pd.DataFrame) -> Dict[str, str]:
     """Get memory usage statistics for dataframe."""
     memory_usage = df.memory_usage(deep=True).sum()
@@ -298,9 +316,8 @@ def load_large_traffic_data(
         raise TrafficDataError(f"Error loading large dataset from '{file_path}': {e}")
 
 
-@st.cache_data
-def get_available_locations() -> Dict[str, str]:
-    """Get list of available data files and their locations."""
+def _get_available_locations_impl() -> Dict[str, str]:
+    """Internal implementation of get_available_locations."""
     data_dir = get_data_directory()
     if not data_dir.exists():
         return {}
@@ -318,3 +335,22 @@ def get_available_locations() -> Dict[str, str]:
         locations[location_name] = str(file)
 
     return locations
+
+
+@st.cache_data
+def _get_available_locations_cached() -> Dict[str, str]:
+    """Cached version of get_available_locations."""
+    return _get_available_locations_impl()
+
+
+def get_available_locations() -> Dict[str, str]:
+    """Get list of available data files and their locations."""
+    # Check if we're in a test environment by looking for pytest in sys.modules
+    import sys
+
+    if "pytest" in sys.modules:
+        # Don't use caching during tests to avoid cache interference
+        return _get_available_locations_impl()
+    else:
+        # Use caching in normal runtime
+        return _get_available_locations_cached()
