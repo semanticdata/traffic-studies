@@ -53,15 +53,18 @@ def setup_sidebar_filters(
         st.sidebar.error("❌ No data files found. Please add CSV files to the 'data' directory.")
         st.stop()
 
+    # Create sorted list for consistent indexing
+    sorted_keys = sorted(list(locations.keys()))
+
     # Use preselected location if available
     if preselected_location and preselected_location in locations:
-        default_index = list(locations.keys()).index(preselected_location)
+        default_index = sorted_keys.index(preselected_location)
     else:
         default_index = 0
 
     selected_location = st.sidebar.selectbox(
         "Select Location",
-        options=sorted(list(locations.keys())),
+        options=sorted_keys,
         index=default_index,
         format_func=clean_location_name,
     )
