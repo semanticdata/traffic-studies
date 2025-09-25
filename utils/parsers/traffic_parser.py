@@ -378,7 +378,7 @@ def load_reference_speed_data(total_spd_file: str) -> Optional[pd.DataFrame]:
         if has_85th_percentile:
             columns_loaded.append("85th Percentile")
 
-        print(f"Loaded {len(df)} rows of reference speed data ({', '.join(columns_loaded)}) from {total_spd_file}")
+        # print(f"Loaded {len(df)} rows of reference speed data ({', '.join(columns_loaded)}) from {total_spd_file}")
         return df
 
     except Exception as e:
