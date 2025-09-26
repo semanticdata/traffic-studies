@@ -100,27 +100,10 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
 def main():
     """Main function for the map page."""
     st.title("🗺️ Traffic Study Locations")
-    st.markdown(
-        "Explore traffic study locations across Crystal, Minnesota. "
-        "Select a location to view detailed analysis and reports."
-    )
-
-    # Explanation of Local vs State counts
-    with st.expander("ℹ️ Understanding Local vs State Traffic Counts"):
-        st.markdown("""
-        **Local Counts** and **State Counts** represent different types of traffic monitoring conducted at various locations:
-
-        - **🏘️ Local Counts**: Traffic studies conducted by the City of Crystal for local traffic management,
-          planning purposes, and to assess neighborhood traffic patterns. These studies typically focus on
-          local street conditions and community-specific traffic concerns.
-
-        - **🛣️ State Counts**: Traffic monitoring conducted by the Minnesota Department of Transportation (MnDOT)
-          as part of the statewide traffic monitoring system. These counts are used for state highway planning,
-          federal reporting requirements, and regional transportation analysis.
-
-        Both types of counts provide valuable data for traffic engineering decisions, but serve different
-        administrative and planning purposes within the transportation network.
-        """)
+    st.markdown("""
+        Explore traffic study locations across Crystal, Minnesota.
+        Please select a location to view detailed analysis and reports.
+    """)
 
     # Load location data with spinner
     with st.spinner("Loading traffic study locations..."):
@@ -230,9 +213,9 @@ def main():
         # Add legend
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("**🎯 Map Legend:**")
-            st.markdown("🔵 **Blue dots**: Local traffic counts")
-            st.markdown("🟢 **Green dots**: State traffic counts")
+            st.markdown("**Map Legend:**")
+            st.markdown("🔵 Local Speed Studies")
+            st.markdown("🟢 State Traffic Counts")
 
         with col2:
             local_count = len(matched_locations[matched_locations["type"] == "Local Count"])
@@ -240,10 +223,20 @@ def main():
             st.metric("🏢 Local Counts", local_count)
             st.metric("🏛️ State Counts", state_count)
 
-        st.info(f"📊 Showing {len(matched_locations)} traffic study locations with coordinate data on map")
-    else:
-        st.warning("📍 No traffic study locations found with coordinate data for map display")
-        st.info("Locations without coordinates are still available for analysis in the selection below.")
+    with st.expander("ℹ️ Understanding Local vs State Traffic Counts"):
+        st.markdown("""
+        **Local Counts** and **State Counts** represent different types of traffic monitoring
+        conducted at various locations:
+
+        - **Local Counts**: Traffic studies for local traffic management, planning purposes,
+          and to assess neighborhood traffic patterns. These studies typically include much more
+          detailed data on vehicle speed and behavior, making them more suitable for speed studies.
+
+        - **State Counts**: Traffic monitoring as part of the statewide traffic monitoring system.
+          These counts are used for state highway planning, federal reporting requirements, and
+          regional transportation analysis. They are prescribed locations that may not offer the best
+          speed study information as these aim to be comprehensive only on volume counts.
+        """)
 
     st.divider()
 
