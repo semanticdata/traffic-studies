@@ -44,19 +44,16 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                 # Clean the study name for comparison
                 clean_study = study_name.replace("_", " ").replace("-ALL", "").strip()
                 if address.lower() in clean_study.lower() or clean_study.lower() in address.lower():
-                    # Determine color based on notes (school zones get different color)
-                    notes = str(row.get("Notes", "")).strip()
-                    is_school = "SCHOOL" in notes.upper()
+                    # Determine color based on kind (Local vs State counts)
+                    kind = str(row.get("Kind", "")).strip()
+                    is_local = kind.upper() == "LOCAL"
 
                     # PyDeck color format: [R, G, B] values 0-255
-                    color = [255, 107, 107] if is_school else [78, 205, 196]  # Red for schools, teal for regular
+                    color = [54, 162, 235] if is_local else [40, 167, 69]  # Blue for Local, Green for State
 
-                    # Size based on site ID (higher IDs = larger dots for visibility)
+                    # Use consistent size for all dots
                     site_id = str(row.get("Site", "0"))
-                    try:
-                        radius = min(60, max(30, int(site_id) // 1000)) if site_id.isdigit() else 40
-                    except (ValueError, TypeError, ZeroDivisionError):
-                        radius = 40
+                    radius = 40  # Consistent size for all locations
 
                     # Load traffic metrics for tooltip
                     try:
@@ -74,6 +71,7 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                         posted_speed = "N/A"
 
                     # Clean notes for display
+                    notes = str(row.get("Notes", "")).strip()
                     display_notes = notes if notes and notes != "nan" else ""
 
                     matched_locations.append(
@@ -86,7 +84,7 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
                             "notes": display_notes,
                             "color": color,
                             "radius": radius,
-                            "type": "School Zone" if is_school else "Regular Traffic Study",
+                            "type": "Local Count" if is_local else "State Count",
                             "adt": adt,
                             "percentile_85th": percentile_85th,
                             "compliance_rate": compliance_rate,
@@ -102,10 +100,10 @@ def match_traffic_study_locations(locations_df: pd.DataFrame, available_location
 def main():
     """Main function for the map page."""
     st.title("🗺️ Traffic Study Locations")
-    st.markdown(
-        "Explore traffic study locations across Crystal, Minnesota. "
-        "Select a location to view detailed analysis and reports."
-    )
+    st.markdown("""
+        Explore traffic study locations across Crystal, Minnesota.
+        Please select a location to view detailed analysis and reports.
+    """)
 
     # Load location data with spinner
     with st.spinner("Loading traffic study locations..."):
@@ -215,21 +213,30 @@ def main():
         # Add legend
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("**🎯 Map Legend:**")
-            st.markdown("🔴 **Red dots**: School zone traffic studies")
-            st.markdown("🔵 **Teal dots**: Regular traffic studies")
-            st.markdown("📏 **Dot size**: Varies by site ID")
+            st.markdown("**Map Legend:**")
+            st.markdown("🔵 Local Speed Studies")
+            st.markdown("🟢 State Traffic Counts")
 
         with col2:
-            school_count = len(matched_locations[matched_locations["type"] == "School Zone"])
-            regular_count = len(matched_locations[matched_locations["type"] == "Regular Traffic Study"])
-            st.metric("🏫 School Zones", school_count)
-            st.metric("🚗 Regular Studies", regular_count)
+            local_count = len(matched_locations[matched_locations["type"] == "Local Count"])
+            state_count = len(matched_locations[matched_locations["type"] == "State Count"])
+            st.metric("🏢 Local Counts", local_count)
+            st.metric("🏛️ State Counts", state_count)
 
-        st.info(f"📊 Showing {len(matched_locations)} traffic study locations with coordinate data on map")
-    else:
-        st.warning("📍 No traffic study locations found with coordinate data for map display")
-        st.info("Locations without coordinates are still available for analysis in the selection below.")
+    with st.expander("ℹ️ Understanding Local vs State Traffic Counts"):
+        st.markdown("""
+        **Local Counts** and **State Counts** represent different types of traffic monitoring
+        conducted at various locations:
+
+        - **Local Counts**: Traffic studies for local traffic management, planning purposes,
+          and to assess neighborhood traffic patterns. These studies typically include much more
+          detailed data on vehicle speed and behavior, making them more suitable for speed studies.
+
+        - **State Counts**: Traffic monitoring as part of the statewide traffic monitoring system.
+          These counts are used for state highway planning, federal reporting requirements, and
+          regional transportation analysis. They are prescribed locations that may not offer the best
+          speed study information as these aim to be comprehensive only on volume counts.
+        """)
 
     st.divider()
 
