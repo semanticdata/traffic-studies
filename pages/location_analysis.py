@@ -31,10 +31,10 @@ from utils.visualizations import (
 )
 
 
-def load_custom_css(file_path: str) -> str:
-    """Load custom CSS from an external file."""
-    with open(file_path, "r") as f:
-        return f"<style>{f.read()}</style>"
+# def load_custom_css(file_path: str) -> str:
+#     """Load custom CSS from an external file."""
+#     with open(file_path, "r") as f:
+#         return f"<style>{f.read()}</style>"
 
 
 def clean_location_name(location_name: str) -> str:
@@ -412,10 +412,10 @@ def main() -> None:
     # Check if a location was selected from the map
     preselected_location = st.session_state.get("selected_location", None)
 
-    # Apply custom CSS
-    css_file_path = "styles.css"
-    if os.path.exists(css_file_path):
-        st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
+    # # Apply custom CSS
+    # css_file_path = "../styles.css"
+    # if os.path.exists(css_file_path):
+    #     st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
     # Header
     st.title("📊 Traffic Analysis")

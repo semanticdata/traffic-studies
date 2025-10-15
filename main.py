@@ -8,6 +8,7 @@ Author: Miguel Pimentel
 License: MIT
 """
 
+import os
 import streamlit as st
 
 
@@ -29,6 +30,16 @@ def main() -> None:
             "Get help": "mailto:miguel.pimentel@crystalmn.gov",
         },
     )
+
+    def load_custom_css(file_path: str) -> str:
+        """Load custom CSS from an external file."""
+        with open(file_path, "r") as f:
+            return f"<style>{f.read()}</style>"
+
+    # Apply custom CSS
+    css_file_path = "styles.css"
+    if os.path.exists(css_file_path):
+        st.markdown(load_custom_css(css_file_path), unsafe_allow_html=True)
 
     # Define pages
     map_page = st.Page("pages/map_page.py", title="Location Map", icon="🗺️", default=True)

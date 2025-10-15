@@ -10,3 +10,7 @@
 .stMetric > div > div[data-testid="stMetricValue"] {
   font-size: 1.25rem;
 }
+
+[data-testid="stMainBlockContainer"] {
+  padding: 4rem 1rem 10rem;
+}
