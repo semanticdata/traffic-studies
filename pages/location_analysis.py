@@ -30,7 +30,6 @@ from utils.visualizations import (
     plot_vehicle_classification_distribution_plotly,
 )
 
-
 # def load_custom_css(file_path: str) -> str:
 #     """Load custom CSS from an external file."""
 #     with open(file_path, "r") as f:
